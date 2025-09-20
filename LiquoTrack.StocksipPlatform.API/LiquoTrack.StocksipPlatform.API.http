@@ -1,0 +1,6 @@
+@LiquoTrack.StocksipPlatform.API_HostAddress = http://localhost:5108
+
+GET {{LiquoTrack.StocksipPlatform.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
