@@ -22,5 +22,8 @@ public static class SharedMappingHelper
         
         // Use of Email/Username Value Object serializer
         SerializerRegistrationHelper.TryRegisterSerializer(new EmailSerializer());
+        
+        // Use of ImageUrl Value Object serializer
+        SerializerRegistrationHelper.TryRegisterSerializer(new ImageUrlSerializer());
     }
 }

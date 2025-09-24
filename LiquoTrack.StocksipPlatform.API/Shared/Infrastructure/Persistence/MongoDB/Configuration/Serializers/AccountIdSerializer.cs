@@ -16,7 +16,7 @@ public class AccountIdSerializer : IBsonSerializer<AccountId>
     public AccountId Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
     {
         var value = context.Reader.ReadString();
-        return new AccountId(value);
+        return new AccountId(value ?? throw new InvalidOperationException());
     }
 
     void IBsonSerializer.Serialize(BsonSerializationContext context, BsonSerializationArgs args, object value)

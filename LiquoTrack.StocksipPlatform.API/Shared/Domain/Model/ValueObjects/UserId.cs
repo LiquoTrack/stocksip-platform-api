@@ -1,4 +1,6 @@
 ﻿using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Exceptions;
+using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration.Serializers;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 
@@ -6,6 +8,7 @@ namespace LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 ///     This class represents a UserId Value Object.
 ///     It is used to encapsulate the identifier of a user in the system.
 /// </summary>
+[BsonSerializer(typeof(UserIdSerializer))]
 public record UserId()
 {
     /// <summary>

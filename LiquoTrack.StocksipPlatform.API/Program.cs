@@ -72,6 +72,9 @@ builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 builder.Services.Configure<JsonOptions>(options =>
 {
     options.JsonSerializerOptions.Converters.Add(new AccountIdJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new UserIdJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new EmailJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new ImageUrlJsonConverter());
 });
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
