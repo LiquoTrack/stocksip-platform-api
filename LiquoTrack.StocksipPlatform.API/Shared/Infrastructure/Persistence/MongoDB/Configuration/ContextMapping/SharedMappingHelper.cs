@@ -26,6 +26,9 @@ public static class SharedMappingHelper
         // Use of InventoryId Value Object serializer
         SerializerRegistrationHelper.TryRegisterSerializer(new InventoryIdSerializer());
         
+        // Use of PurchaseOrderId Value Object serializer
+        SerializerRegistrationHelper.TryRegisterSerializer(new PurchaseOrderIdSerializer());
+        
         // Use of Email/Username Value Object serializer
         SerializerRegistrationHelper.TryRegisterSerializer(new EmailSerializer());
         
