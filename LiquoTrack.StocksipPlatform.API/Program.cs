@@ -79,6 +79,7 @@ builder.Services.Configure<JsonOptions>(options =>
     options.JsonSerializerOptions.Converters.Add(new InventoryIdJsonConverter());
     options.JsonSerializerOptions.Converters.Add(new PurchaseOrderIdJsonConverter());
     options.JsonSerializerOptions.Converters.Add(new CatalogIdJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new MoneyJsonConverter());
 });
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi

@@ -37,5 +37,8 @@ public static class SharedMappingHelper
         
         // Use of ImageUrl Value Object serializer
         SerializerRegistrationHelper.TryRegisterSerializer(new ImageUrlSerializer());
+        
+        // Use of Money Value Object serializer
+        SerializerRegistrationHelper.TryRegisterSerializer(new MoneySerializer());
     }
 }
