@@ -5,37 +5,40 @@ using MongoDB.Bson.Serialization.Attributes;
 namespace LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 
 /// <summary>
-///     The value object representing the unique identifier for a purchase order.
+///     The value object representing a catalog identifier.
 /// </summary>
-[BsonSerializer(typeof(PurchaseOrderIdSerializer))]
-public record PurchaseOrderId()
+[BsonSerializer(typeof(CatalogIdSerializer))]
+public record CatalogId()
 {
     /// <summary>
-    ///     The unique identifier for a purchase order.
+    ///     The catalog identifier.
     /// </summary>
     private string Id { get; } = string.Empty;
 
     /// <summary>
-    ///     The default constructor for the PurchaseOrderId value object.
+    ///     The default constructor for the catalog identifier.
     /// </summary>
     /// <param name="id">
-    ///     The identifier for the purchase order.
+    ///     The catalog identifier.
     /// </param>
     /// <exception cref="ValueObjectValidationException">
-    ///     Thrown when the provided id is null or an empty string.
+    ///     Thrown when the provided identifier is null or an empty string.
     /// </exception>
-    public PurchaseOrderId(string id) : this()
+    public CatalogId(string id) : this()
     {
         if (id == null || id.Trim().Length == 0)
         {
-            throw new ValueObjectValidationException(nameof(PurchaseOrderId), "Purchase Order ID must be a non-empty string.");
+            throw new ValueObjectValidationException(nameof(AccountId), "Catalog ID must be a non-empty string.");
         }
         
         Id = id;
     }
-
+    
     /// <summary>
-    ///     The method to retrieve the string representation of the PurchaseOrderId value object.
+    ///     The method to retrieve the catalog identifier.
     /// </summary>
-    public string GetId => Id;
+    /// <returns>
+    ///     The catalog identifier as a string.
+    /// </returns>
+    public string GetId() => Id;
 }
