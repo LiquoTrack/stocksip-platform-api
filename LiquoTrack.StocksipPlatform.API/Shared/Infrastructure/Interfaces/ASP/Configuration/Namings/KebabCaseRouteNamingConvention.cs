@@ -1,7 +1,7 @@
 ﻿using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Interfaces.ASP.Configuration.Extensions;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 
-namespace LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Interfaces.ASP.Configuration;
+namespace LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Interfaces.ASP.Configuration.Namings;
 
 /// <summary>
 ///     This convention modifies the route templates of controllers and their actions to use kebab-case naming.
