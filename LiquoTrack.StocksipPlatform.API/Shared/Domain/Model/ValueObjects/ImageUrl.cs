@@ -1,10 +1,13 @@
 ﻿using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Exceptions;
+using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration.Serializers;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 
 /// <summary>
 ///     This record class serves as a Value Object for an image URL.
 /// </summary>
+[BsonSerializer(typeof(ImageUrlSerializer))]
 public record ImageUrl()
 {
     /// <summary>
