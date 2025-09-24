@@ -20,7 +20,9 @@ public record AccountId()
     ///     It is used to validate if the provided id is a non-empty string.
     /// </summary>
     /// <param name="id"> The identifier for the account </param>
-    /// <exception cref="ArgumentException">Account ID must be a non-empty string.</exception>
+    /// <exception cref="ValueObjectValidationException">
+    ///     Thrown when the provided id is null or an empty string.
+    /// </exception>
     public AccountId(string id) : this()
     {
         if (id == null || id.Trim().Length == 0)

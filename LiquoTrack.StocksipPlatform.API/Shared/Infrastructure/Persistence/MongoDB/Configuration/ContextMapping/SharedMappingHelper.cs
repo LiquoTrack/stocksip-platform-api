@@ -17,6 +17,9 @@ public static class SharedMappingHelper
         // Use of AccountId Value Object serializer
         SerializerRegistrationHelper.TryRegisterSerializer(new AccountIdSerializer());
         
+        // Use of UserId Value Object serializer
+        SerializerRegistrationHelper.TryRegisterSerializer(new UserIdSerializer());
+        
         // Use of Email/Username Value Object serializer
         SerializerRegistrationHelper.TryRegisterSerializer(new EmailSerializer());
     }

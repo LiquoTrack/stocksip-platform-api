@@ -1,4 +1,5 @@
-﻿using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration.Serializers;
+﻿using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Exceptions;
+using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration.Serializers;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
@@ -19,20 +20,20 @@ public partial record Email()
     ///     It is used to validate if the provided value is a non-empty string and follows a basic email format.
     /// </summary>
     /// <param name="value">The value pf the email</param>
-    /// <exception cref="ArgumentException">
-    ///     Email must be a non-empty string.
+    /// <exception cref="ValueObjectValidationException">
+    ///     Thrown when the provided value is null, empty, or does not match a basic email format.
     /// </exception>
     public Email(string? value) : this()
     {
         if (value == null || value.Trim().Length == 0)
         {
-            throw new ArgumentException("Email must be a non-empty string.");
+            throw new ValueObjectValidationException(nameof(Email), "Email must be a non-empty string.");
         }
 
         // Simple email format validation
         if (!MyRegex().IsMatch(value))
         {
-            throw new ArgumentException("Invalid email format.");
+            throw new ValueObjectValidationException(nameof(Email), "The email does not comply with the structure of a conventional email.");
         }
 
         Value = value;
