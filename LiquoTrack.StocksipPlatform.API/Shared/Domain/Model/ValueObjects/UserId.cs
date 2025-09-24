@@ -1,14 +1,8 @@
 ﻿using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Exceptions;
-using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration.Serializers;
-using MongoDB.Bson.Serialization.Attributes;
 
 namespace LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 
-/// <summary>
-///     This record class serves as a Value Object for an identifier for the Account aggregate.
-/// </summary>
-[BsonSerializer(typeof(AccountIdSerializer))]
-public record AccountId()
+public record UserId()
 {
     /// <summary>
     /// This is the value of the AccountId Value Object.
@@ -21,11 +15,11 @@ public record AccountId()
     /// </summary>
     /// <param name="id"> The identifier for the account </param>
     /// <exception cref="ArgumentException">Account ID must be a non-empty string.</exception>
-    public AccountId(string id) : this()
+    public UserId(string id) : this()
     {
         if (id == null || id.Trim().Length == 0)
         {
-            throw new ValueObjectValidationException(nameof(AccountId), "Account ID must be a non-empty string.");
+            throw new ValueObjectValidationException(nameof(UserId), "User ID must be a non-empty string.");
         }
         
         Id = id;
