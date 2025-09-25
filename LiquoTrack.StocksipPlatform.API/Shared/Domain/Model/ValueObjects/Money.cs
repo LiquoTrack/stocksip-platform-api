@@ -1,12 +1,13 @@
-﻿using System.Runtime.InteropServices.JavaScript;
-using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Exceptions;
-using Org.BouncyCastle.Asn1.Esf;
+﻿using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Exceptions;
+using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration.Serializers;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 
 /// <summary>
 ///     The Money value object represents a monetary amount with its associated currency.
 /// </summary>
+[BsonSerializer(typeof(MoneySerializer))]
 public record Money()
 {
     /// <summary>
