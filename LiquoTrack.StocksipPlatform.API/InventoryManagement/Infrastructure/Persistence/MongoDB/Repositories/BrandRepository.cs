@@ -35,11 +35,11 @@ public class BrandRepository(AppDbContext context) : BaseRepository<Brand>(conte
             .Find(FilterDefinition<Brand>.Empty)
             .Project(m => m.Name)
             .ToListAsync();
-
+        
         // Determine which names need to be added
-        var namesToAdd = existingNames
-            .Where(name => !existingNames.Contains(name))
-            .Select(nombre => new Brand(nombre))
+        var namesToAdd = nameList
+            .Where(name => !existingNames.Contains(Enum.Parse<EBrandNames>(name)))
+            .Select(name => new Brand(Enum.Parse<EBrandNames>(name)))
             .ToList();
 
         // Insert the new names into the database
