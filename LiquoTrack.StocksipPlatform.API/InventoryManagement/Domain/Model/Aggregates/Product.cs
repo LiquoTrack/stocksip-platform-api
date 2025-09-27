@@ -1,17 +1,12 @@
-﻿using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
-using MongoDB.Bson;
+﻿using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Entities;
+
 
 namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Aggregates;
 
 /// <summary>
 ///     The Product Aggregate Root entity.
 /// </summary>
-public class Product : IEntity
+public class Product : Entity
 {
-    /// <summary>
-    ///     The unique identifier of the product.
-    /// </summary>
-    public ObjectId Id { get; } = ObjectId.GenerateNewId();
-    
     
 }
