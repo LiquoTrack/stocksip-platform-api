@@ -4,15 +4,11 @@ using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Commands;
 
 /// <summary>
-///     Command for registering a new product in inventory.
+///     Command to update product information.
 /// </summary>
-public record RegisterProductCommand(
+public record UpdateProductInformationCommand(
         string Name,
-        EProductTypes Type,
-        string Brand,
         Money UnitPrice,
         ProductMinimumStock MinimumStock,
-        ImageUrl ImageUrl,
-        AccountId AccountId,
-        AccountId SupplierId
+        ImageUrl ImageUrl
     );

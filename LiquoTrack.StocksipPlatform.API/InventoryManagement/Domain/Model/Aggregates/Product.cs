@@ -1,4 +1,5 @@
-﻿using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.ValueObjects;
+﻿using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Commands;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 
@@ -69,12 +70,23 @@ public class Product(
     public AccountId SupplierId { get; private set; } = supplierId;
 
     /// <summary>
+    ///     Command constructor for the Product Aggregate Root.
+    /// </summary>
+    /// <param name="command">
+    ///     The command that triggered the creation of the product.
+    ///     It contains the information needed to create the product.   
+    /// </param>
+    public Product(RegisterProductCommand command) : this(command.Name, command.Type, command.Brand, command.UnitPrice,
+        command.MinimumStock, command.ImageUrl, command.AccountId, command.SupplierId)
+    { }
+    
+    /// <summary>
     ///     Method to update the minimum stock of the product.
     /// </summary>
-    /// <param name="minimumStock">
-    ///     The new minimum stock value.
+    /// <param name="command">
+    ///     The command containing the details for updating the minimum stock of the product.
     /// </param>
-    public void UpdateMinimumStock(int minimumStock) => MinimumStock.UpdateMinimumStock(minimumStock);
+    public void UpdateMinimumStock(UpdateProductMinimumStockCommand command) => MinimumStock.UpdateMinimumStock(command.NewMinimumStock);
 
     /// <summary>
     ///     Method to update the total stock in store of the product.
@@ -101,27 +113,14 @@ public class Product(
     /// <summary>
     ///     Method to update the product information.
     /// </summary>
-    /// <param name="name">
-    ///     The new name of the product.    
+    /// <param name="command">
+    ///     The command containing the new product information. 
     /// </param>
-    /// <param name="unitPrice">
-    ///     The new unit price of the product.
-    /// </param>
-    /// <param name="minimumStock">
-    ///     The new minimum stock of the product.
-    /// </param>
-    /// <param name="imageUrl">
-    ///     The new image url of the product.
-    /// </param>
-    public void UpdateInformation(
-        string name,
-        Money unitPrice,
-        ProductMinimumStock minimumStock,
-        ImageUrl imageUrl)
+    public void UpdateInformation(UpdateProductInformationCommand command) 
     {
-        Name = name;
-        UnitPrice = unitPrice;
-        MinimumStock = minimumStock;
-        ImageUrl = imageUrl;
+        Name = command.Name;
+        UnitPrice = command.UnitPrice;
+        MinimumStock = command.MinimumStock;
+        ImageUrl = command.ImageUrl;
     }
 }

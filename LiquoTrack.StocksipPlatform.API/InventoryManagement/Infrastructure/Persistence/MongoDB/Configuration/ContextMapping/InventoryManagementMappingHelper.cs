@@ -16,7 +16,11 @@ public static class InventoryManagementMappingHelper
     /// </summary>
     public static void RegisterInventoryManagementMappings()
     {
+        // Use of Product-related Value Objects
+        
         // Use of EBrandNames Value Object serializer
         SerializerRegistrationHelper.TryRegisterSerializer(new EnumSerializer<EBrandNames>(BsonType.String));
+        
+        // Use of Warehouse-related Value Object 
     }
 }
