@@ -23,7 +23,7 @@ public class BrandRepository(AppDbContext context) : BaseRepository<Brand>(conte
     /// <returns>
     ///     A confirmation of the seeding operation.
     /// </returns>
-    public async Task SeedBrandNames()
+    public async Task SeedBrandNamesAsync()
     {
         // Get the list of brand names from the enum
         var nameList = Enum.GetValues<EBrandNames>()

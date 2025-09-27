@@ -1,6 +1,67 @@
-﻿namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Repositories;
+﻿using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Aggregates;
+using LiquoTrack.StocksipPlatform.API.Shared.Domain.Repositories;
 
-public interface IProductRepository
+namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Repositories;
+
+/// <summary>
+///     Repository interface for managing Product entities.
+/// </summary>
+public interface IProductRepository : IBaseRepository<Product>
 {
+    /// <summary>
+    ///     Method to check if a product exists by a given name.
+    /// </summary>
+    /// <param name="name">
+    ///     The name of the product to check for existence.
+    /// </param>
+    /// <returns>
+    ///     True if a product with the specified name exists; otherwise, false.
+    /// </returns>
+    Task<bool> ExistsByNameAsync(string name);
+
+    /// <summary>
+    ///     Method to check if a product exists by a given ID.
+    /// </summary>
+    /// <param name="productId">
+    ///     The ID of the product to check for existence.
+    /// </param>
+    /// <returns>
+    ///     True if a product with the specified ID exists; otherwise, false.
+    /// </returns>
+    Task<bool> ExistsByIdAsync(string productId);
     
+    /// <summary>
+    ///     Method to find products by a given supplier ID.
+    /// </summary>
+    /// <param name="accountId">
+    ///     The ID of the supplier to find products for.
+    /// </param>
+    /// <returns>
+    ///     A list of products for the specified supplier.
+    ///     Or an empty list if no products are found.
+    /// </returns>
+    Task<ICollection<Product>> FindBySupplierIdAsync(string accountId);
+
+    /// <summary>
+    ///     Method to find products by a given warehouse ID.
+    /// </summary>
+    /// <param name="warehouseId">
+    ///     The ID of the warehouse to find products for.
+    /// </param>
+    /// <returns>
+    ///     A list of products for the specified warehouse.
+    ///     Or an empty list if no products are found.
+    /// </returns>
+    Task<ICollection<Product>> FindByWarehouseIdAsync(string warehouseId);
+
+    /// <summary>
+    ///     Method to find products by a given account ID.
+    /// </summary>
+    /// <param name="accountId">
+    ///     The ID of the account to find products for.
+    /// </param>
+    /// <returns>
+    ///     The list of products associated with the specified account ID.
+    /// </returns>
+    Task<ICollection<Product>> FindByAccountIdAsync(string accountId);
 }

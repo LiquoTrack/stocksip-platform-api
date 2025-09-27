@@ -14,5 +14,5 @@ public interface IBrandRepository : IBaseRepository<Brand>
     /// <returns>
     ///     A confirmation of the seeding operation.
     /// </returns>
-    Task SeedBrandNames();
+    Task SeedBrandNamesAsync();
 }
