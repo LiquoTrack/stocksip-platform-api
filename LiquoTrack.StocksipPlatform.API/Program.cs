@@ -1,4 +1,6 @@
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.QueryServices;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Repositories;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Persistence.MongoDB.Repositories;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Converters.JSON;
@@ -88,6 +90,19 @@ builder.Services.Configure<JsonOptions>(options =>
 
 // Bounded Context Inventory Management
 builder.Services.AddScoped<IBrandRepository, BrandRepository>();
+builder.Services.AddScoped<IBrandQueryService, BrandQueryService>();
+
+// Bounded Context Alerts and Notifications
+
+// Bounded Context Procurement Ordering
+
+// Bounded Context Order Management
+
+// Bounded Context Profile Management
+
+// Bounded Context IAM
+
+// Bounded Context Payment and Subscriptions
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
