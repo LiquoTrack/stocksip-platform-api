@@ -12,6 +12,9 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Per
 /// </summary>
 public class BrandRepository(AppDbContext context) : BaseRepository<Brand>(context), IBrandRepository
 {
+    /// <summary>
+    ///     The MongoDB collection for the Brand entity.   
+    /// </summary>
     private readonly IMongoCollection<Brand> _brandCollection = context.GetCollection<Brand>();
     
     /// <summary>

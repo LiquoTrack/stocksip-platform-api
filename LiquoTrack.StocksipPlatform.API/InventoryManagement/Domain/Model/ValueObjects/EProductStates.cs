@@ -6,5 +6,6 @@
 public enum EProductStates
 {
     OutOfStock,
+    LowStock,
     WithStock
 }
