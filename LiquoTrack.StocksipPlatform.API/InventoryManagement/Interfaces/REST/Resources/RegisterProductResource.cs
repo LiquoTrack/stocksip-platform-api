@@ -10,6 +10,7 @@ public record RegisterProductResource(
         decimal UnitPrice,
         string Code,
         int MinimumStock,
+        decimal Content,
         string ImageUrl,
         string AccountId,
         string SupplierId

@@ -12,6 +12,7 @@ public record RegisterProductCommand(
         string Brand,
         Money UnitPrice,
         ProductMinimumStock MinimumStock,
+        ProductContent Content,
         ImageUrl ImageUrl,
         AccountId AccountId,
         AccountId SupplierId

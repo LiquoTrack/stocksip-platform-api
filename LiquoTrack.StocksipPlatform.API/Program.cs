@@ -70,7 +70,7 @@ builder.Services.AddSingleton<IMongoClient>(sp =>
     return new MongoClient(connectionString);
 });
 
-// Add service por MongoDB client
+// Add service for MongoDB client
 builder.Services.AddSingleton<AppDbContext>();
 
 // Bounded Context Shared
@@ -101,6 +101,13 @@ builder.Services.AddScoped<IProductCommandService, ProductCommandService>();
 builder.Services.Configure<JsonOptions>(options =>
 {
     options.JsonSerializerOptions.Converters.Add(new EBrandNamesJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new EProductStatesJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new EProductTypesJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new ProductContentJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new ProductExpirationDateJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new ProductMinimumStockJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new ProductNameJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new ProductStockJsonConverter());
 });
 
 // Bounded Context Alerts and Notifications

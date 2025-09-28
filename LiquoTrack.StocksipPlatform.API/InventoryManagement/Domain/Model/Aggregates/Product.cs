@@ -2,6 +2,8 @@
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Aggregates;
 
@@ -14,10 +16,11 @@ public class Product(
     string brand,
     Money unitPrice,
     ProductMinimumStock minimumStock,
+    ProductContent content,
     ImageUrl imageUrl,
     AccountId accountId,
     AccountId supplierId
-    ) : Entity
+) : Entity
 {
     /// <summary>
     ///     The name of the product.
@@ -27,6 +30,7 @@ public class Product(
     /// <summary>
     ///     The type of the product.
     /// </summary>
+    [BsonRepresentation(BsonType.String)]
     public EProductTypes Type { get; private set; } = type;
 
     /// <summary>
@@ -42,9 +46,14 @@ public class Product(
     /// <summary>
     ///     The minimum stock of the product before it is considered low of stock.
     /// </summary>
-    public ProductMinimumStock MinimumStock { get; set; } = minimumStock;
+    public ProductMinimumStock MinimumStock { get; private set; } = minimumStock;
 
     /// <summary>
+    ///     The content of the product.
+    /// </summary>
+    public ProductContent Content { get; private set; } = content;
+
+/// <summary>
     ///     The total stock in the store. Which sums up the stock of the product in all the warehouses.
     /// </summary>
     public int TotalStockInStore { get; private set; } = 0;
@@ -77,7 +86,7 @@ public class Product(
     ///     It contains the information needed to create the product.   
     /// </param>
     public Product(RegisterProductCommand command) : this(command.Name, command.Type, command.Brand, command.UnitPrice,
-        command.MinimumStock, command.ImageUrl, command.AccountId, command.SupplierId)
+        command.MinimumStock, command.Content, command.ImageUrl, command.AccountId, command.SupplierId)
     { }
     
     /// <summary>

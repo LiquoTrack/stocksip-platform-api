@@ -10,7 +10,7 @@ public record ProductContent()
     /// <summary>
     ///     The value of the product content.
     /// </summary>
-    private double Value { get; } = 0;
+    private decimal Value { get; } = 0;
 
     /// <summary>
     ///     Default constructor for ProductContent.
@@ -21,7 +21,7 @@ public record ProductContent()
     /// <exception cref="ArgumentException">
     ///     Thrown when the provided content value is negative.
     /// </exception>
-    public ProductContent(double content) : this()
+    public ProductContent(decimal content) : this()
     {
         if (!IsContentValid(content))
             throw new ValueObjectValidationException(nameof(content), "Product content must be a non-negative value.");
@@ -38,7 +38,7 @@ public record ProductContent()
     /// <returns>
     ///     True if the content value is a non-negative number, false otherwise. 
     /// </returns>
-    private static bool IsContentValid(double content) => (content > 0);
+    private static bool IsContentValid(decimal content) => (content > 0);
     
     /// <summary>
     ///     Method to get the value of the product content.
@@ -46,5 +46,5 @@ public record ProductContent()
     /// <returns>
     ///     The value of the product content. 
     /// </returns>
-    public double GetValue() => Value;
+    public decimal GetValue() => Value;
 }
