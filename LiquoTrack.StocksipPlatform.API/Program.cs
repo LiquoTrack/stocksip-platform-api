@@ -1,3 +1,4 @@
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.CommandServices;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.QueryServices;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Services;
@@ -92,6 +93,10 @@ builder.Services.Configure<JsonOptions>(options =>
 // Bounded Context Inventory Management
 builder.Services.AddScoped<IBrandRepository, BrandRepository>();
 builder.Services.AddScoped<IBrandQueryService, BrandQueryService>();
+
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<IProductQueryService, ProductQueryService>();
+builder.Services.AddScoped<IProductCommandService, ProductCommandService>();
 
 builder.Services.Configure<JsonOptions>(options =>
 {
