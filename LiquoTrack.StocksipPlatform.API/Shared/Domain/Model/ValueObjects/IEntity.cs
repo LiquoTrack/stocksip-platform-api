@@ -1,4 +1,4 @@
-﻿using MongoDB.Bson;
+using MongoDB.Bson;
 
 namespace LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 
@@ -7,5 +7,5 @@ namespace LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 /// </summary>
 public interface IEntity
 {
-    ObjectId Id { get; }
+    ObjectId Id { get; set; }
 }
