@@ -42,7 +42,7 @@ public class Product(
     /// <summary>
     ///     The minimum stock of the product before it is considered low of stock.
     /// </summary>
-    private ProductMinimumStock MinimumStock { get; set; } = minimumStock;
+    public ProductMinimumStock MinimumStock { get; set; } = minimumStock;
 
     /// <summary>
     ///     The total stock in the store. Which sums up the stock of the product in all the warehouses.

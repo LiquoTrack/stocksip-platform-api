@@ -4,9 +4,6 @@
 ///     Record that represents a brand resource.
 ///     It is used to transfer brand data between the API and the client.
 /// </summary>
-/// <param name="Name">
-///     The name of the brand.
-/// </param>
 public record BrandResource(
         string Name
     );
