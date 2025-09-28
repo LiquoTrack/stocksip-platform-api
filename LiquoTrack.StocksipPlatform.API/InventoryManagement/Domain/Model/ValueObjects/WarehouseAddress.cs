@@ -76,4 +76,11 @@ public record WarehouseAddress()
         !string.IsNullOrWhiteSpace(postalCode) &&
         !string.IsNullOrWhiteSpace(country);
     
+    /// <summary>
+    ///     Method to get the full address as a formatted string.
+    /// </summary>
+    /// <returns>
+    ///     The full address in the format: "Street, City, District, PostalCode, Country".
+    /// </returns>
+    public string GetFullAddress() => $"{Street}, {City}, {District}, {PostalCode}, {Country}";
 }

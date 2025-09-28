@@ -1,9 +1,11 @@
-﻿namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.ValueObjects;
+﻿using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Exceptions;
+
+namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.ValueObjects;
 
 /// <summary>
 ///     Record class that serves as a Value Object for the temperature range of a warehouse.
 /// </summary>
-public record Temperature()
+public record WarehouseTemperature()
 {
     /// <summary>
     ///     The maximum temperature value of the warehouse.
@@ -24,13 +26,13 @@ public record Temperature()
     /// <param name="maxTemperature">
     ///     The maximum temperature value of the warehouse. Must be greater than the minimum temperature and less than or equal to 50.
     /// </param>
-    /// <exception cref="ArgumentException">
+    /// <exception cref="ValueObjectValidationException">
     ///     Thrown when the provided temperature values are invalid.
     /// </exception>
-    public Temperature(decimal minTemperature, decimal maxTemperature) : this()
+    public WarehouseTemperature(decimal minTemperature, decimal maxTemperature) : this()
     {
         if (!IsTemperatureValid(maxTemperature, minTemperature))
-            throw new ArgumentException($"{nameof(maxTemperature)} must be greater than {nameof(minTemperature)} and less than or equal to 50");
+            throw new ValueObjectValidationException(nameof(WarehouseTemperature), $"{nameof(maxTemperature)} must be greater than {nameof(minTemperature)} and less than or equal to 50");
         
         MinTemperature = minTemperature;
         MaxTemperature = maxTemperature;
@@ -50,4 +52,20 @@ public record Temperature()
     /// </returns>
     private static bool IsTemperatureValid(decimal maxTemperature, decimal minTemperature) =>
         (maxTemperature > minTemperature) && (maxTemperature <= 50);
+    
+    /// <summary>
+    ///     The method to retrieve the minimum temperature value of the warehouse.
+    /// </summary>
+    /// <returns>
+    ///     The minimum temperature value of the warehouse.
+    /// </returns>
+    public decimal GetMinTemperature() => MinTemperature;
+    
+    /// <summary>
+    ///     Method to retrieve the maximum temperature value of the warehouse.
+    /// </summary>
+    /// <returns>
+    ///     The maximum temperature value of the warehouse.
+    /// </returns>
+    public decimal GetMaxTemperature() => MaxTemperature;
 }

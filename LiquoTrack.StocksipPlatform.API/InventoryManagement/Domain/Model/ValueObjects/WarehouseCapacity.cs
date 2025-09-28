@@ -1,9 +1,11 @@
-﻿namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.ValueObjects;
+﻿using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Exceptions;
+
+namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.ValueObjects;
 
 /// <summary>
 ///    Record class that serves as a Value Object for the capacity of a warehouse.
 /// </summary>
-public record Capacity()
+public record WarehouseCapacity()
 {
     /// <summary>
     ///     The value of the capacity.
@@ -16,13 +18,13 @@ public record Capacity()
     /// <param name="totalCapacity">
     ///     The total capacity value of the warehouse. Must be a non-negative value and less than or equal to 100,000.
     /// </param>
-    /// <exception cref="ArgumentException">
+    /// <exception cref="ValueObjectValidationException">
     ///     Thrown when the provided total capacity value is negative or exceeds 100,000.
     /// </exception>
-    public Capacity(decimal totalCapacity) : this()
+    public WarehouseCapacity(decimal totalCapacity) : this()
     {
         if (!IsCapacityValid(totalCapacity))
-            throw new ArgumentException($"{nameof(totalCapacity)} must be greater than {nameof(Capacity)}");
+            throw new ValueObjectValidationException(nameof(WarehouseCapacity), $"{nameof(totalCapacity)} must be greater than {nameof(WarehouseCapacity)}");
         
         Value = totalCapacity;
     }
@@ -38,4 +40,12 @@ public record Capacity()
     /// </returns>
     private static bool IsCapacityValid(decimal totalCapacity) =>
         totalCapacity is >= 0 and <= 100000;
+    
+    /// <summary>
+    ///     Method to retrieve the capacity value.
+    /// </summary>
+    /// <returns>
+    ///     The decimal value representing the capacity of the warehouse.
+    /// </returns>
+    public decimal GetValue() => Value;
 }
