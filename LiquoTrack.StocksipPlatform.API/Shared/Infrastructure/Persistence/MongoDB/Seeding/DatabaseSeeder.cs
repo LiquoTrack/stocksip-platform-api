@@ -11,6 +11,6 @@ public class DatabaseSeeder(
     public async Task SeedAsync()
     {
         // Seed the brand names into the database
-        await brandRepository.SeedBrandNames();
+        await brandRepository.SeedBrandNamesAsync();
     }
 }

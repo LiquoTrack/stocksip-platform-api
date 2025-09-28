@@ -1,6 +1,8 @@
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.CommandServices;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.QueryServices;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Services;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Converters.JSON;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Persistence.MongoDB.Repositories;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Converters.JSON;
@@ -12,6 +14,9 @@ using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
 using MongoDB.Driver;
+
+// Registers the value object mapping for all contexts
+GlobalMongoMappingHelper.RegisterAllBoundedContextMappings();
 
 // Create a builder for the web application
 var builder = WebApplication.CreateBuilder(args);
@@ -57,9 +62,6 @@ builder.Services.AddSwaggerGen(o =>
 
 // Dependency Injection
 
-// Registers the value object mapping for all contexts
-GlobalMongoMappingHelper.RegisterAllBoundedContextMappings();
-
 // Registers the MongoDB client as a singleton service
 builder.Services.AddSingleton<IMongoClient>(sp =>
 {
@@ -68,7 +70,7 @@ builder.Services.AddSingleton<IMongoClient>(sp =>
     return new MongoClient(connectionString);
 });
 
-// Add service por MongoDB client
+// Add service for MongoDB client
 builder.Services.AddSingleton<AppDbContext>();
 
 // Bounded Context Shared
@@ -91,6 +93,22 @@ builder.Services.Configure<JsonOptions>(options =>
 // Bounded Context Inventory Management
 builder.Services.AddScoped<IBrandRepository, BrandRepository>();
 builder.Services.AddScoped<IBrandQueryService, BrandQueryService>();
+
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<IProductQueryService, ProductQueryService>();
+builder.Services.AddScoped<IProductCommandService, ProductCommandService>();
+
+builder.Services.Configure<JsonOptions>(options =>
+{
+    options.JsonSerializerOptions.Converters.Add(new EBrandNamesJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new EProductStatesJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new EProductTypesJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new ProductContentJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new ProductExpirationDateJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new ProductMinimumStockJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new ProductNameJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new ProductStockJsonConverter());
+});
 
 // Bounded Context Alerts and Notifications
 
@@ -121,6 +139,7 @@ using (var scope = app.Services.CreateScope())
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.UseSwagger();
     app.UseSwaggerUI();
 }
 

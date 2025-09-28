@@ -9,6 +9,12 @@ using Swashbuckle.AspNetCore.Annotations;
 
 namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Controllers;
 
+/// <summary>
+///     Controller for handling brand-related requests.
+/// </summary>
+/// <param name="brandQueryService">
+///     The service for handling brand-related queries.
+/// </param>
 [ApiController]
 [Route("api/v1/[controller]")]
 [Produces(MediaTypeNames.Application.Json)]
@@ -17,6 +23,12 @@ public class BrandsController(
         IBrandQueryService brandQueryService
     ) : ControllerBase
 {
+    /// <summary>
+    ///     Endpoint to handle the retrieval of all brands.   
+    /// </summary>
+    /// <returns>
+    ///     The list of all brands. 
+    /// </returns>
     [HttpGet]
     [SwaggerOperation(
         Summary = "Get all brands.",

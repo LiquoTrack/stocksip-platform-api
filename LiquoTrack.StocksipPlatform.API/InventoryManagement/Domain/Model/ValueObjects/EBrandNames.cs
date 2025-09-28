@@ -5,10 +5,10 @@
 /// </summary>
 public enum EBrandNames
 {
-    Tabernero = 1,
-    SantiagoQueirolo = 2,
-    Pilsen = 3,
-    Cristal = 4,
-    Cusqueña = 5,
-    JhonnyWalker = 6
+    Tabernero,
+    SantiagoQueirolo,
+    Pilsen,
+    Cristal,
+    Cusqueña,
+    JhonnyWalker
 }
