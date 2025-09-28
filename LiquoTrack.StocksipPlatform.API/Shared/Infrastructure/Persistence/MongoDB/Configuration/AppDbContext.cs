@@ -1,4 +1,4 @@
-﻿using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration.Namings;
+using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration.Namings;
 using MongoDB.Driver;
 
 namespace LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration;
@@ -11,6 +11,7 @@ public class AppDbContext
     // MongoDB database instance
     private readonly IMongoDatabase _database;
 
+    // Constructor to initialize the database context with MongoDB client and database name
     // Constructor to initialize the database context with MongoDB client and configuration
     public AppDbContext(IMongoClient client, IConfiguration config)
     {

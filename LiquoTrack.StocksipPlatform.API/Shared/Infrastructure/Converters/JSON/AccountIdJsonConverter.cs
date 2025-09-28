@@ -1,9 +1,8 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 
 namespace LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Converters.JSON;
-
 /// <summary>
 ///     This class is a custom JSON converter for the AccountId value object.
 /// </summary>
@@ -12,7 +11,11 @@ public class AccountIdJsonConverter : JsonConverter<AccountId>
     public override AccountId? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         var value = reader.GetString();
-        return new AccountId(value ?? throw new InvalidOperationException());
+        if (string.IsNullOrEmpty(value))
+        {
+            return null;
+        }
+        return AccountId.Create(value);
     }
     
     public override void Write(Utf8JsonWriter writer, AccountId value, JsonSerializerOptions options)

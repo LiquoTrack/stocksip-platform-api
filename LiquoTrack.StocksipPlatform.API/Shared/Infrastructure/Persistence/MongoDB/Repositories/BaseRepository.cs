@@ -1,4 +1,4 @@
-﻿using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Entities;
+using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration;
 using MongoDB.Bson;
