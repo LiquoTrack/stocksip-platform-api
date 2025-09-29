@@ -8,27 +8,27 @@ public record WarehouseAddress()
     /// <summary>
     ///     The street component of the warehouse address.
     /// </summary>
-    private string Street { get; } = string.Empty;
+    public string Street { get; } = string.Empty;
     
     /// <summary>
     ///     The city component of the warehouse address.
     /// </summary>
-    private string City { get; } = string.Empty;
+    public string City { get; } = string.Empty;
     
     /// <summary>
     ///     The district component of the warehouse address.
     /// </summary>
-    private string District { get; } = string.Empty;
+    public string District { get; } = string.Empty;
 
     /// <summary>
     ///     The postal code component of the warehouse address.
     /// </summary>
-    private string PostalCode { get; } = string.Empty;
+    public string PostalCode { get; } = string.Empty;
     
     /// <summary>
     ///     This country component of the warehouse address.
     /// </summary>
-    private string Country { get; } = string.Empty;
+    public string Country { get; } = string.Empty;
 
     /// <summary>
     ///     Default constructor for WarehouseAddress.

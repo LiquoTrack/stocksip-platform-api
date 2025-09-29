@@ -10,7 +10,7 @@ public record WarehouseCapacity()
     /// <summary>
     ///     The value of the capacity.
     /// </summary>
-    private decimal Value { get; } = 0;
+    private double Value { get; } = 0;
 
     /// <summary>
     ///     Default constructor for Capacity.
@@ -21,7 +21,7 @@ public record WarehouseCapacity()
     /// <exception cref="ValueObjectValidationException">
     ///     Thrown when the provided total capacity value is negative or exceeds 100,000.
     /// </exception>
-    public WarehouseCapacity(decimal totalCapacity) : this()
+    public WarehouseCapacity(double totalCapacity) : this()
     {
         if (!IsCapacityValid(totalCapacity))
             throw new ValueObjectValidationException(nameof(WarehouseCapacity), $"{nameof(totalCapacity)} must be greater than {nameof(WarehouseCapacity)}");
@@ -38,7 +38,7 @@ public record WarehouseCapacity()
     /// <returns>
     ///     A boolean indicating whether the capacity value is valid (non-negative and less than or equal to 100,000).
     /// </returns>
-    private static bool IsCapacityValid(decimal totalCapacity) =>
+    private static bool IsCapacityValid(double totalCapacity) =>
         totalCapacity is >= 0 and <= 100000;
     
     /// <summary>
@@ -47,5 +47,5 @@ public record WarehouseCapacity()
     /// <returns>
     ///     The decimal value representing the capacity of the warehouse.
     /// </returns>
-    public decimal GetValue() => Value;
+    public double GetValue() => Value;
 }
