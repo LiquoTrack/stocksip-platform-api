@@ -147,7 +147,7 @@ builder.Services.Configure<JsonOptions>(options =>
 });
 
 
-// Obtener las credenciales de Google desde la configuración
+// Google credentials from settings
 var googleAuthSection = builder.Configuration.GetSection("Authentication:Google");
 var googleClientId = googleAuthSection["ClientId"] ?? 
     throw new InvalidOperationException("Google ClientId no está configurado en appsettings.json");
@@ -162,58 +162,41 @@ builder.Services.AddAuthentication(options =>
     })
     .AddJwtBearer(options =>
     {
-        options.RequireHttpsMetadata = false; // Solo para desarrollo
         options.SaveToken = true;
         options.IncludeErrorDetails = true;
-        
+
         var jwtSettings = builder.Configuration.GetSection("Jwt");
-        var secret = jwtSettings["Secret"];
         
-        // Configuración para tokens JWT estándar
-        if (!string.IsNullOrEmpty(secret))
-        {
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
+        // JWT configuration
+        var key = Encoding.ASCII.GetBytes(jwtSettings["Secret"] ?? 
+            throw new InvalidOperationException("JWT Secret no está configurado"));
             
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuer = true,
-                ValidIssuer = jwtSettings["Issuer"],
-                ValidateAudience = true,
-                ValidAudience = jwtSettings["Audience"],
-                ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = key,
-                ClockSkew = TimeSpan.Zero,
-                NameClaimType = ClaimTypes.Name,
-                RoleClaimType = ClaimTypes.Role
-            };
-            
-            options.Authority = jwtSettings["Issuer"];
-        }
-        
-        // Configuración para validar el token
-        options.TokenValidationParameters.ValidAudiences = new[]
+        options.TokenValidationParameters = new TokenValidationParameters
         {
-            builder.Configuration["Jwt:Audience"],
-            builder.Configuration["Authentication:Google:ClientId"]
+            // Validate issuer (our server)
+            ValidateIssuer = true,
+            ValidIssuer = jwtSettings["Issuer"],
+            
+            // Validate audience (our application)
+            ValidateAudience = true,
+            ValidAudience = jwtSettings["Audience"],
+            
+            // Validate token lifetime
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromMinutes(5),
+            
+            // Configure issuer signing key
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+            
+            // Configuración de claims
+            NameClaimType = ClaimTypes.Name,
+            RoleClaimType = ClaimTypes.Role
         };
         
-        options.TokenValidationParameters.ValidIssuers = new[]
-        {
-            builder.Configuration["Jwt:Issuer"],
-            "https://accounts.google.com"
-        };
-        
-        // Configuración para tokens de Google
-        options.Authority = "https://accounts.google.com";
-        options.TokenValidationParameters.ValidateIssuerSigningKey = false; // Desactivar validación de firma para Google
-        // Custom token validation to handle array claims
-        options.TokenValidationParameters.IssuerSigningKey = null; // Disable signature validation for Google tokens
-        options.TokenValidationParameters.ValidateIssuerSigningKey = false;
-        
-        // Custom token validation to handle array claims in JWT
+        // Only validate local JWT tokens, not Google tokens
         options.SecurityTokenValidators.Clear();
-        options.SecurityTokenValidators.Add(new CustomGoogleTokenValidator());
+        options.SecurityTokenValidators.Add(new JwtSecurityTokenHandler());
         
         options.Events = new JwtBearerEvents
         {
@@ -229,7 +212,34 @@ builder.Services.AddAuthentication(options =>
             OnTokenValidated = context =>
             {
                 var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                logger.LogInformation("Token validado para el usuario: {User}", context.Principal?.Identity?.Name);
+                var identity = context.Principal?.Identity as ClaimsIdentity;
+                
+                logger.LogInformation("=== TOKEN VALIDADO ===");
+                logger.LogInformation("Usuario autenticado: {User}", context.Principal?.Identity?.Name);
+                logger.LogInformation("Autenticado: {IsAuthenticated}", context.Principal?.Identity?.IsAuthenticated);
+                
+                logger.LogInformation("=== CLAIMS DEL TOKEN ===");
+                foreach (var claim in context.Principal.Claims)
+                {
+                    logger.LogInformation("Claim - Tipo: {Type}, Valor: {Value}", claim.Type, claim.Value);
+                    
+                    if (claim.Type == "role" || claim.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role")
+                    {
+                        logger.LogInformation("Rol encontrado: {Role}", claim.Value);
+                        if (!context.Principal.HasClaim(c => c.Type == ClaimTypes.Role && c.Value == claim.Value))
+                        {
+                            var newClaim = new Claim(ClaimTypes.Role, claim.Value);
+                            identity?.AddClaim(newClaim);
+                            logger.LogInformation("Añadido claim de rol: {Role}", claim.Value);
+                        }
+                    }
+                }
+                
+                var hasAdminRole = context.Principal.IsInRole("Admin");
+                logger.LogInformation("¿Tiene rol Admin? {HasAdminRole}", hasAdminRole);
+                
+                logger.LogInformation("=== FIN DE VALIDACIÓN DE TOKEN ===");
+                
                 return Task.CompletedTask;
             },
             OnAuthenticationFailed = context =>
@@ -245,18 +255,17 @@ builder.Services.AddAuthentication(options =>
                 
                 if (context.Exception is SecurityTokenInvalidIssuerException)
                 {
-                    logger.LogError($"Emisor del token no válido. Se esperaba: {context.Options.TokenValidationParameters.ValidIssuer}");
+                    logger.LogError($"Emisor del token no válido. Se esperaba: {context.Options.TokenValidationParameters.ValidIssuers}");
                 }
                 
                 if (context.Exception is SecurityTokenInvalidAudienceException)
                 {
-                    logger.LogError($"Audiencia del token no válida. Se esperaba: {context.Options.TokenValidationParameters.ValidAudience}");
+                    logger.LogError($"Audiencia del token no válida. Se esperaba: {string.Join(", ", context.Options.TokenValidationParameters.ValidAudiences)}");
                 }
                 
                 return Task.CompletedTask;
             }
         };
-        // Configuración adicional de autenticación si es necesaria
     })
     .AddGoogle(GoogleDefaults.AuthenticationScheme, options =>
     {
@@ -296,7 +305,6 @@ builder.Services.AddAuthentication(options =>
                     new("http://schemas.microsoft.com/identity/claims/identityprovider", "Google")
                 };
                 
-                // Add role claims if needed
                 claims.Add(new Claim(ClaimTypes.Role, "User"));
                 
                 var identity = new ClaimsIdentity(claims, context.Scheme.Name);
@@ -313,7 +321,6 @@ builder.Services.AddAuthentication(options =>
         };
     });
 
-// Configurar Swagger/OpenAPI
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
@@ -323,7 +330,6 @@ builder.Services.AddSwaggerGen(c =>
         Description = "API for LiquoTrack Stock Management System"
     });
     
-    // Add JWT Authentication
     var securityScheme = new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -336,7 +342,6 @@ builder.Services.AddSwaggerGen(c =>
     
     c.AddSecurityDefinition("Bearer", securityScheme);
     
-    // Add Security Requirement
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -372,7 +377,7 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
     
-    // Habilitar anotaciones XML para documentación
+
     var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
     if (File.Exists(xmlPath))
@@ -394,7 +399,7 @@ if (app.Environment.IsDevelopment())
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "LiquoTrack API V1");
         c.OAuthClientId("520776661353-aq0nbie37i8742tnn0167ak4bdadk2cu.apps.googleusercontent.com");
         c.OAuthAppName("LiquoTrack API - Swagger");
-        c.OAuthUsePkce(); // Habilita PKCE (recomendado)
+        c.OAuthUsePkce(); 
         c.OAuth2RedirectUrl("https://localhost:7164/swagger/oauth2-redirect.html");
     });
 }
@@ -407,7 +412,6 @@ else
 app.UseHttpsRedirection();
 app.UseRouting();
 
-// Use CORS with the correct policy name
 app.UseCors("AllowSpecificOrigins");
 
 app.UseAuthentication();
