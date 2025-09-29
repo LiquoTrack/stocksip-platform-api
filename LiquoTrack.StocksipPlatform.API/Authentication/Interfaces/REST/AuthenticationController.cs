@@ -24,6 +24,7 @@ using System.Net.Mime;
 using System.Text;
 using System.Threading.Tasks;
 using LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Resources;
+using System.Security.Claims;
 
 namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST
 {
@@ -302,13 +303,16 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST
         /// <param name="page">Page number (1-based)</param>
         /// <param name="pageSize">Number of items per page (max 50)</param>
         /// <returns>Paginated list of users with metadata</returns>
-        [AllowAnonymous]
+        [Authorize(Roles = "Admin")]
         [HttpGet("users")]
         [SwaggerOperation(
             Summary = "Get paginated list of users",
-            Description = "Retrieves a paginated list of users with minimal information.",
+            Description = "Retrieves a paginated list of users with minimal information. Requires Admin role.",
             OperationId = "GetUsers"
         )]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(PaginatedResponse<UserListResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -316,6 +320,14 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = DefaultPageSize)
         {
+            _logger.LogInformation("=== INICIO DE SOLICITUD GET /api/v1/users ===");
+            _logger.LogInformation("User: {User}", User?.Identity?.Name);
+            _logger.LogInformation("IsAuthenticated: {IsAuthenticated}", User?.Identity?.IsAuthenticated);
+            _logger.LogInformation("Claims:");
+            foreach (var claim in User?.Claims ?? Enumerable.Empty<System.Security.Claims.Claim>())
+            {
+                _logger.LogInformation($"{claim.Type} = {claim.Value}");
+            }
             _logger.LogInformation("Fetching users - Page: {Page}, PageSize: {PageSize}", page, pageSize);
 
             try
@@ -485,56 +497,49 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST
                 {
                     email = email["Email { GetValue = ".Length..^2].Trim();
                 }
+                var claims = new List<System.Security.Claims.Claim>();
+                
+                claims.Add(new System.Security.Claims.Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()));
+                claims.Add(new System.Security.Claims.Claim(JwtRegisteredClaimNames.Email, email));
+                claims.Add(new System.Security.Claims.Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()));
+                claims.Add(new System.Security.Claims.Claim(ClaimTypes.Name, email));
+                claims.Add(new System.Security.Claims.Claim(ClaimTypes.NameIdentifier, user.Id.ToString()));
 
-                var claims = new List<System.Security.Claims.Claim>
+                string roleName = "User";
+                if (user.UserRole != null)
                 {
-                    new System.Security.Claims.Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-                    new System.Security.Claims.Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                    new System.Security.Claims.Claim(JwtRegisteredClaimNames.Iat,
-                        DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
-                        System.Security.Claims.ClaimValueTypes.Integer64),
+                    var roleType = user.UserRole.GetType();
+                    var nameProperty = roleType.GetProperty("Name");
+                    if (nameProperty != null)
+                    {
+                        roleName = nameProperty.GetValue(user.UserRole)?.ToString() ?? "User";
+                    }
+                }
+                
+                claims.Add(new System.Security.Claims.Claim(ClaimTypes.Role, roleName));
+                claims.Add(new System.Security.Claims.Claim("role", roleName));
 
-                    new System.Security.Claims.Claim(JwtRegisteredClaimNames.Email, email),
-                    new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Email, email),
-                    new System.Security.Claims.Claim("email", email),
-
-                    new System.Security.Claims.Claim(JwtRegisteredClaimNames.Name, user.Username ?? email),
-                    new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, user.Username ?? email),
-                    new System.Security.Claims.Claim("name", user.Username ?? email),
-                    new System.Security.Claims.Claim("unique_name", user.Username ?? email),
-                    new System.Security.Claims.Claim(JwtRegisteredClaimNames.Name, user.Username ?? email),
-                    new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, user.Username ?? email),
-                    new System.Security.Claims.Claim("name", user.Username ?? email),
-                    new System.Security.Claims.Claim("unique_name", user.Username ?? email),
-
-                    new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role,
-                        user.UserRole?.Name.ToString() ?? EUserRoles.Normal.ToString()),
-                    new System.Security.Claims.Claim("role",
-                        user.UserRole?.Name.ToString() ?? EUserRoles.Normal.ToString()),
-
-                    new System.Security.Claims.Claim("auth_provider", GoogleAuthProvider),
-                    new System.Security.Claims.Claim("sub", user.Id.ToString())
-                };
-
-                _logger.LogInformation("Including claims in JWT:");
+                _logger.LogInformation("JWT Claims:");
                 foreach (var claim in claims)
                 {
-                    _logger.LogInformation($"- {claim.Type}: {claim.Value}");
+                    _logger.LogInformation($"{claim.Type} = {claim.Value}");
                 }
 
                 var tokenDescriptor = new SecurityTokenDescriptor
                 {
-                    Subject = new System.Security.Claims.ClaimsIdentity(claims),
+                    Subject = new ClaimsIdentity(claims),
                     Expires = DateTime.UtcNow.AddMinutes(expiryMinutes),
+                    Issuer = _configuration["Jwt:Issuer"],
+                    Audience = _configuration["Jwt:Audience"],
                     SigningCredentials = new SigningCredentials(
                         new SymmetricSecurityKey(keyBytes),
-                        SecurityAlgorithms.HmacSha256Signature
-                    ),
-                    Issuer = _configuration["Jwt:Issuer"] ?? throw new InvalidOperationException("JWT Issuer not configured"),
-                    Audience = _configuration["Jwt:Audience"] ?? throw new InvalidOperationException("JWT Audience not configured"),
-                    NotBefore = DateTime.UtcNow
+                        SecurityAlgorithms.HmacSha256Signature)
                 };
 
+                _logger.LogInformation($"JWT Token Descriptor - Issuer: {tokenDescriptor.Issuer}");
+                _logger.LogInformation($"JWT Token Descriptor - Audience: {tokenDescriptor.Audience}");
+                _logger.LogInformation($"JWT Token Expires: {tokenDescriptor.Expires}");
+                
                 var token = tokenHandler.CreateToken(tokenDescriptor);
                 var tokenString = tokenHandler.WriteToken(token);
 
