@@ -7,4 +7,6 @@ public interface IUserCommandService
 {
     Task<User?> Handle(CreateUserCommand command);
     Task<User> CreateOrUpdateFromExternalAsync(string providerUserId, string email, string? name, string? accountId = null);
+    Task<User?> Handle(SignInCommand command);
+    Task<User?> Handle(SignUpCommand command);
 }
