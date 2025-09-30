@@ -105,7 +105,7 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
 
             var user = new User
             {
-                Username = email,
+                Username = !string.IsNullOrWhiteSpace(name) ? name : email.Split('@')[0],
                 Email = new Email(email),
                 Password = hashedPassword,
                 CreatedAt = DateTime.UtcNow,
@@ -122,6 +122,64 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
             catch (Exception ex)
             {
                 throw new Exception($"An error occurred while creating user from external provider: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        ///     Handles the sign in command
+        /// </summary>
+        /// <param name="command">The sign in command</param>
+        /// <returns>The user entity</returns>
+        public async Task<User?> Handle(SignInCommand command)
+        {
+            if (command == null)
+                throw new ArgumentNullException(nameof(command));
+
+            var user = await _userRepository.FindByEmailAsync(command.Email.GetValue);
+            if (user == null)
+                throw new InvalidOperationException($"User with email {command.Email.GetValue} not found");
+
+            var isPasswordValid = _hashingService.VerifyPassword(command.Password, user.Password);
+            if (!isPasswordValid)
+                throw new InvalidOperationException("Invalid password");
+
+            return user;
+        }
+
+        /// <summary>
+        ///     Handles the sign up command
+        /// </summary>
+        /// <param name="command">The sign up command</param>
+        /// <returns>The user entity</returns>
+        public async Task<User?> Handle(SignUpCommand command)
+        {
+            if (command == null)
+                throw new ArgumentNullException(nameof(command));
+
+            var existingUser = await _userRepository.FindByEmailAsync(command.Email.GetValue);
+            if (existingUser != null)
+                throw new InvalidOperationException($"Email {command.Email} is already registered");
+
+            var hashedPassword = _hashingService.HashPassword(command.Password);
+            var user = new User
+            {
+                Username = command.Name,
+                Email = command.Email,
+                Password = hashedPassword,
+                UserRole = new RoleEntity { Name = EUserRoles.Normal },
+                CreatedAt = DateTime.UtcNow,
+                UpdateAt = DateTime.UtcNow
+            };
+
+            try
+            {
+                await _userRepository.AddAsync(user);
+                await _unitOfWork.CompleteAsync();
+                return user;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"An error occurred while creating user: {ex.Message}", ex);
             }
         }
     }
