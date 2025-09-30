@@ -6,7 +6,7 @@ namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Reposit
 /// <summary>
 ///     Repository interface for managing Subscription entities.
 /// </summary>
-public interface ISubscriptionsRepository : IBaseRepository<Subscription>
+public interface ISubscriptionRepository : IBaseRepository<Subscription>
 {
     
 }

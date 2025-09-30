@@ -6,7 +6,7 @@ namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Reposit
 /// <summary>
 ///     Repository interface for managing Plan entities.
 /// </summary>
-public interface IPlansRepository : IBaseRepository<Plan>
+public interface IPlanRepository : IBaseRepository<Plan>
 {
     /// <summary>
     ///     Method to seed predefined plans into the database.
