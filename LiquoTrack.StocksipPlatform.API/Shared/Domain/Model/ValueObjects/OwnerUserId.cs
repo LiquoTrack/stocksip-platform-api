@@ -9,7 +9,7 @@ namespace LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 ///     It is used to encapsulate the identifier of a user in the system.
 /// </summary>
 [BsonSerializer(typeof(UserIdSerializer))]
-public record UserId()
+public record OwnerUserId()
 {
     /// <summary>
     /// This is the value of the UserId Value Object.
@@ -24,11 +24,11 @@ public record UserId()
     /// <exception cref="ValueObjectValidationException">
     ///     Thrown when the provided id is null or an empty string.
     /// </exception>
-    public UserId(string id) : this()
+    public OwnerUserId(string id) : this()
     {
         if (id == null || id.Trim().Length == 0)
         {
-            throw new ValueObjectValidationException(nameof(UserId), "User ID must be a non-empty string.");
+            throw new ValueObjectValidationException(nameof(OwnerUserId), "User ID must be a non-empty string.");
         }
         
         Id = id;
