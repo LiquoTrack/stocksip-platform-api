@@ -5,7 +5,7 @@
 /// </summary>
 public enum ESubscriptionStatus
 {
-    Trialing,
+    Trial,
     Active,
     PastDue,
     Canceled,

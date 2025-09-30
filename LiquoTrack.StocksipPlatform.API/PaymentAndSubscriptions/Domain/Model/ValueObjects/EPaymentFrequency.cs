@@ -6,7 +6,5 @@
 public enum EPaymentFrequency
 {
     Monthly,
-    Quarterly,
-    SemiAnnual,
     Yearly
 }
