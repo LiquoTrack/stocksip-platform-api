@@ -25,6 +25,7 @@ using System.Text;
 using System.Threading.Tasks;
 using LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Resources;
 using System.Security.Claims;
+using LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Transform;
 
 namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST
 {
@@ -48,19 +49,18 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST
 
         public AuthenticationController(
             IExternalAuthService externalAuth,
-            IUserCommandService userCommand,
+            IUserCommandService userCommandService,
             IUserQueryService userQueryService,
             IConfiguration configuration,
             ILogger<AuthenticationController> logger)
         {
             _externalAuth = externalAuth ?? throw new ArgumentNullException(nameof(externalAuth));
-            _userCommand = userCommand ?? throw new ArgumentNullException(nameof(userCommand));
+            _userCommand = userCommandService ?? throw new ArgumentNullException(nameof(userCommandService));
             _userQueryService = userQueryService ?? throw new ArgumentNullException(nameof(userQueryService));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        /// <returns>JWT token for authenticated user</returns>
         [HttpPost("auth/google")]
         [AllowAnonymous]
         [SwaggerOperation(
@@ -553,6 +553,116 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST
             {
                 _logger.LogError(ex, "Error generating JWT token for user {UserId}", user.Id);
                 throw new InvalidOperationException("Error generating authentication token", ex);
+            }
+        }
+
+        /// <summary>
+        /// Signs in a user.
+        /// </summary>
+        /// <param name="signInResource">The sign-in resource.</param>
+        /// <returns>The authentication response.</returns>
+        [HttpPost("sign-in")]
+        [AllowAnonymous]
+        [SwaggerOperation(
+        Summary = "Sign in",
+        Description = "Sign in a user",
+        OperationId = "SignIn")]
+        [SwaggerResponse(StatusCodes.Status200OK, "The user was authenticated", typeof(AuthResponse))]
+        [SwaggerResponse(StatusCodes.Status401Unauthorized, "The sign-in process has failed", typeof(string))]
+        public async Task<IActionResult> SignIn([FromBody] SignInResource signInResource)
+        {
+            try
+            {
+                var signInCommand = SignInCommandFromResourceAssembler.ToCommandFromResource(signInResource);
+                var user = await _userCommand.Handle(signInCommand);
+                
+                if (user == null)
+                    return Unauthorized("Invalid username or password");
+                var token = GenerateJwtToken(user);
+                
+                var response = AuthResponse.Create(
+                    token,
+                    user.Id,
+                    user.Email.ToString(), 
+                    user.Username);
+                
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during sign in for user: {Email}", signInResource?.Email);
+                return Unauthorized(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Signs up a new user.
+        /// </summary>
+        /// <param name="resource">The sign-up resource.</param>
+        /// <returns>The authentication response.</returns>
+        [HttpPost("sign-up")]
+        [AllowAnonymous]
+        [Consumes("application/json")]
+        [Produces("application/json")]
+        [SwaggerOperation(
+            Summary = "Sign up",
+            Description = "Sign up a user",
+            OperationId = "SignUp")]
+        [SwaggerResponse(StatusCodes.Status200OK, "The user was created", typeof(AuthResponse))]
+        [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request data")]
+        [SwaggerResponse(StatusCodes.Status401Unauthorized, "The sign-up process has failed")]
+        public async Task<IActionResult> SignUp([FromBody] SignUpResource resource)
+        {
+            if (resource == null)
+            {
+                _logger.LogWarning("SignUp: Request body is null");
+                return BadRequest("Request body is required");
+            }
+
+            _logger.LogInformation("SignUp: Attempting to register user with email: {Email}", resource.Email);
+            
+            try
+            {
+                var existingUser = await _userQueryService.GetByEmailAsync(resource.Email);
+                if (existingUser != null)
+                {
+                    _logger.LogWarning("SignUp failed: Email {Email} is already registered", resource.Email);
+                    return BadRequest("Email is already registered");
+                }
+
+                _logger.LogDebug("Creating sign up command for email: {Email}", resource.Email);
+                var signUpCommand = SignUpCommandFromResourceAssembler.ToCommandFromResource(resource);
+                
+                _logger.LogDebug("Processing sign up command");
+                var user = await _userCommand.Handle(signUpCommand);
+                
+                if (user == null)
+                {
+                    _logger.LogWarning("Failed to create user with email: {Email}", resource.Email);
+                    return Unauthorized("Failed to create user");
+                }
+                
+                _logger.LogInformation("User created successfully. Generating JWT token for user ID: {UserId}", user.Id);
+                var token = GenerateJwtToken(user);
+                
+                var response = AuthResponse.Create(
+                    token,
+                    user.Id,
+                    user.Email.ToString(),
+                    user.Username);
+                
+                _logger.LogInformation("User registration completed successfully for email: {Email}", resource.Email);
+                return Ok(response);
+            }
+            catch (System.ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Invalid argument when processing sign up for email: {Email}", resource?.Email);
+                return BadRequest(ex.Message);
+            }
+            catch (System.Exception ex)
+            {
+                _logger.LogError(ex, "Error during sign up for user: {Email}", resource?.Email);
+                return Unauthorized(ex.Message);
             }
         }
     }
