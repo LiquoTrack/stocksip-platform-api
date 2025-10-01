@@ -18,7 +18,7 @@ public record Money()
     /// <summary>
     ///     The currency of the money.
     /// </summary>
-    private Currency Currency { get; } = new Currency("USD");
+    private Currency Currency { get; } = new Currency(nameof(EValidCurrencyCodes.Usd));
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="Money" /> class with the specified amount and currency.
@@ -27,9 +27,9 @@ public record Money()
     /// <param name="currency">The currency of the money.</param>
     public Money(decimal amount, Currency currency) : this()
     {
-        if (amount <= 0)
+        if (amount < 0)
         {
-            throw new ValueObjectValidationException(nameof(Money), "Amount must be greater than zero.");
+            throw new ValueObjectValidationException(nameof(Money), "Amount must be zero or greater.");
         }
 
         Amount = amount;

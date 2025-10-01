@@ -1,9 +1,10 @@
 ﻿using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Repositories;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Repositories;
 
 namespace LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Seeding;
 
 public class DatabaseSeeder(
-    IBrandRepository brandRepository)
+    IBrandRepository brandRepository, IPlanRepository planRepository)
 {
     /// <summary>
     ///     Method to seed the database with initial data.
@@ -12,5 +13,8 @@ public class DatabaseSeeder(
     {
         // Seed the brand names into the database
         await brandRepository.SeedBrandNamesAsync();
+        
+        // Seed the plans for subscription into the database
+        await planRepository.SeedPlansAsync();
     }
 }
