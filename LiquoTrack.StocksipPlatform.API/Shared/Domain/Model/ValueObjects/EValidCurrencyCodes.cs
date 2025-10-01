@@ -5,12 +5,12 @@
 /// </summary>
 public enum EValidCurrencyCodes
 {
-    Usd,
-    Eur,
-    Jpy,
-    Cad,
-    Che,
-    Cny,
-    Sek,
-    Pen,
+    USD,
+    EUR,
+    JPY,
+    CAD,
+    CHE,
+    CNY,
+    SEK,
+    PEN,
 }

@@ -6,7 +6,7 @@ namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Service
 /// <summary>
 ///     Query service interface for retrieving plan information.
 /// </summary>
-public interface IPlansQueryService
+public interface IPlanQueryService
 {
     /// <summary>
     ///     Method to handle the retrieval of all available plans.

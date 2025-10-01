@@ -4,7 +4,9 @@ using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Converters.JSON;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Persistence.MongoDB.Repositories;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.QueryServices;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Repositories;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.Converters.JSON;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.Persistence.MongoDB.Repositories;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Repositories;
@@ -124,6 +126,8 @@ builder.Services.Configure<JsonOptions>(options =>
 // Bounded Context IAM
 
 // Bounded Context Payment and Subscriptions
+builder.Services.AddScoped<IPlanQueryService, PlanQueryService>();
+
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 builder.Services.AddScoped<IBusinessRepository, BusinessRepository>();
 builder.Services.AddScoped<IPlanRepository, PlanRepository>();

@@ -7,7 +7,7 @@ namespace LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 /// </summary>
 public record Currency()
 {
-    /// <summary>A
+    /// <summary>
     ///     The currency code (e.g., "USD", "EUR").
     /// </summary>
     private string Code { get; } = string.Empty;
@@ -25,7 +25,7 @@ public record Currency()
     {
         try
         {
-            Code = Enum.Parse<EValidCurrencyCodes>(newCode).ToString().ToUpper();
+            Code = Enum.Parse<EValidCurrencyCodes>(newCode).ToString();
         }
         catch 
         {

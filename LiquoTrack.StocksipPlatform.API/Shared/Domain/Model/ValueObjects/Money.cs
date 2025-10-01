@@ -18,7 +18,7 @@ public record Money()
     /// <summary>
     ///     The currency of the money.
     /// </summary>
-    private Currency Currency { get; } = new Currency(nameof(EValidCurrencyCodes.Usd));
+    private Currency Currency { get; } = new Currency(nameof(EValidCurrencyCodes.USD));
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="Money" /> class with the specified amount and currency.
