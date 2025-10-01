@@ -7,7 +7,7 @@ namespace LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 /// </summary>
 public record Currency()
 {
-    /// <summary>
+    /// <summary>A
     ///     The currency code (e.g., "USD", "EUR").
     /// </summary>
     private string Code { get; } = string.Empty;
