@@ -5,6 +5,7 @@
 /// </summary>
 public enum EPaymentFrequency
 {
+    None,
     Monthly,
     Yearly
 }
