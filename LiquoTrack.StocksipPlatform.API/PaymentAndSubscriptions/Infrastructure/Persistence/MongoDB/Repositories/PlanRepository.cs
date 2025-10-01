@@ -28,21 +28,21 @@ public class PlanRepository(AppDbContext context) : BaseRepository<Plan>(context
                 EPlanType.Free,
                 "Free plan with limited features",
                 EPaymentFrequency.None,
-                new Money(0m, new Currency()),
+                new Money(0m, new Currency("USD")),
                 PlanLimits.For(EPlanType.Free)
             ),
             new Plan(
                 EPlanType.Premium,
                 "Premium plan with more features",
                 EPaymentFrequency.Monthly,
-                new Money(29.99m, new Currency()),
+                new Money(29.99m, new Currency("USD")),
                 PlanLimits.For(EPlanType.Premium)
             ),
             new Plan(
                 EPlanType.Enterprise,
                 "Enterprise plan with unlimited features",
                 EPaymentFrequency.Yearly,
-                new Money(199.99m, new Currency()),
+                new Money(199.99m, new Currency("USD")),
                 PlanLimits.For(EPlanType.Enterprise)
             )
         };
