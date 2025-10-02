@@ -27,7 +27,7 @@ public class User : Entity
         Email = new Email();
         Username = string.Empty;
         Password = string.Empty;
-        AccountId = AccountId.CreateNew(); // Create a new unique AccountId
+        AccountId = AccountId.CreateNew();
         UserRole = new Role();
         UserRoleId = string.Empty;
     }

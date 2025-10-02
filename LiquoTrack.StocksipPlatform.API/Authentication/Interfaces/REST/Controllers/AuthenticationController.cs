@@ -24,32 +24,18 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
     [Produces(MediaTypeNames.Application.Json)]
     [SwaggerTag("Authentication endpoints")]
     [ApiExplorerSettings(GroupName = "v1")]
-    public class AuthenticationController : ControllerBase
+    public class AuthenticationController(
+        IExternalAuthService externalAuthService,
+        IUserCommandService userCommandService,
+        IUserQueryService userQueryService,
+        IConfiguration configuration,
+        ILogger<AuthenticationController> logger
+        ) : ControllerBase
     {
         private const int DefaultPageSize = 10;
         private const int MaxPageSize = 50;
         private const string GoogleAuthProvider = "Google";
         private const int TokenExpirationInDays = 7;
-
-        private readonly IExternalAuthService _externalAuth;
-        private readonly IUserCommandService _userCommand;
-        private readonly IUserQueryService _userQueryService;
-        private readonly IConfiguration _configuration;
-        private readonly ILogger<AuthenticationController> _logger;
-
-        public AuthenticationController(
-            IExternalAuthService externalAuth,
-            IUserCommandService userCommandService,
-            IUserQueryService userQueryService,
-            IConfiguration configuration,
-            ILogger<AuthenticationController> logger)
-        {
-            _externalAuth = externalAuth ?? throw new ArgumentNullException(nameof(externalAuth));
-            _userCommand = userCommandService ?? throw new ArgumentNullException(nameof(userCommandService));
-            _userQueryService = userQueryService ?? throw new ArgumentNullException(nameof(userQueryService));
-            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        }
 
         [HttpPost("auth/google")]
         [Microsoft.AspNetCore.Authorization.AllowAnonymous]
@@ -64,13 +50,13 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
         [ProducesResponseType(StatusCodes.Status502BadGateway)]
         public async Task<IActionResult> AuthenticateWithGoogle([FromBody] GoogleAuthRequest request)
         {
-            _logger.LogInformation("=== Starting Google Authentication ===");
-            _logger.LogInformation($"Request received at: {DateTime.UtcNow:u}");
+            logger.LogInformation("=== Starting Google Authentication ===");
+            logger.LogInformation($"Request received at: {DateTime.UtcNow:u}");
 
             if (!ModelState.IsValid)
             {
                 var errors = ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage));
-                _logger.LogWarning("Invalid model state. Errors: {Errors}", string.Join(", ", errors));
+                logger.LogWarning("Invalid model state. Errors: {Errors}", string.Join(", ", errors));
                 return BadRequest(new
                 {
                     error = "Invalid request data",
@@ -80,59 +66,59 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
 
             if (string.IsNullOrWhiteSpace(request?.IdToken))
             {
-                _logger.LogWarning("Empty or null ID token provided");
+                logger.LogWarning("Empty or null ID token provided");
                 return BadRequest(new { error = "ID token is required" });
             }
 
-            _logger.LogInformation("Received Google ID token. Starting validation...");
-            _logger.LogDebug($"Client ID from request: {request.ClientId}");
+            logger.LogInformation("Received Google ID token. Starting validation...");
+            logger.LogDebug($"Client ID from request: {request.ClientId}");
 
             try
             {
-                _logger.LogInformation("Decoding token for debugging...");
+                logger.LogInformation("Decoding token for debugging...");
                 var tokenHandler = new JwtSecurityTokenHandler();
                 var jwtToken = tokenHandler.ReadJwtToken(request.IdToken);
 
-                _logger.LogInformation("Token details:");
-                _logger.LogInformation($"Issuer: {jwtToken.Issuer}");
-                _logger.LogInformation($"Audience: {string.Join(", ", jwtToken.Audiences)}");
-                _logger.LogInformation($"Valid From: {jwtToken.ValidFrom}");
-                _logger.LogInformation($"Valid To: {jwtToken.ValidTo}");
-                _logger.LogInformation("Claims:");
+                logger.LogInformation("Token details:");
+                logger.LogInformation($"Issuer: {jwtToken.Issuer}");
+                logger.LogInformation($"Audience: {string.Join(", ", jwtToken.Audiences)}");
+                logger.LogInformation($"Valid From: {jwtToken.ValidFrom}");
+                logger.LogInformation($"Valid To: {jwtToken.ValidTo}");
+                logger.LogInformation("Claims:");
                 foreach (var claim in jwtToken.Claims)
                 {
-                    _logger.LogInformation($"{claim.Type}: {claim.Value}");
+                    logger.LogInformation($"{claim.Type}: {claim.Value}");
                 }
 
-                var configuredClientId = _configuration["Authentication:Google:ClientId"]
-                                     ?? _configuration["Google:ClientId"];
+                var configuredClientId = configuration["Authentication:Google:ClientId"]
+                                     ?? configuration["Google:ClientId"];
 
-                _logger.LogInformation($"Configured Client ID: {configuredClientId}");
-                _logger.LogInformation($"Request Client ID: {request.ClientId}");
+                logger.LogInformation($"Configured Client ID: {configuredClientId}");
+                logger.LogInformation($"Request Client ID: {request.ClientId}");
 
                 if (string.IsNullOrEmpty(configuredClientId))
                 {
-                    _logger.LogError("Google ClientId is not configured in appsettings.json");
+                    logger.LogError("Google ClientId is not configured in appsettings.json");
                     return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Server configuration error" });
                 }
 
                 if (string.IsNullOrWhiteSpace(configuredClientId))
                 {
                     const string errorMessage = "Google ClientId not configured";
-                    _logger.LogError(errorMessage);
+                    logger.LogError(errorMessage);
                     return StatusCode(
                         StatusCodes.Status500InternalServerError,
                         new { error = "Server misconfiguration: Google ClientId missing" }
                     );
                 }
 
-                _logger.LogInformation("Validating Google ID token with external auth service...");
-                var validationResult = await _externalAuth.ValidateIdTokenAsync(request.IdToken);
+                logger.LogInformation("Validating Google ID token with external auth service...");
+                var validationResult = await externalAuthService.ValidateIdTokenAsync(request.IdToken);
 
                 if (!validationResult.Success)
                 {
-                    _logger.LogWarning("Google token validation failed. Error: {Error}", validationResult.Error);
-                    _logger.LogWarning("Validation result details: Success={Success}, Email={Email}, Name={Name}",
+                    logger.LogWarning("Google token validation failed. Error: {Error}", validationResult.Error);
+                    logger.LogWarning("Validation result details: Success={Success}, Email={Email}, Name={Name}",
                         validationResult.Success, validationResult.Email, validationResult.Name);
 
                     return Unauthorized(new
@@ -142,9 +128,9 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
                     });
                 }
 
-                _logger.LogInformation("Google token validation successful");
-                _logger.LogInformation("User email from token: {Email}", validationResult.Email);
-                _logger.LogInformation("User name from token: {Name}", validationResult.Name);
+                logger.LogInformation("Google token validation successful");
+                logger.LogInformation("User email from token: {Email}", validationResult.Email);
+                logger.LogInformation("User name from token: {Name}", validationResult.Name);
 
                 var user = await GetOrCreateUserAsync(validationResult);
                 if (user == null)
@@ -155,7 +141,7 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
                     );
                 }
                 var token = GenerateJwtToken(user);
-                _logger.LogInformation("Authentication successful for user: {Email}", user.Email);
+                logger.LogInformation("Authentication successful for user: {Email}", user.Email);
 
                 var response = new AuthResponse
                 {
@@ -169,7 +155,7 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
             }
             catch (HttpRequestException httpEx)
             {
-                _logger.LogError(httpEx, "Network error while validating with Google");
+                logger.LogError(httpEx, "Network error while validating with Google");
                 return StatusCode(
                     StatusCodes.Status502BadGateway,
                     new
@@ -181,7 +167,7 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
             }
             catch (SecurityTokenException stEx)
             {
-                _logger.LogWarning(stEx, "Security token validation failed");
+                logger.LogWarning(stEx, "Security token validation failed");
                 return Unauthorized(new
                 {
                     error = "Invalid security token",
@@ -190,13 +176,13 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during authentication. Error: {ErrorMessage}", ex.Message);
-                _logger.LogError("Stack Trace: {StackTrace}", ex.StackTrace);
+                logger.LogError(ex, "Unexpected error during authentication. Error: {ErrorMessage}", ex.Message);
+                logger.LogError("Stack Trace: {StackTrace}", ex.StackTrace);
 
                 if (ex.InnerException != null)
                 {
-                    _logger.LogError("Inner Exception: {InnerException}", ex.InnerException.Message);
-                    _logger.LogError("Inner Stack Trace: {InnerStackTrace}", ex.InnerException.StackTrace);
+                    logger.LogError("Inner Exception: {InnerException}", ex.InnerException.Message);
+                    logger.LogError("Inner Stack Trace: {InnerStackTrace}", ex.InnerException.StackTrace);
                 }
 
                 return StatusCode(
@@ -223,40 +209,40 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
             {
                 if (string.IsNullOrEmpty(validationResult.ProviderUserId) || string.IsNullOrEmpty(validationResult.Email))
                 {
-                    _logger.LogError("Invalid validation result - missing required fields");
+                    logger.LogError("Invalid validation result - missing required fields");
                     return null;
                 }
 
-                var users = await _userQueryService.GetUsersByEmailAsync(new GetUserByEmailQuery(validationResult.Email));
+                var users = await userQueryService.GetUsersByEmailAsync(new GetUserByEmailQuery(validationResult.Email));
                 var user = users?.FirstOrDefault();
 
                 if (user == null)
                 {
-                    _logger.LogInformation("Creating new user for external ID: {ExternalId}", validationResult.ProviderUserId);
+                    logger.LogInformation("Creating new user for external ID: {ExternalId}", validationResult.ProviderUserId);
 
-                    user = await _userCommand.CreateOrUpdateFromExternalAsync(
+                    user = await userCommandService.CreateOrUpdateFromExternalAsync(
                         validationResult.ProviderUserId,
                         validationResult.Email,
                         validationResult.Name);
 
                     if (user == null)
                     {
-                        _logger.LogError("Failed to create user for external ID: {ExternalId}", validationResult.ProviderUserId);
+                        logger.LogError("Failed to create user for external ID: {ExternalId}", validationResult.ProviderUserId);
                         return null;
                     }
 
-                    _logger.LogInformation("Created new user with ID: {UserId}", user.Id);
+                    logger.LogInformation("Created new user with ID: {UserId}", user.Id);
                 }
                 else
                 {
-                    _logger.LogDebug("Found existing user with ID: {UserId}", user.Id);
+                    logger.LogDebug("Found existing user with ID: {UserId}", user.Id);
                 }
 
                 return user;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting or creating user for external ID: {ExternalId}", validationResult.ProviderUserId);
+                logger.LogError(ex, "Error getting or creating user for external ID: {ExternalId}", validationResult.ProviderUserId);
                 throw;
             }
         }
@@ -277,13 +263,13 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
                     var iss = jwt.Issuer;
                     var exp = jwt.ValidTo;
 
-                    _logger.LogDebug("Token details - aud: {aud}, iss: {iss}, exp: {exp}",
+                    logger.LogDebug("Token details - aud: {aud}, iss: {iss}, exp: {exp}",
                         audFromToken, iss, exp);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to parse token for logging");
+                logger.LogWarning(ex, "Failed to parse token for logging");
             }
         }
 
@@ -310,24 +296,24 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = DefaultPageSize)
         {
-            _logger.LogInformation("=== INICIO DE SOLICITUD GET /api/v1/users ===");
-            _logger.LogInformation("User: {User}", User?.Identity?.Name);
-            _logger.LogInformation("IsAuthenticated: {IsAuthenticated}", User?.Identity?.IsAuthenticated);
-            _logger.LogInformation("Claims:");
+            logger.LogInformation("=== INICIO DE SOLICITUD GET /api/v1/users ===");
+            logger.LogInformation("User: {User}", User?.Identity?.Name);
+            logger.LogInformation("IsAuthenticated: {IsAuthenticated}", User?.Identity?.IsAuthenticated);
+            logger.LogInformation("Claims:");
             foreach (var claim in User?.Claims ?? Enumerable.Empty<System.Security.Claims.Claim>())
             {
-                _logger.LogInformation($"{claim.Type} = {claim.Value}");
+                logger.LogInformation($"{claim.Type} = {claim.Value}");
             }
-            _logger.LogInformation("Fetching users - Page: {Page}, PageSize: {PageSize}", page, pageSize);
+            logger.LogInformation("Fetching users - Page: {Page}, PageSize: {PageSize}", page, pageSize);
 
             try
             {
-                _logger.LogInformation("Running in test mode - authentication bypassed");
+                logger.LogInformation("Running in test mode - authentication bypassed");
 
                 // Validar parámetros de paginación
                 if (page < 1)
                 {
-                    _logger.LogWarning("Número de página inválido: {Page}", page);
+                    logger.LogWarning("Número de página inválido: {Page}", page);
                     return BadRequest(new
                     {
                         error = "Parámetro inválido",
@@ -338,7 +324,7 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
 
                 pageSize = Math.Min(Math.Max(1, pageSize), MaxPageSize);
 
-                var users = await _userQueryService.GetAllUsersAsync(HttpContext.RequestAborted);
+                var users = await userQueryService.GetAllUsersAsync(HttpContext.RequestAborted);
                 var usersList = users?.ToList() ?? new List<User>();
                 var totalCount = usersList.Count;
                 var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
@@ -370,12 +356,12 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
                     HasPreviousPage = page > 1
                 };
 
-                _logger.LogInformation("Se recuperaron exitosamente {Count} usuarios", paginatedUsers.Count);
+                logger.LogInformation("Se recuperaron exitosamente {Count} usuarios", paginatedUsers.Count);
                 return Ok(response);
             }
             catch (SecurityTokenExpiredException ex)
             {
-                _logger.LogWarning("Token expirado: {Message}", ex.Message);
+                logger.LogWarning("Token expirado: {Message}", ex.Message);
                 return Unauthorized(new
                 {
                     error = "Token expirado",
@@ -384,14 +370,14 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
                     {
                         token_type = "Bearer",
                         expected_issuer = "https://accounts.google.com",
-                        expected_audience = _configuration["Authentication:Google:ClientId"],
+                        expected_audience = configuration["Authentication:Google:ClientId"],
                         token_expired_at = ex.Expires != default ? ex.Expires.ToString("yyyy-MM-ddTHH:mm:ssZ") : "unknown"
                     }
                 });
             }
             catch (SecurityTokenInvalidAudienceException ex)
             {
-                _logger.LogWarning("Audiencia de token inválida: {Message}", ex.Message);
+                logger.LogWarning("Audiencia de token inválida: {Message}", ex.Message);
                 return Unauthorized(new
                 {
                     error = "Token inválido",
@@ -399,14 +385,14 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
                     details = new
                     {
                         token_type = "Bearer",
-                        expected_audience = _configuration["Authentication:Google:ClientId"],
+                        expected_audience = configuration["Authentication:Google:ClientId"],
                         actual_audience = ex.InvalidAudience ?? "unknown"
                     }
                 });
             }
             catch (SecurityTokenInvalidIssuerException ex)
             {
-                _logger.LogWarning("Emisor de token inválido: {Message}", ex.Message);
+                logger.LogWarning("Emisor de token inválido: {Message}", ex.Message);
                 return Unauthorized(new
                 {
                     error = "Token inválido",
@@ -421,7 +407,7 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
             }
             catch (SecurityTokenException ex)
             {
-                _logger.LogWarning("Token de seguridad inválido: {Message}", ex.Message);
+                logger.LogWarning("Token de seguridad inválido: {Message}", ex.Message);
                 return Unauthorized(new
                 {
                     error = "Token inválido",
@@ -432,7 +418,7 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
                         required_scheme = JwtBearerDefaults.AuthenticationScheme,
                         expected_token_format = "JWT",
                         expected_issuer = "https://accounts.google.com",
-                        expected_audience = _configuration["Authentication:Google:ClientId"],
+                        expected_audience = configuration["Authentication:Google:ClientId"],
                         how_to_authenticate = new[]
                         {
                             "Obtén un token de Google usando OAuth 2.0",
@@ -443,7 +429,7 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving users");
+                logger.LogError(ex, "Error retrieving users");
                 return StatusCode(
                     StatusCodes.Status500InternalServerError,
                     new { error = "An error occurred while retrieving users", details = ex.Message, stackTrace = ex.StackTrace }
@@ -460,26 +446,26 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
         {
             try
             {
-                _logger.LogInformation("=== Starting JWT Token Generation ===");
-                _logger.LogInformation($"User ID: {user.Id}");
-                _logger.LogInformation($"User Email: {user.Email?.ToString() ?? "[No Email]"}");
+                logger.LogInformation("=== Starting JWT Token Generation ===");
+                logger.LogInformation($"User ID: {user.Id}");
+                logger.LogInformation($"User Email: {user.Email?.ToString() ?? "[No Email]"}");
 
                 var tokenHandler = new JwtSecurityTokenHandler();
-                var key = _configuration["Jwt:Secret"];
+                var key = configuration["Jwt:Secret"];
                 if (string.IsNullOrEmpty(key))
                 {
                     throw new InvalidOperationException("JWT Secret not configured");
                 }
 
                 var keyBytes = Encoding.UTF8.GetBytes(key);
-                var expiryMinutes = _configuration.GetValue<int>("Jwt:ExpiryMinutes", 1440);
-                var clockSkewMinutes = _configuration.GetValue<int>("Jwt:ClockSkew", 5);
+                var expiryMinutes = configuration.GetValue<int>("Jwt:ExpiryMinutes", 1440);
+                var clockSkewMinutes = configuration.GetValue<int>("Jwt:ClockSkew", 5);
 
-                _logger.LogInformation("JWT Configuration:");
-                _logger.LogInformation($"Issuer: {_configuration["Jwt:Issuer"]}");
-                _logger.LogInformation($"Audience: {_configuration["Jwt:Audience"]}");
-                _logger.LogInformation($"Expiry Minutes: {expiryMinutes}");
-                _logger.LogInformation($"Clock Skew Minutes: {clockSkewMinutes}");
+                logger.LogInformation("JWT Configuration:");
+                logger.LogInformation($"Issuer: {configuration["Jwt:Issuer"]}");
+                logger.LogInformation($"Audience: {configuration["Jwt:Audience"]}");
+                logger.LogInformation($"Expiry Minutes: {expiryMinutes}");
+                logger.LogInformation($"Clock Skew Minutes: {clockSkewMinutes}");
 
                 var email = user.Email?.ToString() ?? string.Empty;
                 if (email.StartsWith("Email { GetValue = ") && email.EndsWith(" }"))
@@ -508,39 +494,39 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
                 claims.Add(new System.Security.Claims.Claim(ClaimTypes.Role, roleName));
                 claims.Add(new System.Security.Claims.Claim("role", roleName));
 
-                _logger.LogInformation("JWT Claims:");
+                logger.LogInformation("JWT Claims:");
                 foreach (var claim in claims)
                 {
-                    _logger.LogInformation($"{claim.Type} = {claim.Value}");
+                    logger.LogInformation($"{claim.Type} = {claim.Value}");
                 }
 
                 var tokenDescriptor = new SecurityTokenDescriptor
                 {
                     Subject = new ClaimsIdentity(claims),
                     Expires = DateTime.UtcNow.AddMinutes(expiryMinutes),
-                    Issuer = _configuration["Jwt:Issuer"],
-                    Audience = _configuration["Jwt:Audience"],
+                    Issuer = configuration["Jwt:Issuer"],
+                    Audience = configuration["Jwt:Audience"],
                     SigningCredentials = new SigningCredentials(
                         new SymmetricSecurityKey(keyBytes),
                         SecurityAlgorithms.HmacSha256Signature)
                 };
 
-                _logger.LogInformation($"JWT Token Descriptor - Issuer: {tokenDescriptor.Issuer}");
-                _logger.LogInformation($"JWT Token Descriptor - Audience: {tokenDescriptor.Audience}");
-                _logger.LogInformation($"JWT Token Expires: {tokenDescriptor.Expires}");
+                logger.LogInformation($"JWT Token Descriptor - Issuer: {tokenDescriptor.Issuer}");
+                logger.LogInformation($"JWT Token Descriptor - Audience: {tokenDescriptor.Audience}");
+                logger.LogInformation($"JWT Token Expires: {tokenDescriptor.Expires}");
                 
                 var token = tokenHandler.CreateToken(tokenDescriptor);
                 var tokenString = tokenHandler.WriteToken(token);
 
-                _logger.LogInformation("JWT Token generated successfully");
-                _logger.LogDebug("Generated Token: {Token}", tokenString);
-                _logger.LogInformation("Token will expire at: {Expiration}", token.ValidTo.ToUniversalTime().ToString("u"));
+                logger.LogInformation("JWT Token generated successfully");
+                logger.LogDebug("Generated Token: {Token}", tokenString);
+                logger.LogInformation("Token will expire at: {Expiration}", token.ValidTo.ToUniversalTime().ToString("u"));
 
                 return tokenString;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating JWT token for user {UserId}", user.Id);
+                logger.LogError(ex, "Error generating JWT token for user {UserId}", user.Id);
                 throw new InvalidOperationException("Error generating authentication token", ex);
             }
         }
@@ -563,22 +549,15 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
             try
             {
                 var signInCommand = SignInCommandFromResourceAssembler.ToCommandFromResource(signInResource);
-                var user = await _userCommand.Handle(signInCommand);
-                
-                if (user == null) return Unauthorized("Invalid username or password");
-                var token = GenerateJwtToken(user);
-                
-                var response = AuthResponse.Create(
-                    token,
-                    user.Id,
-                    user.Email.ToString(), 
-                    user.Username);
-                
-                return Ok(response);
+                var authenticatedUser  = await userCommandService.Handle(signInCommand);
+
+                var resource = 
+                    AuthenticatedUserResourceFromEntityAssembler.ToResourceFromEntity(authenticatedUser.user,
+                        authenticatedUser.token);
+                return Ok(resource);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during sign in for user: {Email}", signInResource?.Email);
                 return Unauthorized(ex.Message);
             }
         }
@@ -590,8 +569,6 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
         /// <returns>The authentication response.</returns>
         [HttpPost("sign-up")]
         [AllowAnonymous]
-        [Consumes("application/json")]
-        [Produces("application/json")]
         [SwaggerOperation(
             Summary = "Sign up",
             Description = "Sign up a user",
@@ -603,34 +580,34 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
         {
             if (resource == null)
             {
-                _logger.LogWarning("SignUp: Request body is null");
+                logger.LogWarning("SignUp: Request body is null");
                 return BadRequest("Request body is required");
             }
 
-            _logger.LogInformation("SignUp: Attempting to register user with email: {Email}", resource.Email);
+            logger.LogInformation("SignUp: Attempting to register user with email: {Email}", resource.Email);
             
             try
             {
-                var existingUser = await _userQueryService.GetByEmailAsync(resource.Email);
+                var existingUser = await userQueryService.GetByEmailAsync(resource.Email);
                 if (existingUser != null)
                 {
-                    _logger.LogWarning("SignUp failed: Email {Email} is already registered", resource.Email);
+                    logger.LogWarning("SignUp failed: Email {Email} is already registered", resource.Email);
                     return BadRequest("Email is already registered");
                 }
 
-                _logger.LogDebug("Creating sign up command for email: {Email}", resource.Email);
+                logger.LogDebug("Creating sign up command for email: {Email}", resource.Email);
                 var signUpCommand = SignUpCommandFromResourceAssembler.ToCommandFromResource(resource);
                 
-                _logger.LogDebug("Processing sign up command");
-                var user = await _userCommand.Handle(signUpCommand);
+                logger.LogDebug("Processing sign up command");
+                var user = await userCommandService.Handle(signUpCommand);
                 
                 if (user == null)
                 {
-                    _logger.LogWarning("Failed to create user with email: {Email}", resource.Email);
+                    logger.LogWarning("Failed to create user with email: {Email}", resource.Email);
                     return Unauthorized("Failed to create user");
                 }
                 
-                _logger.LogInformation("User created successfully. Generating JWT token for user ID: {UserId}", user.Id);
+                logger.LogInformation("User created successfully. Generating JWT token for user ID: {UserId}", user.Id);
                 var token = GenerateJwtToken(user);
                 
                 var response = AuthResponse.Create(
@@ -639,17 +616,17 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
                     user.Email.ToString(),
                     user.Username);
                 
-                _logger.LogInformation("User registration completed successfully for email: {Email}", resource.Email);
+                logger.LogInformation("User registration completed successfully for email: {Email}", resource.Email);
                 return Ok(response);
             }
             catch (System.ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Invalid argument when processing sign up for email: {Email}", resource?.Email);
+                logger.LogWarning(ex, "Invalid argument when processing sign up for email: {Email}", resource?.Email);
                 return BadRequest(ex.Message);
             }
             catch (System.Exception ex)
             {
-                _logger.LogError(ex, "Error during sign up for user: {Email}", resource?.Email);
+                logger.LogError(ex, "Error during sign up for user: {Email}", resource?.Email);
                 return Unauthorized(ex.Message);
             }
         }
