@@ -4,6 +4,11 @@ using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Converters.JSON;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Persistence.MongoDB.Repositories;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.QueryServices;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Repositories;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Services;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.Converters.JSON;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.Persistence.MongoDB.Repositories;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Converters.JSON;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Interfaces.ASP.Configuration.Namings;
@@ -121,6 +126,27 @@ builder.Services.Configure<JsonOptions>(options =>
 // Bounded Context IAM
 
 // Bounded Context Payment and Subscriptions
+builder.Services.AddScoped<IPlanQueryService, PlanQueryService>();
+builder.Services.AddScoped<IAccountQueryService, AccountQueryService>();
+
+builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+builder.Services.AddScoped<IBusinessRepository, BusinessRepository>();
+builder.Services.AddScoped<IPlanRepository, PlanRepository>();
+builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
+
+builder.Services.Configure<JsonOptions>(options =>
+{
+    options.JsonSerializerOptions.Converters.Add(new BusinessEmailJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new BusinessNameJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new EAccountRoleJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new EAccountStatusesJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new EPaymentFrequencyJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new EPlanTypeJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new ESubscriptionStatusJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new PlanLimitsJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new RucJsonConverter());
+});
+
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();

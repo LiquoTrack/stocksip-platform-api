@@ -1,4 +1,6 @@
 ﻿using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Persistence.MongoDB.Configuration.ContextMapping;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Events;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.Persistence.MongoDB.Configuration.ContextMapping;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration.ContextMapping;
 
 namespace LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration;
@@ -34,6 +36,9 @@ public static class GlobalMongoMappingHelper
         // Procurement Ordering Bounded Context
         
         // Subscription Bounded Context
+        Console.WriteLine("Registering Payment and Subscriptions Mappings...");
+        PaymentAndSubscriptionsMappingHelper.RegisterPaymentAndSubscriptionsMappings();
+        Console.WriteLine("Payment and Subscriptions Mappings Registered!");
         
         // Alerts Bounded Context
         
