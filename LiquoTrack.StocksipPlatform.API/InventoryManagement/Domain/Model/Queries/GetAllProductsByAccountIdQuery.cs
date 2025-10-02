@@ -1,3 +1,8 @@
-﻿namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Queries;
+﻿using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 
-public record GetAllProductsByAccountIdQuery();
+namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Queries;
+
+/// <summary>
+///     Query to get all products for a given account.
+/// </summary>
+public record GetAllProductsByAccountIdQuery(AccountId AccountId);

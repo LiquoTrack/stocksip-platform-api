@@ -1,0 +1,19 @@
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.ValueObjects;
+
+namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.Converters.JSON;
+
+public class BusinessNameJsonConverter : JsonConverter<BusinessName>
+{
+    public override BusinessName? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        var value = reader.GetString();
+        return new BusinessName(value!);
+    }
+
+    public override void Write(Utf8JsonWriter writer, BusinessName value, JsonSerializerOptions options)
+    {
+        writer.WriteStringValue(value.Value);
+    }
+}
