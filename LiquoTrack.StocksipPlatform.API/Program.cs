@@ -127,6 +127,7 @@ builder.Services.Configure<JsonOptions>(options =>
 
 // Bounded Context Payment and Subscriptions
 builder.Services.AddScoped<IPlanQueryService, PlanQueryService>();
+builder.Services.AddScoped<IAccountQueryService, AccountQueryService>();
 
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 builder.Services.AddScoped<IBusinessRepository, BusinessRepository>();
