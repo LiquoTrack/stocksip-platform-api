@@ -18,8 +18,6 @@ public class User : Entity
     public Email Email { get; set; }
     public string Username{ get; set; }
     public string Password { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public DateTime UpdateAt { get; set; }
     public AccountId AccountId { get; set; }
     public Role UserRole { get; set; }
     public string UserRoleId { get; set; }
@@ -29,8 +27,6 @@ public class User : Entity
         Email = new Email();
         Username = string.Empty;
         Password = string.Empty;
-        CreatedAt = DateTime.UtcNow;
-        UpdateAt = DateTime.UtcNow;
         AccountId = AccountId.CreateNew(); // Create a new unique AccountId
         UserRole = new Role();
         UserRoleId = string.Empty;
@@ -51,7 +47,6 @@ public class User : Entity
             throw new ArgumentException("The password must be at least 8 characters long.", nameof(hashedPassword));
 
         Password = hashedPassword;
-        UpdateAt = DateTime.UtcNow;
         return this;
     }
 
@@ -71,7 +66,6 @@ public class User : Entity
             throw new ArgumentException("The username must be at least 3 characters.", nameof(newUsername));
 
         Username = newUsername.Trim();
-        UpdateAt = DateTime.UtcNow;
         return this;
     }
 
@@ -87,7 +81,6 @@ public class User : Entity
             throw new ArgumentException("RoleId cannot be empty.", nameof(newRoleId));
 
         UserRoleId = newRoleId;
-        UserRole = new Role(); 
-        UpdateAt = DateTime.UtcNow;
+        UserRole = new Role();
     }
 }

@@ -365,7 +365,6 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST
                         Provider = GoogleAuthProvider,
                         GoogleSub = u.AccountId.ToString(),
                         CreatedAt = u.CreatedAt,
-                        LastLogin = u.UpdateAt,
                         IsDisabled = false
                     })
                     .ToList();

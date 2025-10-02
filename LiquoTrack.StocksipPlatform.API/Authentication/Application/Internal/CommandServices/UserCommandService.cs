@@ -63,8 +63,6 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
                 Email = command.Email,
                 Password = hashedPassword,
                 UserRole = new RoleEntity { Name = EUserRoles.Normal },
-                CreatedAt = DateTime.UtcNow,
-                UpdateAt = DateTime.UtcNow
             };
 
             try
@@ -108,8 +106,6 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
                 Username = !string.IsNullOrWhiteSpace(name) ? name : email.Split('@')[0],
                 Email = new Email(email),
                 Password = hashedPassword,
-                CreatedAt = DateTime.UtcNow,
-                UpdateAt = DateTime.UtcNow,
                 UserRole = new RoleEntity { Name = EUserRoles.Normal }
             };
 
@@ -167,8 +163,6 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
                 Email = command.Email,
                 Password = hashedPassword,
                 UserRole = new RoleEntity { Name = EUserRoles.Normal },
-                CreatedAt = DateTime.UtcNow,
-                UpdateAt = DateTime.UtcNow
             };
 
             try
