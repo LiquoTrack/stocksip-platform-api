@@ -1,4 +1,4 @@
-﻿namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.Resources;
+﻿namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.REST.Resources;
 
 /// <summary>
 ///     Resource class for representing a Plan.

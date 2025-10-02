@@ -1,7 +1,7 @@
 ﻿using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Entities;
-using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.Resources;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.REST.Resources;
 
-namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.Assemblers;
+namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.REST.Assemblers;
 
 /// <summary>
 ///     Static class to convert Plan entity to PlanResource.

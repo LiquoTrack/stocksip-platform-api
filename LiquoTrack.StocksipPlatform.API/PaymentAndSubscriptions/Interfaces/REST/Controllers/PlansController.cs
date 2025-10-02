@@ -2,12 +2,12 @@
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Queries;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Services;
-using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.Assemblers;
-using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.Resources;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.REST.Assemblers;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.REST.Resources;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 
-namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.Controllers;
+namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.REST.Controllers;
 
 /// <summary>
 ///     Controller for handling plan-related requests.
