@@ -69,5 +69,10 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Qu
         {
             return await _userRepository.GetAllUsersAsync(cancellationToken);
         }
+
+        public async Task<User?> Handle(GetUserByIdQuery query)
+        {
+            return await _userRepository.FindByIdAsync(query.UserId.ToString());
+        }
     }
 }

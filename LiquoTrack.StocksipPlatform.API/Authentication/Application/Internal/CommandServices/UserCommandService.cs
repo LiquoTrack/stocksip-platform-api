@@ -131,9 +131,9 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
             if (command == null)
                 throw new ArgumentNullException(nameof(command));
 
-            var user = await _userRepository.FindByEmailAsync(command.Email.GetValue);
+            var user = await _userRepository.FindByEmailAsync(command.Email);
             if (user == null)
-                throw new InvalidOperationException($"User with email {command.Email.GetValue} not found");
+                throw new InvalidOperationException($"User with email {command.Email} not found");
 
             var isPasswordValid = _hashingService.VerifyPassword(command.Password, user.Password);
             if (!isPasswordValid)
@@ -152,7 +152,7 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
             if (command == null)
                 throw new ArgumentNullException(nameof(command));
 
-            var existingUser = await _userRepository.FindByEmailAsync(command.Email.GetValue);
+            var existingUser = await _userRepository.FindByEmailAsync(command.Email);
             if (existingUser != null)
                 throw new InvalidOperationException($"Email {command.Email} is already registered");
 
@@ -160,7 +160,7 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
             var user = new User
             {
                 Username = command.Name,
-                Email = command.Email,
+                Email = new Email(command.Email),
                 Password = hashedPassword,
                 UserRole = new RoleEntity { Name = EUserRoles.Normal },
             };

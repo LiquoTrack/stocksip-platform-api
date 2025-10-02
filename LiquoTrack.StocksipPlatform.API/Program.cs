@@ -43,6 +43,7 @@ using System.Text.Json.Serialization;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.AspNetCore.Authentication;
 using System.Text.Json;
+using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Pipeline.Middleware.Extensions;
 
 // Registers the value object mapping for all contexts
 GlobalMongoMappingHelper.RegisterAllBoundedContextMappings();
@@ -378,7 +379,7 @@ builder.Services.AddAuthentication(options =>
             }
         };
     });
-
+    
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
@@ -474,13 +475,17 @@ else
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
-app.UseRouting();
-
+// Apply CORS policy
 app.UseCors("AllowSpecificOrigins");
 
+app.UseHttpsRedirection();
+
+app.UseRouting();
+
 app.UseAuthentication();
-app.UseAuthorization();
+
+// Configure the Authentication HTTP request pipeline.
+app.UseRequestAuthorization();
 
 app.MapControllers();
 

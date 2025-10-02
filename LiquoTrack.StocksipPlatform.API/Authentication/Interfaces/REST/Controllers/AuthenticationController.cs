@@ -1,34 +1,24 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Net.Mime;
+using System.Security.Claims;
+using System.Text;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Aggregates;
-using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Commands;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Queries;
-using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google;
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google.Requests;
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google.Responses;
+using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Pipeline.Middleware.Attributes;
 using LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Resources;
-using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
+using LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Transform;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Swashbuckle.AspNetCore.Annotations;
-using System;
-using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
-using System.Net.Mime;
-using System.Text;
-using System.Threading.Tasks;
-using LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Resources;
-using System.Security.Claims;
-using LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Transform;
 
-namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST
+namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/v1")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -62,7 +52,7 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST
         }
 
         [HttpPost("auth/google")]
-        [AllowAnonymous]
+        [Microsoft.AspNetCore.Authorization.AllowAnonymous]
         [SwaggerOperation(
             Summary = "Authenticate with Google",
             Description = "Authenticates a user using Google's OAuth 2.0 ID token"
@@ -303,7 +293,7 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST
         /// <param name="page">Page number (1-based)</param>
         /// <param name="pageSize">Number of items per page (max 50)</param>
         /// <returns>Paginated list of users with metadata</returns>
-        [Authorize(Roles = "Admin")]
+        [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin")]
         [HttpGet("users")]
         [SwaggerOperation(
             Summary = "Get paginated list of users",
@@ -563,9 +553,9 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST
         [HttpPost("sign-in")]
         [AllowAnonymous]
         [SwaggerOperation(
-        Summary = "Sign in",
-        Description = "Sign in a user",
-        OperationId = "SignIn")]
+            Summary = "Sign in",
+            Description = "Sign in a user",
+            OperationId = "SignIn")]
         [SwaggerResponse(StatusCodes.Status200OK, "The user was authenticated", typeof(AuthResponse))]
         [SwaggerResponse(StatusCodes.Status401Unauthorized, "The sign-in process has failed", typeof(string))]
         public async Task<IActionResult> SignIn([FromBody] SignInResource signInResource)
@@ -575,8 +565,7 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST
                 var signInCommand = SignInCommandFromResourceAssembler.ToCommandFromResource(signInResource);
                 var user = await _userCommand.Handle(signInCommand);
                 
-                if (user == null)
-                    return Unauthorized("Invalid username or password");
+                if (user == null) return Unauthorized("Invalid username or password");
                 var token = GenerateJwtToken(user);
                 
                 var response = AuthResponse.Create(

@@ -7,7 +7,7 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Entities;
 /// <summary>
 /// Represents a role in the publishing system.
 /// </summary>
-/// <param name="Name">
+/// <param name="">
 /// The name of the role.
 /// </param>
 public class Role

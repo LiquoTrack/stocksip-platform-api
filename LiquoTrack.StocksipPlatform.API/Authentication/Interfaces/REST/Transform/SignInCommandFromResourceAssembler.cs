@@ -9,13 +9,7 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Transfo
     {
         public static SignInCommand ToCommandFromResource(SignInResource resource)
         {
-            if (resource == null)
-                throw new ArgumentNullException(nameof(resource));
-                
-            // Crear un nuevo objeto Email con el valor de cadena del correo
-            var email = new Email(resource.Email);
-            
-            return new SignInCommand(email, resource.Password);
+            return new SignInCommand(resource.Email, resource.Password);
         }
     }
 }
