@@ -43,6 +43,12 @@ using System.Text.Json.Serialization;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.AspNetCore.Authentication;
 using System.Text.Json;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.CommandServices;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.QueryServices;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Repositories;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Services;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Converters.JSON;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Persistence.MongoDB.Repositories;
 
 // Registers the value object mapping for all contexts
 GlobalMongoMappingHelper.RegisterAllBoundedContextMappings();
@@ -176,6 +182,15 @@ builder.Services.Configure<JsonOptions>(options =>
 // Bounded Context Order Management
 
 // Bounded Context Profile Management
+builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
+builder.Services.AddScoped<IProfileQueryService, ProfileQueryService>();
+builder.Services.AddScoped<IProfileCommandService, ProfileCommandService>();
+
+builder.Services.Configure<JsonOptions>(options =>
+{
+    options.JsonSerializerOptions.Converters.Add(new PersonContactNumberJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new PersonNameJsonConverter());
+});
 
 // Bounded Context IAM
 
