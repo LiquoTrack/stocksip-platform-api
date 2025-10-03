@@ -20,7 +20,8 @@ public static class ProfileResourceFromEntityAssembler
             profile.PersonContactNumber.PhoneNumber,
             profile.ContactNumber,
             profile.ProfilePictureUrl.ToString(),
-            profile.UserId
+            profile.UserId,
+            profile.AssignedRole
         );
     }
 }
