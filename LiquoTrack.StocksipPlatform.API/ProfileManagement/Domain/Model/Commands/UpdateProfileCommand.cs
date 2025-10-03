@@ -16,5 +16,6 @@ public record UpdateProfileCommand(
     PersonName Name,
     PersonContactNumber PersonContactNumber,
     string ContactNumber,
-    ImageUrl ProfilePictureUrl
+    ImageUrl ProfilePictureUrl,
+    string AssignedRole
 );

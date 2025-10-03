@@ -8,10 +8,12 @@ namespace LiquoTrack.StocksipPlatform.API.ProfileManagement.Interfaces.REST.Reso
 /// <param name="PhoneNumber">The phone number.</param>
 /// <param name="ProfilePictureUrl">The profile picture URL.</param>
 /// <param name="UserId">The user ID associated with the profile.</param>
+/// <param name="AssignedRole">The assigned role in the profile.</param>
 public record CreateProfileResource(
     string FirstName,
     string LastName,
     string PhoneNumber,
     string ProfilePictureUrl,
-    string UserId
+    string UserId,
+    string AssignedRole
 );

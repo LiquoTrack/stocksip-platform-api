@@ -11,5 +11,6 @@ public record UpdateProfileResource(
     string FirstName,
     string LastName,
     string PhoneNumber,
-    string ProfilePictureUrl
+    string ProfilePictureUrl,
+    string AssignedRole
 );

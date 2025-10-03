@@ -24,7 +24,8 @@ public class UpdateProfileCommandFromResourceAssembler
             personName,
             personContactNumber,
             resource.PhoneNumber,
-            imageUrl
+            imageUrl,
+            resource.AssignedRole
         );
     }
 }

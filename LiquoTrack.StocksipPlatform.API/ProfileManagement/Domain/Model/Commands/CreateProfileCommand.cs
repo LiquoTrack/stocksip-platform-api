@@ -16,5 +16,6 @@ public record CreateProfileCommand(
     PersonContactNumber PersonContactNumber,
     string ContactNumber,
     ImageUrl ProfilePictureUrl,
-    string UserId
+    string UserId,
+    string AssignedRole
 );
