@@ -39,6 +39,11 @@ public class Profile : Entity
     /// Gets the user ID associated with this profile.
     /// </summary>
     public string UserId { get; private set; }
+    
+    /// <summary>
+    /// Gets or sets the assigned role for the profile.
+    /// </summary>
+    public string AssignedRole { get; private set; }
 
     /// <summary>
     /// Primary constructor for the Profile Aggregate Root.
@@ -48,6 +53,7 @@ public class Profile : Entity
     /// <param name="contactNumber">The contact number as string.</param>
     /// <param name="profilePictureUrl">The profile picture URL.</param>
     /// <param name="userId">The user ID.</param>
+    /// <param name="assignedRole">The assigned role for the profile.</param>
     /// <exception cref="ArgumentNullException">Thrown when required parameters are null.</exception>
     /// <exception cref="ArgumentException">Thrown when userId is null or whitespace.</exception>
     public Profile(
@@ -55,7 +61,8 @@ public class Profile : Entity
         PersonContactNumber personContactNumber,
         string contactNumber,
         ImageUrl profilePictureUrl,
-        string userId)
+        string userId,
+        string assignedRole)
     {
         Name = name ?? throw new ArgumentNullException(nameof(name));
         PersonContactNumber = personContactNumber ?? throw new ArgumentNullException(nameof(personContactNumber));
@@ -65,8 +72,12 @@ public class Profile : Entity
         if (string.IsNullOrWhiteSpace(userId))
             throw new ArgumentException("User ID cannot be null or whitespace.", nameof(userId));
 
+        if (string.IsNullOrWhiteSpace(assignedRole))
+            throw new ArgumentException("Assigned role cannot be null or whitespace.", nameof(assignedRole));
+
         UserId = userId;
         FullName = name.GetFullName();
+        AssignedRole = assignedRole;
     }
 
     /// <summary>
@@ -81,7 +92,8 @@ public class Profile : Entity
         command.PersonContactNumber,
         command.ContactNumber,
         command.ProfilePictureUrl,
-        command.UserId)
+        command.UserId,
+        command.AssignedRole)
     {
     }
 
@@ -98,5 +110,6 @@ public class Profile : Entity
         ContactNumber = command.ContactNumber;
         ProfilePictureUrl = command.ProfilePictureUrl;
         FullName = command.Name.GetFullName();
+        AssignedRole = command.AssignedRole;
     }
 }

@@ -23,7 +23,8 @@ public class CreateProfileCommandFromResourceAssembler
             personContactNumber,
             resource.PhoneNumber,
             imageUrl,
-            resource.UserId
+            resource.UserId,
+            resource.AssignedRole
         );
     }
 }
