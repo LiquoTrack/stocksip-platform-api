@@ -1,4 +1,7 @@
-﻿namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Resources;
+﻿using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+
+namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Resources;
 
 /// <summary>
 ///     Record representing the authenticated user resource.
