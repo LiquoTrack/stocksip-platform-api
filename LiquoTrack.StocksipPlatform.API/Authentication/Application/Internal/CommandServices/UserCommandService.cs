@@ -1,17 +1,13 @@
 using System.Security.Cryptography;
-using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Authentication;
 using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Hashing;
 using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Token;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Commands;
-using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Entities;
-using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Repositories;
-using RoleEntity = LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Entities.Role;
 
 namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.CommandServices
 {
@@ -50,7 +46,8 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
             var user = new User(
                 new Email(command.Email.Value),
                 command.Username,
-                hashedPassword
+                hashedPassword,
+                "1234"
             );
 
             try
@@ -93,7 +90,8 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
             var user = new User(
                 new Email(email),
                 string.IsNullOrWhiteSpace(name) ? email.Split('@')[0] : name,
-                hashedPassword
+                hashedPassword,
+                "1234"
             );
 
             try
@@ -138,6 +136,19 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
 
             try
             {
+                var business = await paymentAndSubscriptionsFacade.CreateBusiness(
+                    businessName: command.BusinessName
+                );
+                
+                if (business == null) throw new Exception("Business creation failed");
+
+                var account = await paymentAndSubscriptionsFacade.CreateAccount(
+                    role: command.Role,
+                    businessId: business.Id.ToString()
+                );
+
+                if (account == null) throw new Exception("Account creation failed");
+                
                 var existingUser = await userRepository.FindByEmailAsync(command.Email);
                 if (existingUser != null)
                     throw new InvalidOperationException($"Email {command.Email} is already registered");
@@ -146,26 +157,11 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
                 var user = new User(
                     new Email(command.Email),
                     command.Name,
-                    hashedPassword
+                    hashedPassword,
+                    account.Id.ToString()
                 );
-
                 await userRepository.AddAsync(user);
                 await unitOfWork.CompleteAsync();
-
-                var business = await paymentAndSubscriptionsFacade.CreateBusiness(
-                    businessName: command.BusinessName
-                );
-                
-                if (business == null) throw new Exception("Business creation failed");
-
-                var account = await paymentAndSubscriptionsFacade.CreateAccount(
-                    ownerUserId: user.Id.ToString(),
-                    role: command.Role,
-                    businessId: business.Id.ToString()
-                );
-
-                if (account == null) throw new Exception("Account creation failed");
-
                 return user;
             }
             catch (Exception ex)

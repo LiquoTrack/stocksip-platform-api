@@ -22,9 +22,6 @@ public class PaymentAndSubscriptionsFacade(IAccountCommandService accountCommand
     /// <summary>
     ///     The service for handling account-related commands.
     /// </summary>
-    /// <param name="ownerUserId">
-    ///     The ID of the user who owns the account.
-    /// </param>
     /// <param name="role">
     ///     The role of the account.
     /// </param>
@@ -34,9 +31,9 @@ public class PaymentAndSubscriptionsFacade(IAccountCommandService accountCommand
     /// <returns>
     ///     The account object.
     /// </returns>
-    public async Task<Account?> CreateAccount(string ownerUserId, string role, string businessId)
+    public async Task<Account?> CreateAccount(string role, string businessId)
     {
-        var command = new CreateAccountCommand(ownerUserId, role, businessId);
+        var command = new CreateAccountCommand(businessId, role);
         var account = await accountCommandService.Handle(command);
         return account;
     }

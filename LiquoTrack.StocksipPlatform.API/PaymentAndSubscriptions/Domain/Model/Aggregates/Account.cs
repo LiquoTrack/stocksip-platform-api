@@ -14,8 +14,7 @@ namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.A
 public class Account(
     string businessId,
     EAccountStatuses status,
-    EAccountRole role,
-    OwnerUserId userId
+    EAccountRole role
     ): Entity
 {
     /// <summary>
@@ -35,10 +34,6 @@ public class Account(
     [BsonRepresentation(BsonType.String)]
     public EAccountRole Role { get; private set; } = role;
     
-    /// <summary>
-    ///     The User Id of the owner of the Account.
-    /// </summary>
-    public OwnerUserId UserId { get; private set; } = userId;
     
     public Subscription? Subscription { get; set; }
     
@@ -48,17 +43,13 @@ public class Account(
     /// <param name="command">
     ///     A <see cref="CreateAccountCommand"/> used to create the Account.
     /// </param>
-    /// <param name="businessId">
-    ///     The Business Id associated with the Account.
-    /// </param>
     /// <returns>
     ///     A new instance of the <see cref="Account"/> aggregate root.
     /// </returns>
     public Account (CreateAccountCommand command) : this(
         command.BusinessId,
         EAccountStatuses.Inactive,
-        Enum.Parse<EAccountRole>(command.AccountRole),
-        new OwnerUserId(command.OwnerUserId)) {}
+        Enum.Parse<EAccountRole>(command.AccountRole)) {}
 
     /// <summary>
     ///     Method to initialize the subscription of the account with a free plan.
