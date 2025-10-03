@@ -182,33 +182,6 @@ public class ProfilesController : ControllerBase
     }
 
     /// <summary>
-    /// Gets profiles by full name.
-    /// </summary>
-    /// <param name="fullName">The full name to search for.</param>
-    /// <returns>A collection of profile resources.</returns>
-    /// <response code="200">Returns matching profiles.</response>
-    [HttpGet("search")]
-    [ProducesResponseType(typeof(IEnumerable<ProfileResource>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetProfilesByFullName([FromQuery] string fullName)
-    {
-        try
-        {
-            _logger.LogInformation("Searching profiles by full name: {FullName}", fullName);
-
-            var query = new GetProfilesByFullNameQuery(fullName);
-            var profiles = await _profileQueryService.Handle(query);
-
-            var resources = profiles.Select(ProfileResourceFromEntityAssembler.ToResourceFromEntity);
-            return Ok(resources);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error searching profiles by full name: {FullName}", fullName);
-            return StatusCode(500, "An error occurred while searching profiles.");
-        }
-    }
-
-    /// <summary>
     /// Updates a profile's information.
     /// </summary>
     /// <param name="id">The profile ID.</param>
