@@ -50,6 +50,11 @@ using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Extern
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.CommandServices;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
 
+using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Services;
+using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.CommandHandlers;
+using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Services;
+using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Authentication;
+using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.CommandServices;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.QueryServices;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Repositories;
@@ -58,13 +63,19 @@ using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Converter
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Persistence.MongoDB.Repositories;
 
 
-// Registers the value object mapping for all contexts
 GlobalMongoMappingHelper.RegisterAllBoundedContextMappings();
 
 // Create a builder for the web application
 var builder = WebApplication.CreateBuilder(args);
 
-// Add relevant things about endpoints, controllers, and swagger
+// Add logger
+var logger = LoggerFactory.Create(config =>
+{
+    config.AddConsole();
+    config.AddDebug();
+}).CreateLogger<Program>();
+
+// Add services to the container
 builder.Services.AddRouting(o => o.LowercaseUrls = true);
 builder.Services.AddControllers(o => o.Conventions.Add(new KebabCaseRouteNamingConvention()));
 builder.Services.AddEndpointsApiExplorer();
@@ -92,6 +103,28 @@ builder.Services.AddCors(options =>
 
 
 // Dependency Injection
+
+// Register Google Auth Services with fully qualified names
+builder.Services.AddScoped<LiquoTrack.StocksipPlatform.API.Authentication.Domain.Services.IGoogleAuthService, 
+    LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Services.GoogleAuthService>();
+
+// Register Google SignIn Command Handler and its dependencies
+builder.Services.AddScoped<GoogleSignInCommandHandler>();
+
+// Register External Auth Service (Google) with fully qualified name
+builder.Services.AddScoped<IExternalAuthService, 
+    LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google.GoogleAuthService>();
+
+// Register the custom token validator first
+builder.Services.AddSingleton<ISecurityTokenValidator, CustomGoogleTokenValidator>();
+
+// Register Google Token Validator with configuration
+builder.Services.AddScoped<IGoogleTokenValidator>(sp => 
+    new CustomGoogleTokenValidatorAdapter(
+        sp.GetRequiredService<ISecurityTokenValidator>(),
+        sp.GetRequiredService<ILogger<CustomGoogleTokenValidatorAdapter>>(),
+        sp.GetRequiredService<IConfiguration>()));
+
 
 // Registers the MongoDB client as a singleton service
 builder.Services.AddSingleton<IMongoClient>(sp =>
@@ -143,7 +176,9 @@ builder.Services.AddScoped<IUnitOfWork, MongoUnitOfWork>();
 builder.Services.AddSingleton<CustomGoogleTokenValidator>();
 builder.Services.AddScoped<ISecurityTokenValidator>(sp => sp.GetRequiredService<CustomGoogleTokenValidator>());
 builder.Services.AddScoped<IGoogleTokenValidator, CustomGoogleTokenValidatorAdapter>();
-builder.Services.AddScoped<IExternalAuthService, GoogleAuthService>();
+// Using fully qualified name to resolve ambiguity
+builder.Services.AddScoped<IExternalAuthService, 
+    LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google.GoogleAuthService>();
 
 // Register user services
 builder.Services.AddScoped<IUserCommandService, UserCommandService>();
@@ -190,6 +225,7 @@ builder.Services.Configure<JsonOptions>(options =>
 // Bounded Context Order Management
 
 // Bounded Context Profile Management
+
 builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
 builder.Services.AddScoped<IProfileQueryService, ProfileQueryService>();
 builder.Services.AddScoped<IProfileCommandService, ProfileCommandService>();
@@ -199,6 +235,7 @@ builder.Services.Configure<JsonOptions>(options =>
     options.JsonSerializerOptions.Converters.Add(new PersonContactNumberJsonConverter());
     options.JsonSerializerOptions.Converters.Add(new PersonNameJsonConverter());
 });
+
 
 // Bounded Context IAM
 
@@ -249,40 +286,55 @@ builder.Services.AddAuthentication(options =>
     {
         options.SaveToken = true;
         options.IncludeErrorDetails = true;
+        options.RequireHttpsMetadata = false; // For development only
 
         var jwtSettings = builder.Configuration.GetSection("Jwt");
-        
-        // JWT configuration
-        var key = Encoding.ASCII.GetBytes(jwtSettings["Secret"] ?? 
-            throw new InvalidOperationException("JWT Secret no está configurado"));
-            
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            // Validate issuer (our server)
-            ValidateIssuer = true,
-            ValidIssuer = jwtSettings["Issuer"],
-            
-            // Validate audience (our application)
-            ValidateAudience = true,
-            ValidAudience = jwtSettings["Audience"],
-            
-            // Validate token lifetime
-            ValidateLifetime = true,
-            ClockSkew = TimeSpan.FromMinutes(5),
-            
-            // Configure issuer signing key
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(key),
-            
-            // Configuración de claims
-            NameClaimType = ClaimTypes.Name,
-            RoleClaimType = ClaimTypes.Role
-        };
-        
-        // Only validate local JWT tokens, not Google tokens
-        options.SecurityTokenValidators.Clear();
-        options.SecurityTokenValidators.Add(new JwtSecurityTokenHandler());
-        
+                // JWT configuration
+                var key = Encoding.ASCII.GetBytes(jwtSettings["Secret"] ?? 
+                    throw new InvalidOperationException("JWT Secret no está configurado"));
+
+                // Get JWT settings from configuration
+                var validateIssuer = jwtSettings.GetValue<bool>("ValidateIssuer");
+                var validateAudience = jwtSettings.GetValue<bool>("ValidateAudience");
+                var validateLifetime = jwtSettings.GetValue<bool>("ValidateLifetime");
+                var validateIssuerSigningKey = jwtSettings.GetValue<bool>("ValidateIssuerSigningKey");
+                var requireExpirationTime = jwtSettings.GetValue<bool>("RequireExpirationTime", true);
+                var clockSkew = TimeSpan.FromMinutes(jwtSettings.GetValue<int>("ClockSkew", 30));
+                
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    // Validate issuer
+                    ValidateIssuer = validateIssuer,
+                    ValidIssuers = new[] { jwtSettings["Issuer"], "https://accounts.google.com" },
+                    
+                    // Validate audience
+                    ValidateAudience = validateAudience,
+                    ValidAudiences = new[] { jwtSettings["Audience"], jwtSettings["ClientId"] },
+                    
+                    // Validate token lifetime
+                    ValidateLifetime = validateLifetime,
+                    ClockSkew = clockSkew,
+                    
+                    // Configure issuer signing key
+                    ValidateIssuerSigningKey = validateIssuerSigningKey,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    
+                    // Other settings
+                    RequireExpirationTime = requireExpirationTime,
+                    RequireSignedTokens = jwtSettings.GetValue<bool>("RequireSignedTokens", false),
+                    
+                    // Configuración de claims
+                    NameClaimType = ClaimTypes.Name,
+                    RoleClaimType = ClaimTypes.Role
+                };
+                
+                // Log the JWT validation parameters for debugging
+                logger.LogInformation("JWT Validation Parameters:");
+                logger.LogInformation($"- ValidateIssuer: {validateIssuer}");
+                logger.LogInformation($"- ValidateAudience: {validateAudience}");
+                logger.LogInformation($"- ValidateLifetime: {validateLifetime}");
+                logger.LogInformation($"- ValidateIssuerSigningKey: {validateIssuerSigningKey}");
+                logger.LogInformation($"- ClockSkew: {clockSkew}");   
         options.Events = new JwtBearerEvents
         {
             OnMessageReceived = context =>
@@ -480,7 +532,7 @@ using (var scope = app.Services.CreateScope())
     await seeder.SeedAsync();
 }
 
-// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -501,12 +553,18 @@ else
     app.UseHsts();
 }
 
-// Apply CORS policy
-app.UseCors("AllowSpecificOrigins");
-
+// Add middleware in the correct order
 app.UseHttpsRedirection();
-
+app.UseCors("AllowSpecificOrigins");
 app.UseRouting();
+app.UseAuthentication();
+app.UseAuthorization();
+
+// Configure endpoints
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllers();
+});
 
 app.UseAuthentication();
 

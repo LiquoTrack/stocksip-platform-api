@@ -1,8 +1,9 @@
-﻿using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Token;
+using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Token;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Queries;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Pipeline.Middleware.Attributes;
-
+using Microsoft.AspNetCore.Authorization;
+using CustomAllowAnonymousAttribute = LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Pipeline.Middleware.Attributes.AllowAnonymousAttribute;
 namespace LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Pipeline.Middleware.Components;
 
 /// <summary>
@@ -30,7 +31,7 @@ public class RequestAuthorizationMiddleware(RequestDelegate next,
         }
         
         var endpoint  = context.GetEndpoint();
-        var allowAnon = endpoint?.Metadata.Any(m => m is AllowAnonymousAttribute) ?? false;
+        var allowAnon = endpoint?.Metadata.Any(m => m is Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute) ?? false;
 
         _logger.LogInformation("Allow Anonymous = {AllowAnonymous}", allowAnon);
         if (allowAnon)
@@ -41,7 +42,7 @@ public class RequestAuthorizationMiddleware(RequestDelegate next,
         
         var token = context.Request.Headers["Authorization"]
             .FirstOrDefault()?
-            .Split(' ')
+            .Split(' ') 
             .Last();
 
         if (string.IsNullOrWhiteSpace(token))
