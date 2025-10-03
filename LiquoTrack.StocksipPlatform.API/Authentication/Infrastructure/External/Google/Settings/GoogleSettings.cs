@@ -1,4 +1,4 @@
-﻿namespace LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google
+﻿namespace LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google.Settings
 {
     /// <summary>
     /// This class is used to store the Google settings.

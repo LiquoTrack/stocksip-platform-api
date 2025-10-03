@@ -1,6 +1,4 @@
-using System.Threading.Tasks;
-
-namespace LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google;
+namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Authentication;
 
 public interface IGoogleTokenValidator
 {
