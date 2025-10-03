@@ -40,7 +40,7 @@ public class Account(
     /// </summary>
     public OwnerUserId UserId { get; private set; } = userId;
     
-    public required Subscription Subscription { get; set; }
+    public Subscription? Subscription { get; set; }
     
     /// <summary>
     ///     Factory method to create a new Account aggregate root from a CreateAccountCommand.
@@ -54,9 +54,9 @@ public class Account(
     /// <returns>
     ///     A new instance of the <see cref="Account"/> aggregate root.
     /// </returns>
-    public Account (CreateAccountCommand command, string businessId) : this(
-        businessId,
-        EAccountStatuses.Active,
+    public Account (CreateAccountCommand command) : this(
+        command.BusinessId,
+        EAccountStatuses.Inactive,
         Enum.Parse<EAccountRole>(command.AccountRole),
         new OwnerUserId(command.OwnerUserId)) {}
 

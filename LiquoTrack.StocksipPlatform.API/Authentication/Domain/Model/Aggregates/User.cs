@@ -1,7 +1,9 @@
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Entities;
+using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Aggregates;
 
@@ -18,18 +20,16 @@ public class User : Entity
     public Email Email { get; set; }
     public string Username{ get; set; }
     public string Password { get; set; }
-    public AccountId AccountId { get; set; }
-    public Role UserRole { get; set; }
-    public string UserRoleId { get; set; }
+    
+    [BsonRepresentation(BsonType.String)]
+    public EUserRoles UserRole { get; set; }
 
-    public User()
+    public User(Email email, string username, string hashedPassword)
     {
-        Email = new Email();
-        Username = string.Empty;
-        Password = string.Empty;
-        AccountId = AccountId.CreateNew(); // Create a new unique AccountId
-        UserRole = new Role();
-        UserRoleId = string.Empty;
+        Email = email;
+        Username = username;
+        Password = hashedPassword;
+        UserRole = EUserRoles.Normal;
     }
     /**
      * <summary>
@@ -79,8 +79,6 @@ public class User : Entity
     {
         if (string.IsNullOrWhiteSpace(newRoleId))
             throw new ArgumentException("RoleId cannot be empty.", nameof(newRoleId));
-
-        UserRoleId = newRoleId;
-        UserRole = new Role();
+        if (!Enum.TryParse<EUserRoles>(newRoleId, out var newRole));
     }
 }

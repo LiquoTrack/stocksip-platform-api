@@ -44,11 +44,5 @@ public interface IUserRepository : IBaseRepository<User>
     /// <param name="username">The username to check.</param>
     /// <returns>True if the user exists; otherwise, false.</returns>
     bool ExistsByUsername(string username);
-
-    /// <summary>
-    ///     Finds users by their account ID asynchronously
-    /// </summary>
-    /// <param name="accountId">The account ID to search for</param>
-    /// <returns>A task that represents the asynchronous operation. The task result contains a list of users.</returns>
-    Task<IEnumerable<User>> FindByAccountIdAsync(AccountId accountId);
+    
 }

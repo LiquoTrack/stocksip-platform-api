@@ -5,17 +5,23 @@ using System;
 
 namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Transform
 {
+    /// <summary>
+    ///     Static assembler class to convert SignInResource to SignInCommand. 
+    /// </summary>
     public static class SignInCommandFromResourceAssembler
     {
+        /// <summary>
+        ///     Method to convert SignInResource to SignInCommand.
+        /// </summary>
+        /// <param name="resource">
+        ///     The SignInResource to convert.
+        /// </param>
+        /// <returns>
+        ///     The SignInCommand.
+        /// </returns>
         public static SignInCommand ToCommandFromResource(SignInResource resource)
         {
-            if (resource == null)
-                throw new ArgumentNullException(nameof(resource));
-                
-            // Crear un nuevo objeto Email con el valor de cadena del correo
-            var email = new Email(resource.Email);
-            
-            return new SignInCommand(email, resource.Password);
+            return new SignInCommand(resource.Email, resource.Password);
         }
     }
 }

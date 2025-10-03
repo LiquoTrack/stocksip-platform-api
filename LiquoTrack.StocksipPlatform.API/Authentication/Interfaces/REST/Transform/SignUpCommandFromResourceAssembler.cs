@@ -4,17 +4,29 @@ using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 
 namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Transform
 {
+    /// <summary>
+    ///     Static assembler class to convert SignUpResource to SignUpCommand.  
+    /// </summary>
     public static class SignUpCommandFromResourceAssembler
     {
+        /// <summary>
+        ///     Method to convert SignUpResource to SignUpCommand. 
+        /// </summary>
+        /// <param name="resource">
+        ///     The SignUpResource to convert.
+        /// </param>
+        /// <returns>
+        ///     A new SignUpCommand.
+        /// </returns>
         public static SignUpCommand ToCommandFromResource(SignUpResource resource)
         {
-            if (resource == null) 
-                throw new System.ArgumentNullException(nameof(resource));
-                
-            // Crear un nuevo objeto Email a partir del string
-            var email = new Email(resource.Email);
-            
-            return new SignUpCommand(email, resource.Password, resource.Name);
+            return new SignUpCommand(
+                resource.Name,
+                resource.Email, 
+                resource.Password,
+                resource.BusinessName,
+                resource.Role
+                );
         }
     }
 }
