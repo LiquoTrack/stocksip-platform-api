@@ -2,13 +2,13 @@
 
 namespace LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Commands
 {
-    /**
-    * <summary>
-    *     The sign up command
-    * </summary>
-    * <remarks>
-    *     This command object includes the username and password to sign up
-    * </remarks>
-    */
-    public record SignUpCommand(string Email, string Password, string Name);
+    
+    /// <summary>
+    ///     Command for registering a new user in the system.
+    /// </summary>
+    public record SignUpCommand(string Name,
+                                string Email,
+                                string Password,
+                                string BusinessName,
+                                string Role);
 }

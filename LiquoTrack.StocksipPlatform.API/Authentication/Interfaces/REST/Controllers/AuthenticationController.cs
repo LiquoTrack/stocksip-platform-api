@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Net.Mime;
 using System.Security.Claims;
 using System.Text;
+using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Authentication;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Queries;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Services;
@@ -25,9 +26,11 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
     [SwaggerTag("Authentication endpoints")]
     [ApiExplorerSettings(GroupName = "v1")]
     public class AuthenticationController(
+        // Mover Services
         IExternalAuthService externalAuthService,
         IUserCommandService userCommandService,
         IUserQueryService userQueryService,
+        // Mover Configuration
         IConfiguration configuration,
         ILogger<AuthenticationController> logger
         ) : ControllerBase
@@ -35,7 +38,6 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
         private const int DefaultPageSize = 10;
         private const int MaxPageSize = 50;
         private const string GoogleAuthProvider = "Google";
-        private const int TokenExpirationInDays = 7;
 
         [HttpPost("auth/google")]
         [Microsoft.AspNetCore.Authorization.AllowAnonymous]
@@ -339,7 +341,6 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
                         Email = u.Email?.ToString() ?? string.Empty,
                         EmailVerified = true,
                         Provider = GoogleAuthProvider,
-                        GoogleSub = u.AccountId.ToString(),
                         CreatedAt = u.CreatedAt,
                         IsDisabled = false
                     })
@@ -563,10 +564,14 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
         }
 
         /// <summary>
-        /// Signs up a new user.
+        ///     Signs up a new user.
         /// </summary>
-        /// <param name="resource">The sign-up resource.</param>
-        /// <returns>The authentication response.</returns>
+        /// <param name="signUpResource">
+        ///     The sign-up resource.
+        /// </param>
+        /// <returns>
+        ///     The authentication response.
+        /// </returns>
         [HttpPost("sign-up")]
         [AllowAnonymous]
         [SwaggerOperation(
@@ -576,59 +581,11 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
         [SwaggerResponse(StatusCodes.Status200OK, "The user was created", typeof(AuthResponse))]
         [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request data")]
         [SwaggerResponse(StatusCodes.Status401Unauthorized, "The sign-up process has failed")]
-        public async Task<IActionResult> SignUp([FromBody] SignUpResource resource)
+        public async Task<IActionResult> SignUp([FromBody] SignUpResource signUpResource)
         {
-            if (resource == null)
-            {
-                logger.LogWarning("SignUp: Request body is null");
-                return BadRequest("Request body is required");
-            }
-
-            logger.LogInformation("SignUp: Attempting to register user with email: {Email}", resource.Email);
-            
-            try
-            {
-                var existingUser = await userQueryService.GetByEmailAsync(resource.Email);
-                if (existingUser != null)
-                {
-                    logger.LogWarning("SignUp failed: Email {Email} is already registered", resource.Email);
-                    return BadRequest("Email is already registered");
-                }
-
-                logger.LogDebug("Creating sign up command for email: {Email}", resource.Email);
-                var signUpCommand = SignUpCommandFromResourceAssembler.ToCommandFromResource(resource);
-                
-                logger.LogDebug("Processing sign up command");
-                var user = await userCommandService.Handle(signUpCommand);
-                
-                if (user == null)
-                {
-                    logger.LogWarning("Failed to create user with email: {Email}", resource.Email);
-                    return Unauthorized("Failed to create user");
-                }
-                
-                logger.LogInformation("User created successfully. Generating JWT token for user ID: {UserId}", user.Id);
-                var token = GenerateJwtToken(user);
-                
-                var response = AuthResponse.Create(
-                    token,
-                    user.Id,
-                    user.Email.ToString(),
-                    user.Username);
-                
-                logger.LogInformation("User registration completed successfully for email: {Email}", resource.Email);
-                return Ok(response);
-            }
-            catch (System.ArgumentException ex)
-            {
-                logger.LogWarning(ex, "Invalid argument when processing sign up for email: {Email}", resource?.Email);
-                return BadRequest(ex.Message);
-            }
-            catch (System.Exception ex)
-            {
-                logger.LogError(ex, "Error during sign up for user: {Email}", resource?.Email);
-                return Unauthorized(ex.Message);
-            }
+            var signUpCommand = SignUpCommandFromResourceAssembler.ToCommandFromResource(signUpResource);
+            await userCommandService.Handle(signUpCommand);
+            return Ok(new { message = "User created successfully" });
         }
     }
 }

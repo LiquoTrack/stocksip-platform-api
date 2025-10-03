@@ -11,7 +11,8 @@ public abstract class Entity
     /// <summary>
     ///     Id of the generic entity.
     /// </summary>
-    public ObjectId Id { get; } = ObjectId.GenerateNewId();
+    /// 
+    public ObjectId Id { get; set; } = ObjectId.GenerateNewId();
     
     /// <summary>
     ///     The date and time when the entity was created.

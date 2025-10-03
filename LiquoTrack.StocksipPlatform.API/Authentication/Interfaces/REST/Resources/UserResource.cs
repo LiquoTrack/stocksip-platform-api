@@ -3,5 +3,5 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Resourc
     /// <summary>
     ///     Record representing a user resource.
     /// </summary>
-    public record UserResource(string Id, string Username);
+    public record UserResource(string Id, string Username, string Email);
 }

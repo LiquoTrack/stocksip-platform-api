@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Authentication;
 using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Hashing;
 using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Token;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Aggregates;
@@ -7,7 +8,7 @@ using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Services;
-using LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.ACL;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Repositories;
 using RoleEntity = LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Entities.Role;
@@ -25,10 +26,10 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
         IUserRepository userRepository,
         IUnitOfWork unitOfWork,
         ITokenService tokenService,
-        IHashingService hashingService
-        ) : IUserCommandService
+        IHashingService hashingService,
+        IPaymentAndSubscriptionsFacade paymentAndSubscriptionsFacade
+    ) : IUserCommandService
     {
-
         /// <summary>
         /// Handles the creation of a new user.
         /// </summary>
@@ -46,13 +47,11 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
                 throw new InvalidOperationException($"Username {command.Username} is already taken");
 
             var hashedPassword = hashingService.HashPassword(command.Password);
-            var user = new User
-            {
-                Username = command.Username,
-                Email = command.Email,
-                Password = hashedPassword,
-                UserRole = new RoleEntity { Name = EUserRoles.Normal },
-            };
+            var user = new User(
+                new Email(command.Email.Value),
+                command.Username,
+                hashedPassword
+            );
 
             try
             {
@@ -75,7 +74,8 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
         /// <param name="accountId">The account ID of the user (optional).</param>
         /// <returns>The created or updated user entity.</returns>
         /// <exception cref="ArgumentException">Thrown when the email is null or whitespace.</exception>
-        public async Task<User> CreateOrUpdateFromExternalAsync(string providerUserId, string email, string? name = null, string? accountId = null)
+        public async Task<User> CreateOrUpdateFromExternalAsync(string providerUserId, string email,
+            string? name = null, string? accountId = null)
         {
             if (string.IsNullOrWhiteSpace(email))
                 throw new ArgumentException("Email cannot be empty", nameof(email));
@@ -90,13 +90,11 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
             var randomPassword = Convert.ToBase64String(RandomNumberGenerator.GetBytes(16));
             var hashedPassword = hashingService.HashPassword(randomPassword);
 
-            var user = new User
-            {
-                Username = !string.IsNullOrWhiteSpace(name) ? name : email.Split('@')[0],
-                Email = new Email(email),
-                Password = hashedPassword,
-                UserRole = new RoleEntity { Name = EUserRoles.Normal }
-            };
+            var user = new User(
+                new Email(email),
+                string.IsNullOrWhiteSpace(name) ? email.Split('@')[0] : name,
+                hashedPassword
+            );
 
             try
             {
@@ -123,7 +121,8 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
                 throw new Exception("Invalid username or password");
 
             var token = tokenService.GenerateToken(user);
-
+            
+            await unitOfWork.CompleteAsync();
             return (user, token);
         }
 
@@ -137,29 +136,41 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
             if (command == null)
                 throw new ArgumentNullException(nameof(command));
 
-            var existingUser = await userRepository.FindByEmailAsync(command.Email);
-            
-            if (existingUser != null)
-                throw new InvalidOperationException($"Email {command.Email} is already registered");
-
-            var hashedPassword = hashingService.HashPassword(command.Password);
-            var user = new User
-            {
-                Username = command.Name,
-                Email = new Email(command.Email),
-                Password = hashedPassword,
-                UserRole = new RoleEntity { Name = EUserRoles.Normal },
-            };
-
             try
             {
+                var existingUser = await userRepository.FindByEmailAsync(command.Email);
+                if (existingUser != null)
+                    throw new InvalidOperationException($"Email {command.Email} is already registered");
+
+                var hashedPassword = hashingService.HashPassword(command.Password);
+                var user = new User(
+                    new Email(command.Email),
+                    command.Name,
+                    hashedPassword
+                );
+
                 await userRepository.AddAsync(user);
                 await unitOfWork.CompleteAsync();
+
+                var business = await paymentAndSubscriptionsFacade.CreateBusiness(
+                    businessName: command.BusinessName
+                );
+                
+                if (business == null) throw new Exception("Business creation failed");
+
+                var account = await paymentAndSubscriptionsFacade.CreateAccount(
+                    ownerUserId: user.Id.ToString(),
+                    role: command.Role,
+                    businessId: business.Id.ToString()
+                );
+
+                if (account == null) throw new Exception("Account creation failed");
+
                 return user;
             }
             catch (Exception ex)
             {
-                throw new Exception($"An error occurred while creating user: {ex.Message}", ex);
+                throw new Exception($"SignUp failed: {ex.Message}", ex);
             }
         }
     }

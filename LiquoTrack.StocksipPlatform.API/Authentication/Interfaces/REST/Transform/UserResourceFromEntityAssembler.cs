@@ -19,7 +19,7 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Transfo
         /// </returns>
         public static UserResource ToResourceFromEntity(User entity)
         {
-            return new UserResource(entity.Id.ToString(), entity.Username);
+            return new UserResource(entity.Id.ToString(), entity.Username, entity.Email.Value);
         }
     }
 }
