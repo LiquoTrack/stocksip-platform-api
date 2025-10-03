@@ -3,14 +3,11 @@ using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Outbou
 using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Token;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Commands;
-using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Entities;
-using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Services;
-using LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.ACL;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Repositories;
-using RoleEntity = LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Entities.Role;
 
 namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.CommandServices
 {
@@ -21,25 +18,14 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
     /// This service is responsible for creating and updating user entities in the database.
     /// It also handles the creation of authentication tokens for the user.
     /// </remarks>
-    public class UserCommandService : IUserCommandService
+    public class UserCommandService(
+        IUserRepository userRepository,
+        IUnitOfWork unitOfWork,
+        ITokenService tokenService,
+        IHashingService hashingService,
+        IPaymentAndSubscriptionsFacade paymentAndSubscriptionsFacade
+    ) : IUserCommandService
     {
-        private readonly IUserRepository _userRepository;
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly ITokenService? _tokenService;
-        private readonly IHashingService _hashingService;
-
-        public UserCommandService(
-            IUserRepository userRepository,
-            IUnitOfWork unitOfWork,
-            IHashingService hashingService,
-            ITokenService? tokenService = null)
-        {
-            _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
-            _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
-            _hashingService = hashingService ?? throw new ArgumentNullException(nameof(hashingService));
-            _tokenService = tokenService;
-        }
-
         /// <summary>
         /// Handles the creation of a new user.
         /// </summary>
@@ -52,23 +38,22 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
             if (command == null)
                 throw new ArgumentNullException(nameof(command));
 
-            var existingUser = await _userRepository.FindByUsernameAsync(command.Username);
+            var existingUser = await userRepository.FindByUsernameAsync(command.Username);
             if (existingUser != null)
                 throw new InvalidOperationException($"Username {command.Username} is already taken");
 
-            var hashedPassword = _hashingService.HashPassword(command.Password);
-            var user = new User
-            {
-                Username = command.Username,
-                Email = command.Email,
-                Password = hashedPassword,
-                UserRole = new RoleEntity { Name = EUserRoles.Normal },
-            };
+            var hashedPassword = hashingService.HashPassword(command.Password);
+            var user = new User(
+                new Email(command.Email.Value),
+                command.Username,
+                hashedPassword,
+                "1234"
+            );
 
             try
             {
-                await _userRepository.AddAsync(user);
-                await _unitOfWork.CompleteAsync();
+                await userRepository.AddAsync(user);
+                await unitOfWork.CompleteAsync();
                 return user;
             }
             catch (Exception ex)
@@ -86,12 +71,13 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
         /// <param name="accountId">The account ID of the user (optional).</param>
         /// <returns>The created or updated user entity.</returns>
         /// <exception cref="ArgumentException">Thrown when the email is null or whitespace.</exception>
-        public async Task<User> CreateOrUpdateFromExternalAsync(string providerUserId, string email, string? name = null, string? accountId = null)
+        public async Task<User> CreateOrUpdateFromExternalAsync(string providerUserId, string email,
+            string? name = null, string? accountId = null)
         {
             if (string.IsNullOrWhiteSpace(email))
                 throw new ArgumentException("Email cannot be empty", nameof(email));
 
-            var existingUser = await _userRepository.FindByUsernameAsync(email);
+            var existingUser = await userRepository.FindByUsernameAsync(email);
 
             if (existingUser != null)
             {
@@ -99,20 +85,19 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
             }
 
             var randomPassword = Convert.ToBase64String(RandomNumberGenerator.GetBytes(16));
-            var hashedPassword = _hashingService.HashPassword(randomPassword);
+            var hashedPassword = hashingService.HashPassword(randomPassword);
 
-            var user = new User
-            {
-                Username = !string.IsNullOrWhiteSpace(name) ? name : email.Split('@')[0],
-                Email = new Email(email),
-                Password = hashedPassword,
-                UserRole = new RoleEntity { Name = EUserRoles.Normal }
-            };
+            var user = new User(
+                new Email(email),
+                string.IsNullOrWhiteSpace(name) ? email.Split('@')[0] : name,
+                hashedPassword,
+                "1234"
+            );
 
             try
             {
-                await _userRepository.AddAsync(user);
-                await _unitOfWork.CompleteAsync();
+                await userRepository.AddAsync(user);
+                await unitOfWork.CompleteAsync();
                 return user;
             }
             catch (Exception ex)
@@ -126,54 +111,62 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
         /// </summary>
         /// <param name="command">The sign in command</param>
         /// <returns>The user entity</returns>
-        public async Task<User?> Handle(SignInCommand command)
+        public async Task<(User user, string token)> Handle(SignInCommand command)
         {
-            if (command == null)
-                throw new ArgumentNullException(nameof(command));
+            var user = await userRepository.FindByEmailAsync(command.Email);
 
-            var user = await _userRepository.FindByEmailAsync(command.Email.GetValue);
-            if (user == null)
-                throw new InvalidOperationException($"User with email {command.Email.GetValue} not found");
+            if (user == null || !hashingService.VerifyPassword(command.Password, user.Password))
+                throw new Exception("Invalid username or password");
 
-            var isPasswordValid = _hashingService.VerifyPassword(command.Password, user.Password);
-            if (!isPasswordValid)
-                throw new InvalidOperationException("Invalid password");
-
-            return user;
+            var token = tokenService.GenerateToken(user);
+            
+            await unitOfWork.CompleteAsync();
+            return (user, token);
         }
 
         /// <summary>
-        ///     Handles the sign up command
+        ///     Handles the sign-up command
         /// </summary>
-        /// <param name="command">The sign up command</param>
+        /// <param name="command">The sign-up command</param>
         /// <returns>The user entity</returns>
         public async Task<User?> Handle(SignUpCommand command)
         {
             if (command == null)
                 throw new ArgumentNullException(nameof(command));
 
-            var existingUser = await _userRepository.FindByEmailAsync(command.Email.GetValue);
-            if (existingUser != null)
-                throw new InvalidOperationException($"Email {command.Email} is already registered");
-
-            var hashedPassword = _hashingService.HashPassword(command.Password);
-            var user = new User
-            {
-                Username = command.Name,
-                Email = command.Email,
-                Password = hashedPassword,
-                UserRole = new RoleEntity { Name = EUserRoles.Normal },
-            };
-
             try
             {
-                await _userRepository.AddAsync(user);
-                await _unitOfWork.CompleteAsync();
+                var business = await paymentAndSubscriptionsFacade.CreateBusiness(
+                    businessName: command.BusinessName
+                );
+                
+                if (business == null) throw new Exception("Business creation failed");
+
+                var account = await paymentAndSubscriptionsFacade.CreateAccount(
+                    role: command.Role,
+                    businessId: business.Id.ToString()
+                );
+
+                if (account == null) throw new Exception("Account creation failed");
+                
+                var existingUser = await userRepository.FindByEmailAsync(command.Email);
+                if (existingUser != null)
+                    throw new InvalidOperationException($"Email {command.Email} is already registered");
+
+                var hashedPassword = hashingService.HashPassword(command.Password);
+                var user = new User(
+                    new Email(command.Email),
+                    command.Name,
+                    hashedPassword,
+                    account.Id.ToString()
+                );
+                await userRepository.AddAsync(user);
+                await unitOfWork.CompleteAsync();
                 return user;
             }
             catch (Exception ex)
             {
-                throw new Exception($"An error occurred while creating user: {ex.Message}", ex);
+                throw new Exception($"SignUp failed: {ex.Message}", ex);
             }
         }
     }

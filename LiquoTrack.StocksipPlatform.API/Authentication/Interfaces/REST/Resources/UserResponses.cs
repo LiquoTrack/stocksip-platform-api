@@ -26,11 +26,6 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Resourc
         public string Provider { get; set; } = string.Empty;
 
         /// <summary>
-        /// The user's ID from the authentication provider (if available)
-        /// </summary>
-        public string? GoogleSub { get; set; }
-
-        /// <summary>
         /// When the user account was created
         /// </summary>
         public DateTime CreatedAt { get; set; }

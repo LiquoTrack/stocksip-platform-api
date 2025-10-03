@@ -1,7 +1,8 @@
-using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Entities;
+using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Aggregates;
 
@@ -15,21 +16,54 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Aggregates
  */
 public class User : Entity
 {
+    /// <summary>
+    ///     The user email.
+    /// </summary>
     public Email Email { get; set; }
+    
+    /// <summary>
+    ///     The user username.
+    /// </summary>
     public string Username{ get; set; }
+    
+    /// <summary>
+    ///     The user password.
+    /// </summary>
     public string Password { get; set; }
+    
+    /// <summary>
+    ///     The user role.
+    /// </summary>
+    [BsonRepresentation(BsonType.String)]
+    public EUserRoles UserRole { get; set; }
+    
+    /// <summary>
+    ///     The account id of the user is associated with.
+    /// </summary>
     public AccountId AccountId { get; set; }
-    public Role UserRole { get; set; }
-    public string UserRoleId { get; set; }
 
-    public User()
+    /// <summary>
+    ///     Default constructor to create a new user (Admin).
+    /// </summary>
+    /// <param name="email">
+    ///     The email.
+    /// </param>
+    /// <param name="username">
+    ///     The username.
+    /// </param>
+    /// <param name="hashedPassword">
+    ///     The hashed password. 
+    /// </param>
+    /// <param name="accountId">
+    ///     The account id of the user is associated with.
+    /// </param>
+    public User(Email email, string username, string hashedPassword, string accountId)
     {
-        Email = new Email();
-        Username = string.Empty;
-        Password = string.Empty;
-        AccountId = AccountId.CreateNew(); // Create a new unique AccountId
-        UserRole = new Role();
-        UserRoleId = string.Empty;
+        Email = email;
+        Username = username;
+        Password = hashedPassword;
+        AccountId = new AccountId(accountId);
+        UserRole = EUserRoles.Admin;
     }
     /**
      * <summary>
@@ -79,8 +113,6 @@ public class User : Entity
     {
         if (string.IsNullOrWhiteSpace(newRoleId))
             throw new ArgumentException("RoleId cannot be empty.", nameof(newRoleId));
-
-        UserRoleId = newRoleId;
-        UserRole = new Role();
+        if (!Enum.TryParse<EUserRoles>(newRoleId, out var newRole));
     }
 }

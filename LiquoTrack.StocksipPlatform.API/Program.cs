@@ -43,12 +43,20 @@ using System.Text.Json.Serialization;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.AspNetCore.Authentication;
 using System.Text.Json;
+
+using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Authentication;
+using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Pipeline.Middleware.Extensions;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.External.ACL;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.CommandServices;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
+
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.CommandServices;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.QueryServices;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Converters.JSON;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Persistence.MongoDB.Repositories;
+
 
 // Registers the value object mapping for all contexts
 GlobalMongoMappingHelper.RegisterAllBoundedContextMappings();
@@ -197,11 +205,15 @@ builder.Services.Configure<JsonOptions>(options =>
 // Bounded Context Payment and Subscriptions
 builder.Services.AddScoped<IPlanQueryService, PlanQueryService>();
 builder.Services.AddScoped<IAccountQueryService, AccountQueryService>();
+builder.Services.AddScoped<IAccountCommandService, AccountCommandService>();
+builder.Services.AddScoped<IBusinessCommandService, BusinessCommandService>();
 
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 builder.Services.AddScoped<IBusinessRepository, BusinessRepository>();
 builder.Services.AddScoped<IPlanRepository, PlanRepository>();
 builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
+
+builder.Services.AddScoped<IPaymentAndSubscriptionsFacade, PaymentAndSubscriptionsFacade>();
 
 builder.Services.Configure<JsonOptions>(options =>
 {
@@ -393,7 +405,7 @@ builder.Services.AddAuthentication(options =>
             }
         };
     });
-
+    
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
@@ -489,13 +501,17 @@ else
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
-app.UseRouting();
-
+// Apply CORS policy
 app.UseCors("AllowSpecificOrigins");
 
+app.UseHttpsRedirection();
+
+app.UseRouting();
+
 app.UseAuthentication();
-app.UseAuthorization();
+
+// Configure the Authentication HTTP request pipeline.
+app.UseRequestAuthorization();
 
 app.MapControllers();
 

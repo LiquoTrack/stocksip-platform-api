@@ -1,5 +1,4 @@
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Commands;
-using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Resources;
 
 namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Transform
