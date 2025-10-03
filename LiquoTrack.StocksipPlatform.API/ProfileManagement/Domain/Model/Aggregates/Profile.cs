@@ -2,8 +2,6 @@
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
 
 namespace LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Model.Aggregates;
 
