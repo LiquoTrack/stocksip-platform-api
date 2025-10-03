@@ -1,20 +1,21 @@
-using System.IdentityModel.Tokens.Jwt;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Mime;
 using System.Security.Claims;
-using System.Text;
+using System.Threading.Tasks;
 using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Authentication;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Aggregates;
-using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Queries;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google;
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google.Requests;
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google.Responses;
-using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Pipeline.Middleware.Attributes;
 using LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Resources;
 using LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Transform;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Logging;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Controllers
@@ -25,22 +26,39 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
     [Produces(MediaTypeNames.Application.Json)]
     [SwaggerTag("Authentication endpoints")]
     [ApiExplorerSettings(GroupName = "v1")]
-    public class AuthenticationController(
-        // Mover Services
-        IExternalAuthService externalAuthService,
-        IUserCommandService userCommandService,
-        IUserQueryService userQueryService,
-        // Mover Configuration
-        IConfiguration configuration,
-        ILogger<AuthenticationController> logger
-        ) : ControllerBase
+    public class AuthenticationController : ControllerBase
     {
         private const int DefaultPageSize = 10;
         private const int MaxPageSize = 50;
         private const string GoogleAuthProvider = "Google";
+        private const string LogPrefix = "[AuthenticationController]";
 
+        private readonly IGoogleAuthService _googleAuthService;
+        private readonly IUserCommandService _userCommandService;
+        private readonly IUserQueryService _userQueryService;
+        private readonly ILogger<AuthenticationController> _logger;
+
+        public AuthenticationController(
+            IGoogleAuthService googleAuthService,
+            IUserCommandService userCommandService,
+            IUserQueryService userQueryService,
+            ILogger<AuthenticationController> logger)
+        {
+            _googleAuthService = googleAuthService ?? throw new ArgumentNullException(nameof(googleAuthService));
+            _userCommandService = userCommandService ?? throw new ArgumentNullException(nameof(userCommandService));
+            _userQueryService = userQueryService ?? throw new ArgumentNullException(nameof(userQueryService));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
+
+        #region Google Authentication
+
+        /// <summary>
+        /// Authenticates a user using Google's OAuth 2.0 ID token
+        /// </summary>
+        /// <param name="request">Google authentication request containing ID token and client ID</param>
+        /// <returns>Authentication response with user details and JWT token</returns>
         [HttpPost("auth/google")]
-        [Microsoft.AspNetCore.Authorization.AllowAnonymous]
+        [AllowAnonymous]
         [SwaggerOperation(
             Summary = "Authenticate with Google",
             Description = "Authenticates a user using Google's OAuth 2.0 ID token"
@@ -52,540 +70,243 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
         [ProducesResponseType(StatusCodes.Status502BadGateway)]
         public async Task<IActionResult> AuthenticateWithGoogle([FromBody] GoogleAuthRequest request)
         {
-            logger.LogInformation("=== Starting Google Authentication ===");
-            logger.LogInformation($"Request received at: {DateTime.UtcNow:u}");
-
-            if (!ModelState.IsValid)
-            {
-                var errors = ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage));
-                logger.LogWarning("Invalid model state. Errors: {Errors}", string.Join(", ", errors));
-                return BadRequest(new
-                {
-                    error = "Invalid request data",
-                    details = errors
-                });
-            }
-
-            if (string.IsNullOrWhiteSpace(request?.IdToken))
-            {
-                logger.LogWarning("Empty or null ID token provided");
-                return BadRequest(new { error = "ID token is required" });
-            }
-
-            logger.LogInformation("Received Google ID token. Starting validation...");
-            logger.LogDebug($"Client ID from request: {request.ClientId}");
+            _logger.LogInformation($"{LogPrefix} Starting Google Authentication");
 
             try
             {
-                logger.LogInformation("Decoding token for debugging...");
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var jwtToken = tokenHandler.ReadJwtToken(request.IdToken);
-
-                logger.LogInformation("Token details:");
-                logger.LogInformation($"Issuer: {jwtToken.Issuer}");
-                logger.LogInformation($"Audience: {string.Join(", ", jwtToken.Audiences)}");
-                logger.LogInformation($"Valid From: {jwtToken.ValidFrom}");
-                logger.LogInformation($"Valid To: {jwtToken.ValidTo}");
-                logger.LogInformation("Claims:");
-                foreach (var claim in jwtToken.Claims)
+                if (!ModelState.IsValid)
                 {
-                    logger.LogInformation($"{claim.Type}: {claim.Value}");
+                    return HandleInvalidModelState();
                 }
 
-                var configuredClientId = configuration["Authentication:Google:ClientId"]
-                                     ?? configuration["Google:ClientId"];
+                _logger.LogDebug($"{LogPrefix} Validating Google token for client: {request.ClientId}");
+                var (user, token, error) = await _googleAuthService.AuthenticateWithGoogleAsync(request.IdToken, request.ClientId);
 
-                logger.LogInformation($"Configured Client ID: {configuredClientId}");
-                logger.LogInformation($"Request Client ID: {request.ClientId}");
-
-                if (string.IsNullOrEmpty(configuredClientId))
+                if (error != null || user == null || token == null)
                 {
-                    logger.LogError("Google ClientId is not configured in appsettings.json");
-                    return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Server configuration error" });
+                    _logger.LogWarning($"{LogPrefix} Google authentication failed: {error}");
+                    return Unauthorized(new { error = error ?? "Authentication failed" });
                 }
 
-                if (string.IsNullOrWhiteSpace(configuredClientId))
-                {
-                    const string errorMessage = "Google ClientId not configured";
-                    logger.LogError(errorMessage);
-                    return StatusCode(
-                        StatusCodes.Status500InternalServerError,
-                        new { error = "Server misconfiguration: Google ClientId missing" }
-                    );
-                }
-
-                logger.LogInformation("Validating Google ID token with external auth service...");
-                var validationResult = await externalAuthService.ValidateIdTokenAsync(request.IdToken);
-
-                if (!validationResult.Success)
-                {
-                    logger.LogWarning("Google token validation failed. Error: {Error}", validationResult.Error);
-                    logger.LogWarning("Validation result details: Success={Success}, Email={Email}, Name={Name}",
-                        validationResult.Success, validationResult.Email, validationResult.Name);
-
-                    return Unauthorized(new
-                    {
-                        error = "Authentication failed",
-                        details = validationResult.Error ?? "Unknown error during token validation"
-                    });
-                }
-
-                logger.LogInformation("Google token validation successful");
-                logger.LogInformation("User email from token: {Email}", validationResult.Email);
-                logger.LogInformation("User name from token: {Name}", validationResult.Name);
-
-                var user = await GetOrCreateUserAsync(validationResult);
-                if (user == null)
-                {
-                    return StatusCode(
-                        StatusCodes.Status500InternalServerError,
-                        new { error = "Failed to process user account" }
-                    );
-                }
-                var token = GenerateJwtToken(user);
-                logger.LogInformation("Authentication successful for user: {Email}", user.Email);
-
-                var response = new AuthResponse
-                {
-                    Token = token,
-                    UserId = user.Id.ToString(),
-                    Email = user.Email.ToString(),
-                    Username = user.Username,
-                };
-
-                return Ok(response);
-            }
-            catch (HttpRequestException httpEx)
-            {
-                logger.LogError(httpEx, "Network error while validating with Google");
-                return StatusCode(
-                    StatusCodes.Status502BadGateway,
-                    new
-                    {
-                        error = "Could not connect to Google authentication service",
-                        details = httpEx.Message
-                    }
-                );
-            }
-            catch (SecurityTokenException stEx)
-            {
-                logger.LogWarning(stEx, "Security token validation failed");
-                return Unauthorized(new
-                {
-                    error = "Invalid security token",
-                    details = stEx.Message
-                });
+                _logger.LogInformation($"{LogPrefix} Successfully authenticated user: {user.Email}");
+                return Ok(new { token, user });
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Unexpected error during authentication. Error: {ErrorMessage}", ex.Message);
-                logger.LogError("Stack Trace: {StackTrace}", ex.StackTrace);
-
-                if (ex.InnerException != null)
-                {
-                    logger.LogError("Inner Exception: {InnerException}", ex.InnerException.Message);
-                    logger.LogError("Inner Stack Trace: {InnerStackTrace}", ex.InnerException.StackTrace);
-                }
-
-                return StatusCode(
-                    StatusCodes.Status500InternalServerError,
-                    new
-                    {
-                        error = "An error occurred during authentication",
-                        details = ex.Message,
-                        stackTrace = ex.StackTrace,
-                        innerException = ex.InnerException?.Message
-                    }
-                );
+                _logger.LogError(ex, $"{LogPrefix} Error during Google authentication");
+                return HandleException(ex);
             }
         }
 
-        /// <summary>
-        /// Gets or creates a user from the external authentication result.
-        /// </summary>
-        /// <param name="validationResult">The external authentication result.</param>
-        /// <returns>The user.</returns>
-        private async Task<User?> GetOrCreateUserAsync(ExternalAuthResult validationResult)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(validationResult.ProviderUserId) || string.IsNullOrEmpty(validationResult.Email))
-                {
-                    logger.LogError("Invalid validation result - missing required fields");
-                    return null;
-                }
+        #endregion
 
-                var users = await userQueryService.GetUsersByEmailAsync(new GetUserByEmailQuery(validationResult.Email));
-                var user = users?.FirstOrDefault();
-
-                if (user == null)
-                {
-                    logger.LogInformation("Creating new user for external ID: {ExternalId}", validationResult.ProviderUserId);
-
-                    user = await userCommandService.CreateOrUpdateFromExternalAsync(
-                        validationResult.ProviderUserId,
-                        validationResult.Email,
-                        validationResult.Name);
-
-                    if (user == null)
-                    {
-                        logger.LogError("Failed to create user for external ID: {ExternalId}", validationResult.ProviderUserId);
-                        return null;
-                    }
-
-                    logger.LogInformation("Created new user with ID: {UserId}", user.Id);
-                }
-                else
-                {
-                    logger.LogDebug("Found existing user with ID: {UserId}", user.Id);
-                }
-
-                return user;
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error getting or creating user for external ID: {ExternalId}", validationResult.ProviderUserId);
-                throw;
-            }
-        }
+        #region User Management
 
         /// <summary>
-        /// Logs the token details.
-        /// </summary>
-        /// <param name="idToken">The ID token.</param>
-        private void LogTokenDetails(string idToken)
-        {
-            try
-            {
-                var handler = new JwtSecurityTokenHandler();
-                if (handler.CanReadToken(idToken))
-                {
-                    var jwt = handler.ReadJwtToken(idToken);
-                    var audFromToken = string.Join(",", jwt.Audiences);
-                    var iss = jwt.Issuer;
-                    var exp = jwt.ValidTo;
-
-                    logger.LogDebug("Token details - aud: {aud}, iss: {iss}, exp: {exp}",
-                        audFromToken, iss, exp);
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex, "Failed to parse token for logging");
-            }
-        }
-
-        /// <summary>
-        /// Gets a paginated list of users with minimal information
+        /// Gets a paginated list of users (Admin only)
         /// </summary>
         /// <param name="page">Page number (1-based)</param>
         /// <param name="pageSize">Number of items per page (max 50)</param>
-        /// <returns>Paginated list of users with metadata</returns>
-        [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         [HttpGet("users")]
         [SwaggerOperation(
-            Summary = "Get paginated list of users",
-            Description = "Retrieves a paginated list of users with minimal information. Requires Admin role.",
-            OperationId = "GetUsers"
+            Summary = "Get users",
+            Description = "Gets a paginated list of users (Admin only)"
         )]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(PaginatedResponse<UserListResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> GetUsers(
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = DefaultPageSize)
+        public async Task<IActionResult> GetUsers(int page = 1, int pageSize = DefaultPageSize)
         {
-            logger.LogInformation("=== INICIO DE SOLICITUD GET /api/v1/users ===");
-            logger.LogInformation("User: {User}", User?.Identity?.Name);
-            logger.LogInformation("IsAuthenticated: {IsAuthenticated}", User?.Identity?.IsAuthenticated);
-            logger.LogInformation("Claims:");
-            foreach (var claim in User?.Claims ?? Enumerable.Empty<System.Security.Claims.Claim>())
-            {
-                logger.LogInformation($"{claim.Type} = {claim.Value}");
-            }
-            logger.LogInformation("Fetching users - Page: {Page}, PageSize: {PageSize}", page, pageSize);
+            _logger.LogInformation($"{LogPrefix} Fetching users - Page: {page}, PageSize: {pageSize}");
+            LogUserClaims();
 
             try
             {
-                logger.LogInformation("Running in test mode - authentication bypassed");
-
-                // Validar parámetros de paginación
                 if (page < 1)
                 {
-                    logger.LogWarning("Número de página inválido: {Page}", page);
-                    return BadRequest(new
-                    {
-                        error = "Parámetro inválido",
-                        message = "El número de página debe ser mayor a 0.",
-                        details = new { parameter = "page", value = page }
-                    });
+                    _logger.LogWarning($"{LogPrefix} Invalid page number: {page}");
+                    return BadRequest("Page number must be greater than 0");
                 }
 
-                pageSize = Math.Min(Math.Max(1, pageSize), MaxPageSize);
+                pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
+                _logger.LogDebug($"{LogPrefix} Using page size: {pageSize}");
 
-                var users = await userQueryService.GetAllUsersAsync(HttpContext.RequestAborted);
+                var users = await _userQueryService.GetAllUsersAsync(HttpContext.RequestAborted);
                 var usersList = users?.ToList() ?? new List<User>();
-                var totalCount = usersList.Count;
-                var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
-                var paginatedUsers = usersList
-                    .OrderBy(u => u.Id)
-                    .Skip((page - 1) * pageSize)
-                    .Take(pageSize)
-                    .Select(u => new UserListResponse
-                    {
-                        Id = int.Parse(u.Id.ToString().Substring(0, 8), System.Globalization.NumberStyles.HexNumber),
-                        Email = u.Email?.ToString() ?? string.Empty,
-                        EmailVerified = true,
-                        Provider = GoogleAuthProvider,
-                        CreatedAt = u.CreatedAt,
-                        IsDisabled = false
-                    })
-                    .ToList();
-
-                var response = new PaginatedResponse<UserListResponse>
-                {
-                    Items = paginatedUsers,
-                    Page = page,
-                    PageSize = pageSize,
-                    TotalCount = totalCount,
-                    TotalPages = totalPages,
-                    HasNextPage = page < totalPages,
-                    HasPreviousPage = page > 1
-                };
-
-                logger.LogInformation("Se recuperaron exitosamente {Count} usuarios", paginatedUsers.Count);
-                return Ok(response);
-            }
-            catch (SecurityTokenExpiredException ex)
-            {
-                logger.LogWarning("Token expirado: {Message}", ex.Message);
-                return Unauthorized(new
-                {
-                    error = "Token expirado",
-                    message = "El token de autenticación ha expirado. Por favor, obtén un nuevo token e inténtalo de nuevo.",
-                    details = new
-                    {
-                        token_type = "Bearer",
-                        expected_issuer = "https://accounts.google.com",
-                        expected_audience = configuration["Authentication:Google:ClientId"],
-                        token_expired_at = ex.Expires != default ? ex.Expires.ToString("yyyy-MM-ddTHH:mm:ssZ") : "unknown"
-                    }
-                });
-            }
-            catch (SecurityTokenInvalidAudienceException ex)
-            {
-                logger.LogWarning("Audiencia de token inválida: {Message}", ex.Message);
-                return Unauthorized(new
-                {
-                    error = "Token inválido",
-                    message = "La audiencia del token no es válida para este recurso.",
-                    details = new
-                    {
-                        token_type = "Bearer",
-                        expected_audience = configuration["Authentication:Google:ClientId"],
-                        actual_audience = ex.InvalidAudience ?? "unknown"
-                    }
-                });
-            }
-            catch (SecurityTokenInvalidIssuerException ex)
-            {
-                logger.LogWarning("Emisor de token inválido: {Message}", ex.Message);
-                return Unauthorized(new
-                {
-                    error = "Token inválido",
-                    message = "El emisor del token no es válido.",
-                    details = new
-                    {
-                        token_type = "Bearer",
-                        expected_issuer = "https://accounts.google.com",
-                        actual_issuer = ex.InvalidIssuer ?? "unknown"
-                    }
-                });
-            }
-            catch (SecurityTokenException ex)
-            {
-                logger.LogWarning("Token de seguridad inválido: {Message}", ex.Message);
-                return Unauthorized(new
-                {
-                    error = "Token inválido",
-                    message = "El token de autenticación proporcionado no es válido.",
-                    details = new
-                    {
-                        token_type = "Bearer",
-                        required_scheme = JwtBearerDefaults.AuthenticationScheme,
-                        expected_token_format = "JWT",
-                        expected_issuer = "https://accounts.google.com",
-                        expected_audience = configuration["Authentication:Google:ClientId"],
-                        how_to_authenticate = new[]
-                        {
-                            "Obtén un token de Google usando OAuth 2.0",
-                            "Incluye el token en el encabezado: 'Authorization: Bearer <token>'"
-                        }
-                    }
-                });
+                var paginatedResponse = CreatePaginatedResponse(usersList, page, pageSize);
+                return Ok(paginatedResponse);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error retrieving users");
-                return StatusCode(
-                    StatusCodes.Status500InternalServerError,
-                    new { error = "An error occurred while retrieving users", details = ex.Message, stackTrace = ex.StackTrace }
-                );
+                _logger.LogError(ex, $"{LogPrefix} Error retrieving users");
+                return HandleException(ex);
             }
         }
 
-        /// <summary>
-        /// Generates a JWT token for the specified user.
-        /// </summary>
-        /// <param name="user">The user to generate the token for.</param>
-        /// <returns>A JWT token string.</returns>
-        private string GenerateJwtToken(User user)
-        {
-            try
-            {
-                logger.LogInformation("=== Starting JWT Token Generation ===");
-                logger.LogInformation($"User ID: {user.Id}");
-                logger.LogInformation($"User Email: {user.Email?.ToString() ?? "[No Email]"}");
+        #endregion
 
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var key = configuration["Jwt:Secret"];
-                if (string.IsNullOrEmpty(key))
-                {
-                    throw new InvalidOperationException("JWT Secret not configured");
-                }
-
-                var keyBytes = Encoding.UTF8.GetBytes(key);
-                var expiryMinutes = configuration.GetValue<int>("Jwt:ExpiryMinutes", 1440);
-                var clockSkewMinutes = configuration.GetValue<int>("Jwt:ClockSkew", 5);
-
-                logger.LogInformation("JWT Configuration:");
-                logger.LogInformation($"Issuer: {configuration["Jwt:Issuer"]}");
-                logger.LogInformation($"Audience: {configuration["Jwt:Audience"]}");
-                logger.LogInformation($"Expiry Minutes: {expiryMinutes}");
-                logger.LogInformation($"Clock Skew Minutes: {clockSkewMinutes}");
-
-                var email = user.Email?.ToString() ?? string.Empty;
-                if (email.StartsWith("Email { GetValue = ") && email.EndsWith(" }"))
-                {
-                    email = email["Email { GetValue = ".Length..^2].Trim();
-                }
-                var claims = new List<System.Security.Claims.Claim>();
-                
-                claims.Add(new System.Security.Claims.Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()));
-                claims.Add(new System.Security.Claims.Claim(JwtRegisteredClaimNames.Email, email));
-                claims.Add(new System.Security.Claims.Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()));
-                claims.Add(new System.Security.Claims.Claim(ClaimTypes.Name, email));
-                claims.Add(new System.Security.Claims.Claim(ClaimTypes.NameIdentifier, user.Id.ToString()));
-
-                string roleName = "User";
-                if (user.UserRole != null)
-                {
-                    var roleType = user.UserRole.GetType();
-                    var nameProperty = roleType.GetProperty("Name");
-                    if (nameProperty != null)
-                    {
-                        roleName = nameProperty.GetValue(user.UserRole)?.ToString() ?? "User";
-                    }
-                }
-                
-                claims.Add(new System.Security.Claims.Claim(ClaimTypes.Role, roleName));
-                claims.Add(new System.Security.Claims.Claim("role", roleName));
-
-                logger.LogInformation("JWT Claims:");
-                foreach (var claim in claims)
-                {
-                    logger.LogInformation($"{claim.Type} = {claim.Value}");
-                }
-
-                var tokenDescriptor = new SecurityTokenDescriptor
-                {
-                    Subject = new ClaimsIdentity(claims),
-                    Expires = DateTime.UtcNow.AddMinutes(expiryMinutes),
-                    Issuer = configuration["Jwt:Issuer"],
-                    Audience = configuration["Jwt:Audience"],
-                    SigningCredentials = new SigningCredentials(
-                        new SymmetricSecurityKey(keyBytes),
-                        SecurityAlgorithms.HmacSha256Signature)
-                };
-
-                logger.LogInformation($"JWT Token Descriptor - Issuer: {tokenDescriptor.Issuer}");
-                logger.LogInformation($"JWT Token Descriptor - Audience: {tokenDescriptor.Audience}");
-                logger.LogInformation($"JWT Token Expires: {tokenDescriptor.Expires}");
-                
-                var token = tokenHandler.CreateToken(tokenDescriptor);
-                var tokenString = tokenHandler.WriteToken(token);
-
-                logger.LogInformation("JWT Token generated successfully");
-                logger.LogDebug("Generated Token: {Token}", tokenString);
-                logger.LogInformation("Token will expire at: {Expiration}", token.ValidTo.ToUniversalTime().ToString("u"));
-
-                return tokenString;
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error generating JWT token for user {UserId}", user.Id);
-                throw new InvalidOperationException("Error generating authentication token", ex);
-            }
-        }
+        #region Authentication
 
         /// <summary>
-        /// Signs in a user.
+        /// Signs in a user with email and password
         /// </summary>
-        /// <param name="signInResource">The sign-in resource.</param>
-        /// <returns>The authentication response.</returns>
+        /// <param name="signInResource">User credentials</param>
         [HttpPost("sign-in")]
         [AllowAnonymous]
         [SwaggerOperation(
             Summary = "Sign in",
-            Description = "Sign in a user",
-            OperationId = "SignIn")]
-        [SwaggerResponse(StatusCodes.Status200OK, "The user was authenticated", typeof(AuthResponse))]
-        [SwaggerResponse(StatusCodes.Status401Unauthorized, "The sign-in process has failed", typeof(string))]
+            Description = "Sign in with email and password"
+        )]
+        [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> SignIn([FromBody] SignInResource signInResource)
         {
+            _logger.LogInformation($"{LogPrefix} Sign in attempt for user: {signInResource.Email}");
+
             try
             {
                 var signInCommand = SignInCommandFromResourceAssembler.ToCommandFromResource(signInResource);
-                var authenticatedUser  = await userCommandService.Handle(signInCommand);
+                var (user, token) = await _userCommandService.Handle(signInCommand);
 
-                var resource = 
-                    AuthenticatedUserResourceFromEntityAssembler.ToResourceFromEntity(authenticatedUser.user,
-                        authenticatedUser.token);
+                _logger.LogInformation($"{LogPrefix} Successful sign in for user: {user.Email}");
+                var resource = AuthenticatedUserResourceFromEntityAssembler.ToResourceFromEntity(user, token);
                 return Ok(resource);
             }
             catch (Exception ex)
             {
-                return Unauthorized(ex.Message);
+                _logger.LogError(ex, $"{LogPrefix} Sign in failed for user: {signInResource?.Email}");
+                return Unauthorized(new
+                {
+                    error = "Authentication failed",
+                    message = "Invalid email or password",
+                    requestId = HttpContext.TraceIdentifier
+                });
             }
         }
 
         /// <summary>
-        ///     Signs up a new user.
+        /// Registers a new user
         /// </summary>
-        /// <param name="signUpResource">
-        ///     The sign-up resource.
-        /// </param>
-        /// <returns>
-        ///     The authentication response.
-        /// </returns>
+        /// <param name="signUpResource">User registration details</param>
         [HttpPost("sign-up")]
         [AllowAnonymous]
         [SwaggerOperation(
             Summary = "Sign up",
-            Description = "Sign up a user",
-            OperationId = "SignUp")]
-        [SwaggerResponse(StatusCodes.Status200OK, "The user was created", typeof(AuthResponse))]
-        [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request data")]
-        [SwaggerResponse(StatusCodes.Status401Unauthorized, "The sign-up process has failed")]
+            Description = "Register a new user"
+        )]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> SignUp([FromBody] SignUpResource signUpResource)
         {
-            var signUpCommand = SignUpCommandFromResourceAssembler.ToCommandFromResource(signUpResource);
-            await userCommandService.Handle(signUpCommand);
-            return Ok(new { message = "User created successfully" });
+            _logger.LogInformation($"{LogPrefix} New user registration: {signUpResource.Email}");
+
+            try
+            {
+                var signUpCommand = SignUpCommandFromResourceAssembler.ToCommandFromResource(signUpResource);
+                var result = await _userCommandService.Handle(signUpCommand);
+
+                _logger.LogInformation($"{LogPrefix} User registered successfully: {signUpResource.Email}");
+                return Ok(new { message = "User created successfully", userId = result?.Id });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"{LogPrefix} Registration failed for user: {signUpResource.Email}");
+                return HandleException(ex);
+            }
         }
+
+        #endregion
+
+        #region Private Helpers
+
+        private void LogUserClaims()
+        {
+            if (User?.Identity?.IsAuthenticated == true)
+            {
+                _logger.LogInformation($"{LogPrefix} Authenticated user: {User.Identity.Name}");
+                _logger.LogDebug($"{LogPrefix} User claims: {string.Join(", ", User.Claims.Select(c => $"{c.Type}={c.Value}"))}");
+            }
+        }
+
+        private PaginatedResponse<UserListResponse> CreatePaginatedResponse(List<User> users, int page, int pageSize)
+        {
+            var totalCount = users.Count;
+            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+            var items = users
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(u => new UserListResponse
+                {
+                    Id = ParseUserId(u.Id.ToString()),
+                    Email = u.Email?.ToString() ?? string.Empty,
+                    EmailVerified = true,
+                    Provider = GoogleAuthProvider,
+                    // Add other properties as needed
+                })
+                .ToList();
+
+            return new PaginatedResponse<UserListResponse>
+            {
+                Items = items,
+                Page = page,
+                PageSize = items.Count,
+                TotalCount = totalCount,
+                TotalPages = totalPages
+            };
+        }
+
+        private static int ParseUserId(string id)
+        {
+            if (string.IsNullOrEmpty(id) || id.Length < 8)
+                return 0;
+
+            try
+            {
+                return int.Parse(id.Substring(0, 8),
+                    System.Globalization.NumberStyles.HexNumber);
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
+        private IActionResult HandleInvalidModelState()
+        {
+            var errors = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+
+            _logger.LogWarning($"{LogPrefix} Invalid model state. Errors: {string.Join(", ", errors)}");
+
+            return BadRequest(new
+            {
+                error = "Invalid request data",
+                details = errors
+            });
+        }
+
+        private IActionResult HandleException(Exception ex)
+        {
+            var errorId = Guid.NewGuid().ToString();
+            _logger.LogError(ex, $"{LogPrefix} Error ID: {errorId}");
+
+            return StatusCode(StatusCodes.Status500InternalServerError, new
+            {
+                error = "An unexpected error occurred",
+                errorId,
+                details = ex.Message
+            });
+        }
+
+        #endregion
     }
 }
