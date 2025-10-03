@@ -11,11 +11,7 @@
 /// <param name="AccountRole">
 ///     The role of the account.
 /// </param>
-/// <param name="OwnerUserId">
-///     The ID of the user who owns the account.
-/// </param>
 public record CreateAccountCommand(
         string BusinessId,
-        string AccountRole,
-        string OwnerUserId
+        string AccountRole
     );

@@ -1,4 +1,3 @@
-using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
@@ -17,19 +16,54 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Aggregates
  */
 public class User : Entity
 {
+    /// <summary>
+    ///     The user email.
+    /// </summary>
     public Email Email { get; set; }
+    
+    /// <summary>
+    ///     The user username.
+    /// </summary>
     public string Username{ get; set; }
+    
+    /// <summary>
+    ///     The user password.
+    /// </summary>
     public string Password { get; set; }
     
+    /// <summary>
+    ///     The user role.
+    /// </summary>
     [BsonRepresentation(BsonType.String)]
     public EUserRoles UserRole { get; set; }
+    
+    /// <summary>
+    ///     The account id of the user is associated with.
+    /// </summary>
+    public AccountId AccountId { get; set; }
 
-    public User(Email email, string username, string hashedPassword)
+    /// <summary>
+    ///     Default constructor to create a new user (Admin).
+    /// </summary>
+    /// <param name="email">
+    ///     The email.
+    /// </param>
+    /// <param name="username">
+    ///     The username.
+    /// </param>
+    /// <param name="hashedPassword">
+    ///     The hashed password. 
+    /// </param>
+    /// <param name="accountId">
+    ///     The account id of the user is associated with.
+    /// </param>
+    public User(Email email, string username, string hashedPassword, string accountId)
     {
         Email = email;
         Username = username;
         Password = hashedPassword;
-        UserRole = EUserRoles.Normal;
+        AccountId = new AccountId(accountId);
+        UserRole = EUserRoles.Admin;
     }
     /**
      * <summary>

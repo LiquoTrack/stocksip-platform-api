@@ -12,9 +12,6 @@ public interface IPaymentAndSubscriptionsFacade
     /// <summary>
     ///     Method to create a new account.
     /// </summary>
-    /// <param name="ownerUserId">
-    ///     The ID of the user who owns the account.
-    /// </param>
     /// <param name="role">
     ///     The 
     /// </param>
@@ -24,7 +21,7 @@ public interface IPaymentAndSubscriptionsFacade
     /// <returns>
     ///     An account object.
     /// </returns>
-    Task<Account?> CreateAccount(string ownerUserId, string role, string businessId);
+    Task<Account?> CreateAccount(string role, string businessId);
     
     /// <summary>
     ///     Method to create a new business.

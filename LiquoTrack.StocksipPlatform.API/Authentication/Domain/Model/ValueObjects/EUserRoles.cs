@@ -2,12 +2,10 @@
 
 
 /// <summary>
-/// Represents the various roles of a user.
+///     Represents the various roles of a user.
 /// </summary>
 public enum EUserRoles
 {
-    SuperAdmin,
     Admin,
-    AccountOwner,
-    Normal
+    Employee,
 }
