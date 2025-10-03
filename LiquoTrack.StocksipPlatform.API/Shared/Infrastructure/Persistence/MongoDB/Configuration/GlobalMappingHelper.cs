@@ -1,6 +1,7 @@
 ﻿using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Persistence.MongoDB.Configuration.ContextMapping;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Events;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.Persistence.MongoDB.Configuration.ContextMapping;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Persistence.MongoDB.Configuration.ContextMapping;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration.ContextMapping;
 
 namespace LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration;
@@ -43,6 +44,9 @@ public static class GlobalMongoMappingHelper
         // Alerts Bounded Context
         
         // Profiles Bounded Context
+        Console.WriteLine("Registering Profile Management Mappings...");
+        ProfileManagementMappingHelper.RegisterProfileManagementMappings();
+        Console.WriteLine("Profile Management Mappings Registered!");
         
         _initialized = true;
     }

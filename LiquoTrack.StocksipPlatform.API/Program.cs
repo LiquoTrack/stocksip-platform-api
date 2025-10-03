@@ -55,12 +55,12 @@ using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Comman
 using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Services;
 using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Authentication;
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google;
-//using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.CommandServices;
-//using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.QueryServices;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.CommandServices;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.QueryServices;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Services;
-//using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Converters.JSON;
-//using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Persistence.MongoDB.Repositories;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Converters.JSON;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Persistence.MongoDB.Repositories;
 
 
 GlobalMongoMappingHelper.RegisterAllBoundedContextMappings();
@@ -225,15 +225,17 @@ builder.Services.Configure<JsonOptions>(options =>
 // Bounded Context Order Management
 
 // Bounded Context Profile Management
-//builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
-//builder.Services.AddScoped<IProfileQueryService, ProfileQueryService>();
-//builder.Services.AddScoped<IProfileCommandService, ProfileCommandService>();
 
-//builder.Services.Configure<JsonOptions>(options =>
-//{
-//    options.JsonSerializerOptions.Converters.Add(new PersonContactNumberJsonConverter());
-//    options.JsonSerializerOptions.Converters.Add(new PersonNameJsonConverter());
-//});
+builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
+builder.Services.AddScoped<IProfileQueryService, ProfileQueryService>();
+builder.Services.AddScoped<IProfileCommandService, ProfileCommandService>();
+
+builder.Services.Configure<JsonOptions>(options =>
+{
+    options.JsonSerializerOptions.Converters.Add(new PersonContactNumberJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new PersonNameJsonConverter());
+});
+
 
 // Bounded Context IAM
 
