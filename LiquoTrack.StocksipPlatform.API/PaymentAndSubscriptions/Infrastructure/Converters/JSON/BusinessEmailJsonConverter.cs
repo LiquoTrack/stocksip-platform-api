@@ -12,7 +12,7 @@ public class BusinessEmailJsonConverter : JsonConverter<BusinessEmail>
     public override BusinessEmail? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         var value = reader.GetString();
-        return new BusinessEmail(value!);
+        return new BusinessEmail(value ?? throw new InvalidOperationException());
     }
 
     public override void Write(Utf8JsonWriter writer, BusinessEmail value, JsonSerializerOptions options)
