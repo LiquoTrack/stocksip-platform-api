@@ -12,7 +12,7 @@ public class RucJsonConverter : JsonConverter<Ruc>
     public override Ruc? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         var value = reader.GetString();
-        return new Ruc(value!);
+        return new Ruc(value ?? throw new InvalidOperationException());
     }
 
     public override void Write(Utf8JsonWriter writer, Ruc value, JsonSerializerOptions options)

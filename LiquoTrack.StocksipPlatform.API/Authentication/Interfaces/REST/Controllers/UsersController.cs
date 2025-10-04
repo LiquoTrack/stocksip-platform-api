@@ -17,7 +17,7 @@ public class UsersController(IUserQueryService userQueryService) : ControllerBas
 {
     /**
      * <summary>
-     *     Get user by id endpoint. It allows to get a user by id
+     *     Get user by id endpoint. It allows getting a user by id
      * </summary>
      * <param name="id">The user id</param>
      * <returns>The user resource</returns>
@@ -32,7 +32,8 @@ public class UsersController(IUserQueryService userQueryService) : ControllerBas
     {
         var getUserByIdQuery = new GetUserByIdQuery(id);
         var user = await userQueryService.Handle(getUserByIdQuery);
-        var userResource = UserResourceFromEntityAssembler.ToResourceFromEntity(user!);
+        if (user == null) return NotFound($"User with {id} not found");
+        var userResource = UserResourceFromEntityAssembler.ToResourceFromEntity(user);
         return Ok(userResource);
     }
 }
