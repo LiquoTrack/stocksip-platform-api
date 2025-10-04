@@ -1,3 +1,10 @@
+using LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Application.ACL;
+using LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Application.Internal.CommandServices;
+using LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Application.Internal.QueryServices;
+using LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Domain.Repositories;
+using LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Domain.Services;
+using LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Infrastructure.Persistence.EFC.Repositories;
+using LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Interfaces.ACL;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Converters.JSON;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Interfaces.ASP.Configuration.Namings;
@@ -68,6 +75,7 @@ builder.Services.AddSingleton<AppDbContext>();
 
 // Bounded Context Shared
 builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
+builder.Services.AddScoped<IUnitOfWork, LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Repositories.UnitOfWork>();
 
 builder.Services.Configure<JsonOptions>(options =>
 {
@@ -82,6 +90,12 @@ builder.Services.Configure<JsonOptions>(options =>
     options.JsonSerializerOptions.Converters.Add(new MoneyJsonConverter());
 });
 
+// Bounded Context Alerts and Notifications
+builder.Services.AddScoped<IAlertRepository,AlertRepository>();
+builder.Services.AddScoped<IAlertCommandService,AlertCommandService>();
+builder.Services.AddScoped<IAlertQueryService,AlertQueryService>();
+builder.Services.AddScoped<IAlertsAndNotificationsContextFacade, AlertsAndNotificationsContextFacade>();
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
@@ -91,8 +105,12 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
-    app.UseSwaggerUI();
+    app.UseSwagger();
+    app.UseSwaggerUI(c => 
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "StockSip Platform API V1");
+        c.RoutePrefix = string.Empty; 
+    });
 }
 
 // Apply CORS Policy
