@@ -31,7 +31,6 @@ public class BaseRepository<T>(AppDbContext context) : IBaseRepository<T> where 
         entity.UpdatedAt = DateTime.UtcNow;
         await _collection.InsertOneAsync(entity);
     }
-
     /// <summary>
     ///     Finds an entity by its id
     /// </summary>
@@ -39,7 +38,8 @@ public class BaseRepository<T>(AppDbContext context) : IBaseRepository<T> where 
     /// <returns>Entity object if found</returns>
     public async Task<T?> FindByIdAsync(string id)
     {
-        var objectId = ObjectId.Parse(id);
+        if (!ObjectId.TryParse(id, out var objectId))
+            return null;
         return await _collection.Find(x => x.Id == objectId).FirstOrDefaultAsync();
     }
 
@@ -54,9 +54,21 @@ public class BaseRepository<T>(AppDbContext context) : IBaseRepository<T> where 
     /// </param>
     public async Task UpdateAsync(string id, T entity)
     {
-        var objectId = ObjectId.Parse(id);
+        if (!ObjectId.TryParse(id, out var objectId))
+            throw new ArgumentException("Invalid id format. Expected a Mongo ObjectId (24 hex chars).", nameof(id));
         if (entity is Entity baseEntity) baseEntity.UpdatedAt = DateTime.UtcNow;
         await _collection.ReplaceOneAsync(x => x.Id == objectId, entity);
+    }
+
+    /// <summary>
+    ///     Updates the entity using its own Mongo _id contained in the entity.
+    /// </summary>
+    /// <param name="entity">The entity to update.</param>
+    public async Task UpdateAsync(T entity)
+    {
+        if (entity is null) throw new ArgumentNullException(nameof(entity));
+        if (entity is Entity baseEntity) baseEntity.UpdatedAt = DateTime.UtcNow;
+        await _collection.ReplaceOneAsync(x => x.Id == entity.Id, entity);
     }
 
     /// <summary>
@@ -65,7 +77,8 @@ public class BaseRepository<T>(AppDbContext context) : IBaseRepository<T> where 
     /// <param name="id">The identifier of the entity to remove</param>
     public async Task DeleteAsync(string id)
     {
-        var objectId = ObjectId.Parse(id);
+        if (!ObjectId.TryParse(id, out var objectId))
+            throw new ArgumentException("Invalid id format. Expected a Mongo ObjectId (24 hex chars).", nameof(id));
         await _collection.DeleteOneAsync(x => x.Id == objectId);
     }
 
