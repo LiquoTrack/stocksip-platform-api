@@ -1,4 +1,4 @@
-﻿using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Entities;
+using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Entities;
 
 namespace LiquoTrack.StocksipPlatform.API.Shared.Domain.Repositories;
 
@@ -30,6 +30,13 @@ public interface IBaseRepository<TEntity> where TEntity : Entity
     /// <param name="id">The identifier of the entity object to update</param>
     /// <param name="entity">The entity objects to replace the existing one</param>
     Task UpdateAsync(string id, TEntity entity);
+    
+    /// <summary>
+    ///     Updates the entity by its Mongo _id contained in the entity itself.
+    ///     This avoids passing string ids and eliminates ObjectId parsing issues.
+    /// </summary>
+    /// <param name="entity">The entity object to replace the existing one</param>
+    Task UpdateAsync(TEntity entity);
     
     /// <summary>
     ///     Removes the entity

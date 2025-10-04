@@ -236,6 +236,46 @@ builder.Services.Configure<JsonOptions>(options =>
     options.JsonSerializerOptions.Converters.Add(new PersonNameJsonConverter());
 });
 
+//Bounded Context Care Guides
+builder.Services.AddScoped<ICareGuideRepository, CareGuideRepository>();
+builder.Services.AddScoped<ICareGuideQueryService, CareGuideQueryService>();
+builder.Services.AddScoped<ICareGuideCommandService, CareGuideCommandService>();
+
+// Add service for MongoDB client
+builder.Services.AddSingleton<AppDbContext>();
+
+// Bounded Context Shared
+builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
+builder.Services.AddScoped<DatabaseSeeder>();
+
+// Authentication Bounded Context
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+// JWT Configuration
+builder.Services.Configure<LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Tokens.JWT.Configuration.TokenSettings>(
+    builder.Configuration.GetSection("Jwt"));
+
+// Register Token Service
+builder.Services.AddScoped<ITokenService, TokenService>();
+
+// Register Hashing Service
+builder.Services.AddScoped<IHashingService, HashingService>();
+
+// Register Unit of Work
+builder.Services.AddScoped<IUnitOfWork, MongoUnitOfWork>();
+
+// Register token validator and authentication services
+builder.Services.AddSingleton<CustomGoogleTokenValidator>();
+builder.Services.AddScoped<ISecurityTokenValidator>(sp => sp.GetRequiredService<CustomGoogleTokenValidator>());
+builder.Services.AddScoped<IGoogleTokenValidator, CustomGoogleTokenValidatorAdapter>();
+// Using fully qualified name to resolve ambiguity
+builder.Services.AddScoped<IExternalAuthService,
+    LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google.GoogleAuthService>();
+
+// Register user services
+builder.Services.AddScoped<IUserCommandService, UserCommandService>();
+builder.Services.AddScoped<IUserQueryService, UserQueryService>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 // Bounded Context IAM
 
