@@ -4,6 +4,23 @@ using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Converters.JSON;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Persistence.MongoDB.Repositories;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.QueryServices;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Repositories;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Services;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.Converters.JSON;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.Persistence.MongoDB.Repositories;
+using System.Security.Claims;
+using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.CommandServices;
+using LiquoTrack.StocksipPlatform.API.Security.TokenValidators;
+using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Hashing;
+using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Token;
+using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.QueryServices;
+using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Repositories;
+using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Services;
+using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google;
+using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Hashing.BCrypt.Services;
+using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Persistence.Repositories;
+using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Tokens.JWT.Services;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Converters.JSON;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Interfaces.ASP.Configuration.Namings;
@@ -11,17 +28,54 @@ using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration.Namings;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Repositories;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Seeding;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MongoDB.Driver;
+using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
+using System.Reflection;
+using System.Text;
+using System.Text.Json.Serialization;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.AspNetCore.Authentication;
+using System.Text.Json;
 
-// Registers the value object mapping for all contexts
+using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Authentication;
+using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Pipeline.Middleware.Extensions;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.External.ACL;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.CommandServices;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
+
+using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Services;
+using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.CommandHandlers;
+using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Services;
+using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Authentication;
+using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.CommandServices;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.QueryServices;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Repositories;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Services;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Converters.JSON;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Persistence.MongoDB.Repositories;
+
+
 GlobalMongoMappingHelper.RegisterAllBoundedContextMappings();
 
 // Create a builder for the web application
 var builder = WebApplication.CreateBuilder(args);
 
-// Add relevant things about endpoints, controllers, and swagger
+// Add logger
+var logger = LoggerFactory.Create(config =>
+{
+    config.AddConsole();
+    config.AddDebug();
+}).CreateLogger<Program>();
+
+// Add services to the container
 builder.Services.AddRouting(o => o.LowercaseUrls = true);
 builder.Services.AddControllers(o => o.Conventions.Add(new KebabCaseRouteNamingConvention()));
 builder.Services.AddEndpointsApiExplorer();
@@ -30,44 +84,69 @@ builder.Services.AddHttpContextAccessor();
 // Register MongoDB conventions for camel case naming
 CamelCaseFieldNamingConvention.UseCamelCaseNamingConvention();
 
-// Add Cors policy to allow all origins, methods, and headers
-builder.Services.AddCors(o =>
+// Add CORS policy
+builder.Services.AddCors(options =>
 {
-    o.AddPolicy("AllowAllPolicy", p =>
-        p.AllowAnyOrigin()
-            .AllowAnyMethod()
-            .AllowAnyHeader());
+    options.AddPolicy("AllowSpecificOrigins",
+        builder =>
+        {
+            builder.WithOrigins(
+                    "https://localhost:7164",
+                    "http://localhost:5283",
+                    "https://localhost:44355"
+                )
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .AllowCredentials();
+        });
 });
 
-// Configure Swagger/OpenAPI
-builder.Services.AddSwaggerGen(o =>
-{
-    o.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title       = "LiquoTrack.StocksipPlatform.API",
-        Version     = "v1",
-        Description = "StockSip Platform API",
-        TermsOfService = new Uri("https://stocksip.com/tos"),
-        Contact = new OpenApiContact { Name = "StockSip", Email = "contact@stocksip.com" },
-        License = new OpenApiLicense
-        {
-            Name = "Apache 2.0",
-            Url  = new Uri("https://www.apache.org/licenses/LICENSE-2.0.html")
-        }
-    });
-    
-    // Enable Annotations for Swagger
-    o.EnableAnnotations();
-});
 
 // Dependency Injection
+
+// Register Google Auth Services with fully qualified names
+builder.Services.AddScoped<LiquoTrack.StocksipPlatform.API.Authentication.Domain.Services.IGoogleAuthService, 
+    LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Services.GoogleAuthService>();
+
+// Register Google SignIn Command Handler and its dependencies
+builder.Services.AddScoped<GoogleSignInCommandHandler>();
+
+// Register External Auth Service (Google) with fully qualified name
+builder.Services.AddScoped<IExternalAuthService, 
+    LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google.GoogleAuthService>();
+
+// Register the custom token validator first
+builder.Services.AddSingleton<ISecurityTokenValidator, CustomGoogleTokenValidator>();
+
+// Register Google Token Validator with configuration
+builder.Services.AddScoped<IGoogleTokenValidator>(sp => 
+    new CustomGoogleTokenValidatorAdapter(
+        sp.GetRequiredService<ISecurityTokenValidator>(),
+        sp.GetRequiredService<ILogger<CustomGoogleTokenValidatorAdapter>>(),
+        sp.GetRequiredService<IConfiguration>()));
+
 
 // Registers the MongoDB client as a singleton service
 builder.Services.AddSingleton<IMongoClient>(sp =>
 {
-    var config = sp.GetRequiredService<IConfiguration>();
-    var connectionString = config["MongoDB:ConnectionString"];
-    return new MongoClient(connectionString);
+    var cs = builder.Configuration["MongoDB:ConnectionString"];
+    if (string.IsNullOrEmpty(cs))
+    {
+        throw new InvalidOperationException("MongoDB connection string is not configured");
+    }
+    return new MongoClient(cs);
+});
+
+// Register IMongoDatabase
+builder.Services.AddScoped<IMongoDatabase>(sp =>
+{
+    var client = sp.GetRequiredService<IMongoClient>();
+    var dbName = builder.Configuration["MongoDB:DatabaseName"];
+    if (string.IsNullOrEmpty(dbName))
+    {
+        throw new InvalidOperationException("MongoDB database name is not configured");
+    }
+    return client.GetDatabase(dbName);
 });
 
 // Add service for MongoDB client
@@ -76,6 +155,35 @@ builder.Services.AddSingleton<AppDbContext>();
 // Bounded Context Shared
 builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 builder.Services.AddScoped<DatabaseSeeder>();
+
+// Authentication Bounded Context
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+// JWT Configuration
+builder.Services.Configure<LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Tokens.JWT.Configuration.TokenSettings>(
+    builder.Configuration.GetSection("Jwt"));
+
+// Register Token Service
+builder.Services.AddScoped<ITokenService, TokenService>();
+
+// Register Hashing Service
+builder.Services.AddScoped<IHashingService, HashingService>();
+
+// Register Unit of Work
+builder.Services.AddScoped<IUnitOfWork, MongoUnitOfWork>();
+
+// Register token validator and authentication services
+builder.Services.AddSingleton<CustomGoogleTokenValidator>();
+builder.Services.AddScoped<ISecurityTokenValidator>(sp => sp.GetRequiredService<CustomGoogleTokenValidator>());
+builder.Services.AddScoped<IGoogleTokenValidator, CustomGoogleTokenValidatorAdapter>();
+// Using fully qualified name to resolve ambiguity
+builder.Services.AddScoped<IExternalAuthService, 
+    LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google.GoogleAuthService>();
+
+// Register user services
+builder.Services.AddScoped<IUserCommandService, UserCommandService>();
+builder.Services.AddScoped<IUserQueryService, UserQueryService>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 builder.Services.Configure<JsonOptions>(options =>
 {
@@ -118,12 +226,341 @@ builder.Services.Configure<JsonOptions>(options =>
 
 // Bounded Context Profile Management
 
+builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
+builder.Services.AddScoped<IProfileQueryService, ProfileQueryService>();
+builder.Services.AddScoped<IProfileCommandService, ProfileCommandService>();
+
+builder.Services.Configure<JsonOptions>(options =>
+{
+    options.JsonSerializerOptions.Converters.Add(new PersonContactNumberJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new PersonNameJsonConverter());
+});
+
+//Bounded Context Care Guides
+builder.Services.AddScoped<ICareGuideRepository, CareGuideRepository>();
+builder.Services.AddScoped<ICareGuideQueryService, CareGuideQueryService>();
+builder.Services.AddScoped<ICareGuideCommandService, CareGuideCommandService>();
+
+// Add service for MongoDB client
+builder.Services.AddSingleton<AppDbContext>();
+
+// Bounded Context Shared
+builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
+builder.Services.AddScoped<DatabaseSeeder>();
+
+// Authentication Bounded Context
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+// JWT Configuration
+builder.Services.Configure<LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Tokens.JWT.Configuration.TokenSettings>(
+    builder.Configuration.GetSection("Jwt"));
+
+// Register Token Service
+builder.Services.AddScoped<ITokenService, TokenService>();
+
+// Register Hashing Service
+builder.Services.AddScoped<IHashingService, HashingService>();
+
+// Register Unit of Work
+builder.Services.AddScoped<IUnitOfWork, MongoUnitOfWork>();
+
+// Register token validator and authentication services
+builder.Services.AddSingleton<CustomGoogleTokenValidator>();
+builder.Services.AddScoped<ISecurityTokenValidator>(sp => sp.GetRequiredService<CustomGoogleTokenValidator>());
+builder.Services.AddScoped<IGoogleTokenValidator, CustomGoogleTokenValidatorAdapter>();
+// Using fully qualified name to resolve ambiguity
+builder.Services.AddScoped<IExternalAuthService,
+    LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google.GoogleAuthService>();
+
+// Register user services
+builder.Services.AddScoped<IUserCommandService, UserCommandService>();
+builder.Services.AddScoped<IUserQueryService, UserQueryService>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+
 // Bounded Context IAM
 
 // Bounded Context Payment and Subscriptions
+builder.Services.AddScoped<IPlanQueryService, PlanQueryService>();
+builder.Services.AddScoped<IAccountQueryService, AccountQueryService>();
+builder.Services.AddScoped<IAccountCommandService, AccountCommandService>();
+builder.Services.AddScoped<IBusinessCommandService, BusinessCommandService>();
+
+builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+builder.Services.AddScoped<IBusinessRepository, BusinessRepository>();
+builder.Services.AddScoped<IPlanRepository, PlanRepository>();
+builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
+
+builder.Services.AddScoped<IPaymentAndSubscriptionsFacade, PaymentAndSubscriptionsFacade>();
+
+builder.Services.Configure<JsonOptions>(options =>
+{
+    options.JsonSerializerOptions.Converters.Add(new BusinessEmailJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new BusinessNameJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new EAccountRoleJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new EAccountStatusesJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new EPaymentFrequencyJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new EPlanTypeJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new ESubscriptionStatusJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new PlanLimitsJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new RucJsonConverter());
+});
+
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+
+// Google credentials from settings
+var googleAuthSection = builder.Configuration.GetSection("Authentication:Google");
+var googleClientId = googleAuthSection["ClientId"] ?? 
+    throw new InvalidOperationException("Google ClientId no está configurado en appsettings.json");
+var googleClientSecret = googleAuthSection["ClientSecret"] ?? 
+    throw new InvalidOperationException("Google ClientSecret no está configurado en appsettings.json");
+
+// Configure authentication
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.SaveToken = true;
+        options.IncludeErrorDetails = true;
+        options.RequireHttpsMetadata = false; // For development only
+
+        var jwtSettings = builder.Configuration.GetSection("Jwt");
+                // JWT configuration
+                var key = Encoding.ASCII.GetBytes(jwtSettings["Secret"] ?? 
+                    throw new InvalidOperationException("JWT Secret no está configurado"));
+
+                // Get JWT settings from configuration
+                var validateIssuer = jwtSettings.GetValue<bool>("ValidateIssuer");
+                var validateAudience = jwtSettings.GetValue<bool>("ValidateAudience");
+                var validateLifetime = jwtSettings.GetValue<bool>("ValidateLifetime");
+                var validateIssuerSigningKey = jwtSettings.GetValue<bool>("ValidateIssuerSigningKey");
+                var requireExpirationTime = jwtSettings.GetValue<bool>("RequireExpirationTime", true);
+                var clockSkew = TimeSpan.FromMinutes(jwtSettings.GetValue<int>("ClockSkew", 30));
+                
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    // Validate issuer
+                    ValidateIssuer = validateIssuer,
+                    ValidIssuers = new[] { jwtSettings["Issuer"], "https://accounts.google.com" },
+                    
+                    // Validate audience
+                    ValidateAudience = validateAudience,
+                    ValidAudiences = new[] { jwtSettings["Audience"], jwtSettings["ClientId"] },
+                    
+                    // Validate token lifetime
+                    ValidateLifetime = validateLifetime,
+                    ClockSkew = clockSkew,
+                    
+                    // Configure issuer signing key
+                    ValidateIssuerSigningKey = validateIssuerSigningKey,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    
+                    // Other settings
+                    RequireExpirationTime = requireExpirationTime,
+                    RequireSignedTokens = jwtSettings.GetValue<bool>("RequireSignedTokens", false),
+                    
+                    // Configuración de claims
+                    NameClaimType = ClaimTypes.Name,
+                    RoleClaimType = ClaimTypes.Role
+                };
+                
+                // Log the JWT validation parameters for debugging
+                logger.LogInformation("JWT Validation Parameters:");
+                logger.LogInformation($"- ValidateIssuer: {validateIssuer}");
+                logger.LogInformation($"- ValidateAudience: {validateAudience}");
+                logger.LogInformation($"- ValidateLifetime: {validateLifetime}");
+                logger.LogInformation($"- ValidateIssuerSigningKey: {validateIssuerSigningKey}");
+                logger.LogInformation($"- ClockSkew: {clockSkew}");   
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Headers.Authorization.ToString();
+                if (!string.IsNullOrEmpty(accessToken) && accessToken.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                {
+                    context.Token = accessToken.Substring("Bearer ".Length).Trim();
+                }
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                var identity = context.Principal?.Identity as ClaimsIdentity;
+                
+                logger.LogInformation("=== TOKEN VALIDADO ===");
+                logger.LogInformation("Usuario autenticado: {User}", context.Principal?.Identity?.Name);
+                logger.LogInformation("Autenticado: {IsAuthenticated}", context.Principal?.Identity?.IsAuthenticated);
+                
+                logger.LogInformation("=== CLAIMS DEL TOKEN ===");
+                foreach (var claim in context.Principal.Claims)
+                {
+                    logger.LogInformation("Claim - Tipo: {Type}, Valor: {Value}", claim.Type, claim.Value);
+                    
+                    if (claim.Type == "role" || claim.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role")
+                    {
+                        logger.LogInformation("Rol encontrado: {Role}", claim.Value);
+                        if (!context.Principal.HasClaim(c => c.Type == ClaimTypes.Role && c.Value == claim.Value))
+                        {
+                            var newClaim = new Claim(ClaimTypes.Role, claim.Value);
+                            identity?.AddClaim(newClaim);
+                            logger.LogInformation("Añadido claim de rol: {Role}", claim.Value);
+                        }
+                    }
+                }
+                
+                var hasAdminRole = context.Principal.IsInRole("Admin");
+                logger.LogInformation("¿Tiene rol Admin? {HasAdminRole}", hasAdminRole);
+                
+                logger.LogInformation("=== FIN DE VALIDACIÓN DE TOKEN ===");
+                
+                return Task.CompletedTask;
+            },
+            OnAuthenticationFailed = context =>
+            {
+                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                logger.LogError(context.Exception, "Error de autenticación");
+                
+                if (context.Exception is SecurityTokenExpiredException)
+                {
+                    context.Response.Headers.Add("Token-Expired", "true");
+                    logger.LogError("El token ha expirado");
+                }
+                
+                if (context.Exception is SecurityTokenInvalidIssuerException)
+                {
+                    logger.LogError($"Emisor del token no válido. Se esperaba: {context.Options.TokenValidationParameters.ValidIssuers}");
+                }
+                
+                if (context.Exception is SecurityTokenInvalidAudienceException)
+                {
+                    logger.LogError($"Audiencia del token no válida. Se esperaba: {string.Join(", ", context.Options.TokenValidationParameters.ValidAudiences)}");
+                }
+                
+                return Task.CompletedTask;
+            }
+        };
+    })
+    .AddGoogle(GoogleDefaults.AuthenticationScheme, options =>
+    {
+        options.ClientId = builder.Configuration["Authentication:Google:ClientId"];
+        options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+        options.CallbackPath = "/signin-google";
+        options.AuthorizationEndpoint = "https://accounts.google.com/o/oauth2/v2/auth";
+        options.TokenEndpoint = "https://oauth2.googleapis.com/token";
+        options.UserInformationEndpoint = "https://www.googleapis.com/oauth2/v2/userinfo";
+        
+        options.Scope.Clear();
+        options.Scope.Add("openid");
+        options.Scope.Add("profile");
+        options.Scope.Add("email");
+        
+        options.SaveTokens = true;
+        
+        options.Events.OnCreatingTicket = async context =>
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, context.Options.UserInformationEndpoint);
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", context.AccessToken);
+                
+                var response = await context.Backchannel.SendAsync(request, context.HttpContext.RequestAborted);
+                response.EnsureSuccessStatusCode();
+                
+                var user = await response.Content.ReadFromJsonAsync<JsonElement>();
+                
+                var claims = new List<Claim>
+                {
+                    new(ClaimTypes.NameIdentifier, user.GetString("id") ?? string.Empty),
+                    new(ClaimTypes.Name, user.GetString("name") ?? string.Empty),
+                    new(ClaimTypes.Email, user.GetString("email") ?? string.Empty),
+                    new(ClaimTypes.GivenName, user.GetString("given_name") ?? string.Empty),
+                    new(ClaimTypes.Surname, user.GetString("family_name") ?? string.Empty),
+                    new("http://schemas.microsoft.com/identity/claims/identityprovider", "Google")
+                };
+                
+                claims.Add(new Claim(ClaimTypes.Role, "User"));
+                
+                var identity = new ClaimsIdentity(claims, context.Scheme.Name);
+                context.Principal = new ClaimsPrincipal(identity);
+                
+                context.Success();
+            }
+            catch (Exception ex)
+            {
+                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                logger.LogError(ex, "Error creating authentication ticket");
+                context.Fail(ex);
+            }
+        };
+    });
+    
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "LiquoTrack API",
+        Version = "v1",
+        Description = "API for LiquoTrack Stock Management System"
+    });
+    
+    var securityScheme = new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Description = "Enter JWT Bearer token (without 'Bearer ' prefix)",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT"
+    };
+    
+    c.AddSecurityDefinition("Bearer", securityScheme);
+    
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+    
+    // Add OAuth2 Configuration
+    c.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.OAuth2,
+        Flows = new OpenApiOAuthFlows
+        {
+            AuthorizationCode = new OpenApiOAuthFlow
+            {
+                AuthorizationUrl = new Uri("https://accounts.google.com/o/oauth2/v2/auth"),
+                TokenUrl = new Uri("https://oauth2.googleapis.com/token"),
+                Scopes = new Dictionary<string, string>
+                {
+                    { "openid", "OpenID" },
+                    { "profile", "Profile" },
+                    { "email", "Email" }
+                }
+            }
+        }
+    });
+    
+
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+    }
+});
 
 // Build the application
 var app = builder.Build();
@@ -135,20 +572,44 @@ using (var scope = app.Services.CreateScope())
     await seeder.SeedAsync();
 }
 
-// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseDeveloperExceptionPage();
+    
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "LiquoTrack API V1");
+        c.OAuthClientId("520776661353-aq0nbie37i8742tnn0167ak4bdadk2cu.apps.googleusercontent.com");
+        c.OAuthAppName("LiquoTrack API - Swagger");
+        c.OAuthUsePkce(); 
+        c.OAuth2RedirectUrl("https://localhost:7164/swagger/oauth2-redirect.html");
+    });
+}
+else
+{
+    app.UseExceptionHandler("/error");
+    app.UseHsts();
 }
 
-// Apply CORS Policy
-app.UseCors("AllowAllPolicy");
-
+// Add middleware in the correct order
 app.UseHttpsRedirection();
-
+app.UseCors("AllowSpecificOrigins");
+app.UseRouting();
+app.UseAuthentication();
 app.UseAuthorization();
+
+// Configure endpoints
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllers();
+});
+
+app.UseAuthentication();
+
+// Configure the Authentication HTTP request pipeline.
+app.UseRequestAuthorization();
 
 app.MapControllers();
 

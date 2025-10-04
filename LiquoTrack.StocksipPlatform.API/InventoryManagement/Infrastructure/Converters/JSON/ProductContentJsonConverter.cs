@@ -5,7 +5,7 @@ using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.ValueObje
 namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Converters.JSON;
 
 /// <summary>
-///     Converter for the ProductContent value object to and from JSON.
+///     Converter for the ProductContent value object to JSON string representation.
 /// </summary>
 public class ProductContentJsonConverter : JsonConverter<ProductContent>
 {

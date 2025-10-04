@@ -79,8 +79,9 @@ public class ProductsController(
         var productResource = ProductResourceFromEntityAssembler.ToResourceFromEntity(product);
         return CreatedAtAction(nameof(GetProductById), new { id = product.Id.ToString() }, productResource);
     }
-
-    [HttpGet]
+    
+    
+    [HttpGet("{accountId}")]
     public Task<IActionResult> GetAllProductsByAccountId([FromQuery] string accountId)
     {
         throw new NotImplementedException();
@@ -89,7 +90,7 @@ public class ProductsController(
         // This endpoint will be sent to the controller of accounts -> AccountProductsController
     }
     
-    [HttpGet]
+    [HttpGet("{warehouseId}")]
     public Task<IActionResult> GetAllProductsByWarehouseId([FromQuery] string warehouseId)
     {
         throw new NotImplementedException();

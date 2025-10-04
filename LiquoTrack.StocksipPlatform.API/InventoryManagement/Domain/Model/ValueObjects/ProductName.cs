@@ -23,7 +23,7 @@ public record ProductName()
     /// </exception>
     public ProductName(string name) : this()
     {
-        if (IsNameValid(name))
+        if (!IsNameValid(name))
             throw new ValueObjectValidationException(nameof(name), "Product name cannot be empty or whitespace.");
         
         Value = name;

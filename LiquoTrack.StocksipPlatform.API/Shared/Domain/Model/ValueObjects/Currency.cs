@@ -25,7 +25,7 @@ public record Currency()
     {
         try
         {
-            Code = Enum.Parse<EValidCurrencyCodes>(newCode).ToString().ToUpper();
+            Code = Enum.Parse<EValidCurrencyCodes>(newCode).ToString();
         }
         catch 
         {
