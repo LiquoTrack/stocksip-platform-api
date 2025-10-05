@@ -18,6 +18,10 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Aggre
         public double RecommendedMaxTemperature { get; set; }
         public string RecommendedPlaceStorage { get; set; }
         public string GeneralRecommendation { get; set; }
+        public string? GuideFileName { get; set; } 
+        public string? FileName { get; set; }
+        public string? FileContentType { get; set; }
+        public byte[]? FileData { get; set; }
 
         ///<summary>
         /// This constructor is used to create a new care guide.
@@ -114,6 +118,23 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Aggre
                 ProductId = newProductId;
                 ProductAssociated = null;
             }
+        }
+        /// <summary>
+        /// Attach a binary file to this care guide.
+        /// </summary>
+        /// <param name="fileName">Original file name</param>
+        /// <param name="contentType">MIME type</param>
+        /// <param name="data">Binary data</param>
+        public void AttachFile(string fileName, string contentType, byte[] data)
+        {
+            if (string.IsNullOrWhiteSpace(fileName)) throw new ArgumentException("fileName is required");
+            if (string.IsNullOrWhiteSpace(contentType)) throw new ArgumentException("contentType is required");
+            if (data == null || data.Length == 0) throw new ArgumentException("file data is empty");
+
+            GuideFileName = fileName; 
+            FileName = fileName;
+            FileContentType = contentType;
+            FileData = data;
         }
         public CareGuide() { }
 
