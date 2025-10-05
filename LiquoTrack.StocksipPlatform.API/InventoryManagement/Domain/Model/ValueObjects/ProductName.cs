@@ -1,10 +1,13 @@
-﻿using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Exceptions;
+﻿using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Persistence.MongoDB.Configuration.Serializers;
+using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Exceptions;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.ValueObjects;
 
 /// <summary>
 ///     Record class that serves as a Value Object for the name of a product.
 /// </summary>
+[BsonSerializer(typeof(ProductNameSerializer))]
 public record ProductName()
 {
     /// <summary>

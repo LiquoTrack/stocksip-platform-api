@@ -1,10 +1,13 @@
-﻿using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Exceptions;
+﻿using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Persistence.MongoDB.Configuration.Serializers;
+using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Exceptions;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.ValueObjects;
 
 /// <summary>
 ///     The record class that serves as a Value Object for the minimum stock of a product.
 /// </summary>
+[BsonSerializer(typeof(ProductMinimumStockSerializer))]
 public record ProductMinimumStock()
 {
     /// <summary>

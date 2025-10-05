@@ -37,7 +37,7 @@ public class Product(
     ///     The brand of the product.
     /// </summary>
     public string Brand { get; private set; } = brand;
-
+    
     /// <summary>
     ///     The unit price of the product.
     /// </summary>

@@ -36,6 +36,7 @@ public class ProductCommandService(
         try
         {
             await productRepository.AddAsync(product);
+            return product;
         }
         // If the product could not be added, throws an exception.
         catch (ProductFailedCreationException e)
@@ -43,9 +44,6 @@ public class ProductCommandService(
             Console.WriteLine(e);
             throw;
         }
-        
-        // Returns the newly created product.
-        return product;
     }
 
     /// <summary>
