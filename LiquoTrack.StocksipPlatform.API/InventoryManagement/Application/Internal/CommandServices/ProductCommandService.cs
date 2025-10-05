@@ -128,6 +128,7 @@ public class ProductCommandService(
     /// </returns>
     public async Task Handle(DeleteProductCommand command)
     {
+        Console.WriteLine(command.ProductId.ToString());
         // Verifies that the product exists.
         var productToDelete = await productRepository.FindByIdAsync(command.ProductId.ToString())
                               ?? throw new ProductFailedDeletionException($"Could not find the product to delete with identifier ${command.ProductId.ToString()}.");

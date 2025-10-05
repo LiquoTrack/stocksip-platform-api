@@ -16,7 +16,7 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Intern
 /// <param name="unitOfWork">
 ///     The unit of work for handling database transactions.
 /// </param>
-public class CareGuideCommandService(ICareGuideRepository careGuideRepository, IUnitOfWork unitOfWork) : ICareGuideCommandService
+public class CareGuideCommandService(ICareGuideRepository careGuideRepository) : ICareGuideCommandService
 {
         /// <summary>
         /// Create a new care guide
@@ -40,7 +40,6 @@ public class CareGuideCommandService(ICareGuideRepository careGuideRepository, I
             );
     
             await careGuideRepository.AddAsync(careGuide);
-            await unitOfWork.CompleteAsync();
             return new List<CareGuide> { careGuide };
         }
         
@@ -65,7 +64,6 @@ public class CareGuideCommandService(ICareGuideRepository careGuideRepository, I
             );
             
             await careGuideRepository.AddAsync(careGuide);
-            await unitOfWork.CompleteAsync();
             return new List<CareGuide> { careGuide };
         }
         
@@ -80,7 +78,6 @@ public class CareGuideCommandService(ICareGuideRepository careGuideRepository, I
             careGuideToUpdate.UpdateRecommendations(command.title, command.summary, command.recommendedMinTemperature, command.recommendedMaxTemperature, command.recommendedPlaceStorage, command.generalRecommendation);
             
             await careGuideRepository.UpdateAsync(careGuideToUpdate);
-            await unitOfWork.CompleteAsync();
             return new List<CareGuide> { careGuideToUpdate };
         }
         
@@ -93,7 +90,6 @@ public class CareGuideCommandService(ICareGuideRepository careGuideRepository, I
             var careGuideToAssign = await careGuideRepository.GetById(command.careGuideId)?? throw new Exception("CareGuide not found");
             careGuideToAssign.AssignCareGuideToAnotherProduct(command.productId);
             await careGuideRepository.UpdateAsync(careGuideToAssign);
-            await unitOfWork.CompleteAsync();
             return new List<CareGuide> { careGuideToAssign };
         }
         
@@ -106,7 +102,6 @@ public class CareGuideCommandService(ICareGuideRepository careGuideRepository, I
             var careGuideToUnassing = await careGuideRepository.GetById(command.careGuideId)?? throw new Exception("CareGuide not found");
             careGuideToUnassing.UnassignCareGuide();
             await careGuideRepository.UpdateAsync(careGuideToUnassing);
-            await unitOfWork.CompleteAsync();
             return new List<CareGuide> { careGuideToUnassing };
         }
         
@@ -117,6 +112,5 @@ public class CareGuideCommandService(ICareGuideRepository careGuideRepository, I
         public async Task Handle(DeleteCareGuideCommand command){
             var careGuideToDelete = await careGuideRepository.GetById(command.careGuideId)?? throw new Exception("CareGuide not found");
             await careGuideRepository.DeleteAsync(careGuideToDelete.Id.ToString());
-            await unitOfWork.CompleteAsync();
         }
     }

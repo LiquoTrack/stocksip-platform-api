@@ -20,7 +20,6 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
     /// </remarks>
     public class UserCommandService(
         IUserRepository userRepository,
-        IUnitOfWork unitOfWork,
         ITokenService tokenService,
         IHashingService hashingService,
         IPaymentAndSubscriptionsFacade paymentAndSubscriptionsFacade
@@ -53,7 +52,6 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
             try
             {
                 await userRepository.AddAsync(user);
-                await unitOfWork.CompleteAsync();
                 return user;
             }
             catch (Exception ex)
@@ -97,7 +95,6 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
             try
             {
                 await userRepository.AddAsync(user);
-                await unitOfWork.CompleteAsync();
                 return user;
             }
             catch (Exception ex)
@@ -120,7 +117,6 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
 
             var token = tokenService.GenerateToken(user);
             
-            await unitOfWork.CompleteAsync();
             return (user, token);
         }
 
@@ -161,7 +157,6 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
                     account.Id.ToString()
                 );
                 await userRepository.AddAsync(user);
-                await unitOfWork.CompleteAsync();
                 return user;
             }
             catch (Exception ex)

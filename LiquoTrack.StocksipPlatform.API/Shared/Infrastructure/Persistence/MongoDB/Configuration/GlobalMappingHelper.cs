@@ -1,4 +1,5 @@
-﻿using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Persistence.MongoDB.Configuration.ContextMapping;
+﻿using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Persistence.MongoDB.Configuration;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Persistence.MongoDB.Configuration.ContextMapping;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Events;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.Persistence.MongoDB.Configuration.ContextMapping;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Persistence.MongoDB.Configuration.ContextMapping;
@@ -26,6 +27,9 @@ public static class GlobalMongoMappingHelper
         Console.WriteLine("Shared Mappings Registered!");
         
         // IAM Bounded Context
+        Console.WriteLine("Registering Authentication Mappings...");
+        AuthenticationMappingHelper.RegisterAuthenticationMappings();
+        Console.WriteLine("Authentication Mappings Registered!");
         
         // Inventory Bounded Context
         Console.WriteLine("Registering Inventory Management Mappings...");

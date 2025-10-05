@@ -20,7 +20,6 @@ using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google;
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Hashing.BCrypt.Services;
-using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Persistence.Repositories;
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Tokens.JWT.Services;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Converters.JSON;
@@ -46,6 +45,7 @@ using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Extern
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.CommandServices;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
 using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.CommandHandlers;
+using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Persistence.Repositories;
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Tokens.JWT.Configuration;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.CommandServices;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.QueryServices;
@@ -143,9 +143,6 @@ builder.Services.AddSingleton<AppDbContext>();
 builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 builder.Services.AddScoped<DatabaseSeeder>();
 
-// Register Unit of Work
-builder.Services.AddScoped<IUnitOfWork, MongoUnitOfWork>();
-
 builder.Services.Configure<JsonOptions>(options =>
 {
     options.JsonSerializerOptions.Converters.Add(new AccountIdJsonConverter());
@@ -173,9 +170,6 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 
 // Register Hashing Service
 builder.Services.AddScoped<IHashingService, HashingService>();
-
-// Register Unit of Work
-builder.Services.AddScoped<IUnitOfWork, MongoUnitOfWork>();
 
 // Register token validator and authentication services
 builder.Services.AddSingleton<CustomGoogleTokenValidator>();

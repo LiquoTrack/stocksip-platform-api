@@ -80,25 +80,6 @@ public class ProductsController(
         return CreatedAtAction(nameof(GetProductById), new { id = product.Id.ToString() }, productResource);
     }
     
-    
-    [HttpGet("{accountId}")]
-    public Task<IActionResult> GetAllProductsByAccountId([FromQuery] string accountId)
-    {
-        throw new NotImplementedException();
-        
-        // TODO: Implement this method to retrieve all products by account ID when having the ACCOUNT context.
-        // This endpoint will be sent to the controller of accounts -> AccountProductsController
-    }
-    
-    [HttpGet("{warehouseId}")]
-    public Task<IActionResult> GetAllProductsByWarehouseId([FromQuery] string warehouseId)
-    {
-        throw new NotImplementedException();
-        
-        // TODO: Implement this method to retrieve all products by warehouse ID when having the WAREHOUSE entity.
-        // This endpoint will be sent to the controller of warehouses -> WarehouseProductsController
-    }
-    
     /// <summary>
     ///     Endpoint to handle the retrieval of all products by a given supplier id.
     /// </summary>
@@ -191,7 +172,7 @@ public class ProductsController(
     /// <returns>
     ///     A 204 No Content response if the product was successfully deleted, or a 400 Bad Request response if the product to delete could not be found.
     /// </returns>
-    [HttpDelete]
+    [HttpDelete("{id}")]
     [SwaggerOperation(
         Summary = "Delete a product by ID.",
         Description = "Deletes a product from the store by its unique identifier.",
