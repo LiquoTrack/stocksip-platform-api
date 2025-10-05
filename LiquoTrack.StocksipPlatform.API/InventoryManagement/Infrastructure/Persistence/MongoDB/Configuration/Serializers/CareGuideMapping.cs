@@ -1,4 +1,5 @@
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Aggregates;
+using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration.Serializers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using MongoDB.Bson.Serialization;

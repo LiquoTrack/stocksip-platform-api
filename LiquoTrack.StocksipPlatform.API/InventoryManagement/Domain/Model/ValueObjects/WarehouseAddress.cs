@@ -1,8 +1,12 @@
-﻿namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.ValueObjects;
+﻿using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Persistence.MongoDB.Configuration.Serializers;
+using MongoDB.Bson.Serialization.Attributes;
+
+namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.ValueObjects;
 
 /// <summary>
 ///     This record class serves as a Value Object for the address of a warehouse.
 /// </summary>
+[BsonSerializer(typeof(WarehouseAddressSerializer))]
 public record WarehouseAddress()
 {
     /// <summary>
