@@ -7,11 +7,9 @@ using LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Resour
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Net.Mime;
-using System;
-using System.Linq;
 
-namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Controllers
-{
+namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Controllers;
+
     [ApiController]
     [Route("api/v1/[controller]")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -115,7 +113,6 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Co
             return Ok(resource);
         }
 
-
         [HttpPut("{careGuideId}")]
         [SwaggerOperation(
             Summary = "Update Care Guide",
@@ -178,4 +175,3 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Co
             { Message = $"Care Guide with ID {careGuideId} assigned to product with ID {productId} successfully." });
         }
     }
-}
