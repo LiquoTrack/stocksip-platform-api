@@ -5,10 +5,19 @@ using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Repositories;
 
-namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.CommandServices
+namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.CommandServices;
+
+/// <summary>
+///     Service implementation for handling care guide-related commands.
+/// </summary>
+/// <param name="careGuideRepository">
+///     The repository for handling the CareGuides in the database.
+/// </param>
+/// <param name="unitOfWork">
+///     The unit of work for handling database transactions.
+/// </param>
+public class CareGuideCommandService(ICareGuideRepository careGuideRepository, IUnitOfWork unitOfWork) : ICareGuideCommandService
 {
-    public class CareGuideCommandService(ICareGuideRepository careGuideRepository,IUnitOfWork unitOfWork) : ICareGuideCommandService
-    {
         /// <summary>
         /// Create a new care guide
         /// </summary>
@@ -18,24 +27,25 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Intern
         {
             var accountId = new AccountId(command.accountId);
             var careGuide = new CareGuide(
-            command.careGuideId,
-            accountId,
-            null,
-            command.productId,
-            command.title,
-            command.summary,
-            command.recommendedMinTemperature,
-            command.recommendedMaxTemperature,
-            command.recommendedPlaceStorage,
-            command.generalRecommendation
+                command.careGuideId,
+                accountId,
+                null,
+                command.productId,
+                command.title,
+                command.summary,
+                command.recommendedMinTemperature,
+                command.recommendedMaxTemperature,
+                command.recommendedPlaceStorage,
+                command.generalRecommendation
             );
     
             await careGuideRepository.AddAsync(careGuide);
             await unitOfWork.CompleteAsync();
             return new List<CareGuide> { careGuide };
         }
+        
         /// <summary>
-        /// Create a new care guide without product id
+        /// Create a new care guide without the product id
         /// </summary>
         /// <param name="command">CreateCareGuideWithoutProductIdCommand</param>
         /// <returns>The created care guide object.</returns>
@@ -53,10 +63,12 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Intern
             command.recommendedPlaceStorage,
             command.generalRecommendation
             );
+            
             await careGuideRepository.AddAsync(careGuide);
             await unitOfWork.CompleteAsync();
             return new List<CareGuide> { careGuide };
         }
+        
         /// <summary>
         /// Update a care guide
         /// </summary>
@@ -64,11 +76,14 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Intern
         /// <returns>The updated care guide object.</returns>
         public async Task<IEnumerable<CareGuide>> Handle(UpdateCareGuideCommand command){
             var careGuideToUpdate = await careGuideRepository.GetById(command.careGuideId)?? throw new Exception("CareGuide not found");
+            
             careGuideToUpdate.UpdateRecommendations(command.title, command.summary, command.recommendedMinTemperature, command.recommendedMaxTemperature, command.recommendedPlaceStorage, command.generalRecommendation);
+            
             await careGuideRepository.UpdateAsync(careGuideToUpdate);
             await unitOfWork.CompleteAsync();
             return new List<CareGuide> { careGuideToUpdate };
         }
+        
         /// <summary>
         /// Assign a care guide to a product
         /// </summary>
@@ -81,6 +96,7 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Intern
             await unitOfWork.CompleteAsync();
             return new List<CareGuide> { careGuideToAssign };
         }
+        
         /// <summary>
         /// Unassign a care guide from a product
         /// </summary>
@@ -93,6 +109,7 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Intern
             await unitOfWork.CompleteAsync();
             return new List<CareGuide> { careGuideToUnassing };
         }
+        
         /// <summary>
         /// Delete a care guide
         /// </summary>
@@ -116,4 +133,3 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Intern
             return new List<CareGuide> { careGuide };
         }
     }
-}

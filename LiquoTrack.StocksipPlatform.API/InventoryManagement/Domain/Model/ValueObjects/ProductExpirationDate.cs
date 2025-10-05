@@ -1,10 +1,13 @@
-﻿using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Exceptions;
+﻿using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Persistence.MongoDB.Configuration.Serializers;
+using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Exceptions;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.ValueObjects;
 
 /// <summary>
 ///     Represents the expiration date of a product in inventory.
 /// </summary>
+[BsonSerializer(typeof(ProductExpirationDateSerializer))]
 public record ProductExpirationDate()
 {
     /// <summary>

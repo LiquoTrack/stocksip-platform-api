@@ -3,6 +3,7 @@ using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Persist
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration.Serializers;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Serializers;
+using AccountIdSerializer = LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration.Serializers.AccountIdSerializer;
 
 namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Persistence.MongoDB.Configuration.ContextMapping;
 
@@ -45,12 +46,18 @@ public static class InventoryManagementMappingHelper
         SerializerRegistrationHelper.TryRegisterSerializer(new ProductStockSerializer());
 
         //
-        // Use of Warehouse-related Value Object
-        //
         // Register CareGuide mapping and serializers
+        //
         CareGuideMapping.ConfigureBsonMapping();
         
-        // Register AccountId serializer for CareGuide using the shared serializer
-        SerializerRegistrationHelper.TryRegisterSerializer(new Shared.Infrastructure.Persistence.MongoDB.Configuration.Serializers.AccountIdSerializer());
+        //
+        // Use of Warehouse-related Value Object
+        //
+        
+        // Use of WarehouseCapacity Value Object serializer
+        SerializerRegistrationHelper.TryRegisterSerializer(new WarehouseCapacitySerializer());
+        
+        // Use of WarehouseAddress Value Object serializer
+        SerializerRegistrationHelper.TryRegisterSerializer(new WarehouseAddressSerializer());
     }
 }

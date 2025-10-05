@@ -141,6 +141,8 @@ public class ProductsController(
         Summary = "Update product information.",
         Description = "Updates the information of an existing product.",
         OperationId = "UpdateProduct")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Product updated successfully.", typeof(ProductResource))]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Product with the specified ID could not be updated.")]
     public async Task<IActionResult> UpdateProduct([FromRoute] string id,
         [FromBody] UpdateProductInformationResource resource)
     {
