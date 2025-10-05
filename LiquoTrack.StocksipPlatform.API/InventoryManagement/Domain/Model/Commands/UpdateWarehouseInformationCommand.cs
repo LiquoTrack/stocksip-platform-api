@@ -7,6 +7,7 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Comma
 ///     Record class that represents a command to update warehouse information.
 /// </summary>
 public record UpdateWarehouseInformationCommand(
+    string WarehouseId,
     string Name, 
     WarehouseAddress NewAddress, 
     WarehouseTemperature NewTempLimits, 

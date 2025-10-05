@@ -2,70 +2,70 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Repositories;
 
-namespace LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Repositories
+namespace LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Repositories;
+    
+public sealed class MongoUnitOfWork(IMongoClient mongoClient, IClientSessionHandle session) : IUnitOfWork, IDisposable
 {
-    public class MongoUnitOfWork : IUnitOfWork, IDisposable
-    {
         private bool _disposed = false;
-        private readonly IMongoClient _mongoClient;
-        private IClientSessionHandle _session;
-
-        public MongoUnitOfWork(IMongoClient mongoClient)
-        {
-            _mongoClient = mongoClient ?? throw new ArgumentNullException(nameof(mongoClient));
-        }
+        private readonly IMongoClient _mongoClient = mongoClient ?? throw new ArgumentNullException(nameof(mongoClient));
+        private IClientSessionHandle _session = session;
 
         public async Task CompleteAsync(CancellationToken cancellationToken = default)
         {
-            if (_disposed) throw new ObjectDisposedException(nameof(MongoUnitOfWork));
+            if (!_disposed)
+            {
+                _session = await _mongoClient.StartSessionAsync(cancellationToken: cancellationToken);
 
-            _session = await _mongoClient.StartSessionAsync(cancellationToken: cancellationToken);
-            
-            try
-            {
-                // Check if the server supports transactions
-                var adminDb = _mongoClient.GetDatabase("admin");
-                var serverInfo = await adminDb.RunCommandAsync<BsonDocument>(new BsonDocument("serverStatus", 1), 
-                    cancellationToken: cancellationToken);
-                    
-                bool supportsTransactions = serverInfo.Contains("repl") && 
-                                         serverInfo["repl"].AsBsonDocument.Contains("setName");
+                try
+                {
+                    // Check if the server supports transactions
+                    var adminDb = _mongoClient.GetDatabase("admin");
+                    var serverInfo = await adminDb.RunCommandAsync<BsonDocument>(new BsonDocument("serverStatus", 1),
+                        cancellationToken: cancellationToken);
 
-                if (supportsTransactions)
-                {
-                    _session.StartTransaction();
-                    await _session.CommitTransactionAsync(cancellationToken);
+                    var supportsTransactions = serverInfo.Contains("repl") &&
+                                               serverInfo["repl"].AsBsonDocument.Contains("setName");
+
+                    if (supportsTransactions)
+                    {
+                        _session.StartTransaction();
+                        await _session.CommitTransactionAsync(cancellationToken);
+                    }
+                    // No need for an else case as we're not doing any actual save operations here
+                    // the repositories handle The actual save operations
                 }
-                // No need for else case as we're not doing any actual save operations here
-                // The actual save operations are handled by the repositories
-            }
-            catch (Exception)
-            {
-                if (_session.IsInTransaction)
+                catch (Exception)
                 {
-                    await _session.AbortTransactionAsync(cancellationToken);
+                    if (_session.IsInTransaction)
+                    {
+                        await _session.AbortTransactionAsync(cancellationToken);
+                    }
+
+                    throw;
                 }
-                throw;
+                finally
+                {
+                    _session?.Dispose();
+                    _session = null;
+                }
             }
-            finally
+            else
             {
-                _session?.Dispose();
-                _session = null;
+                throw new ObjectDisposedException(nameof(MongoUnitOfWork));
             }
         }
 
-        protected virtual void Dispose(bool disposing)
+        private void Dispose(bool disposing)
         {
-            if (!_disposed)
+            if (_disposed) return;
+            
+            if (disposing)
             {
-                if (disposing)
-                {
-                    // Dispose managed resources
-                    _session?.Dispose();
-                }
-
-                _disposed = true;
+                // Dispose of managed resources
+                _session?.Dispose();
             }
+
+            _disposed = true;
         }
 
         public void Dispose()
@@ -73,5 +73,4 @@ namespace LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.Mong
             Dispose(true);
             GC.SuppressFinalize(this);
         }
-    }
 }

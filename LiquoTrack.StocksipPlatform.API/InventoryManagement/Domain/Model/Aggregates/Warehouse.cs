@@ -2,6 +2,7 @@
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
+using PayPal.Api;
 
 namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Aggregates;
 
@@ -53,8 +54,11 @@ public class Warehouse(
     /// <param name="command">
     ///     The command containing the details to register a new warehouse.
     /// </param>
-    public Warehouse(RegisterWarehouseCommand command) 
-        : this(command.Name, command.Address, command.Temperature, command.Capacity, command.ImageUrl, command.AccountId) 
+    /// <param name="imageUrl">
+    ///     The image url of the warehouse.
+    /// </param>
+    public Warehouse(RegisterWarehouseCommand command, ImageUrl imageUrl) 
+        : this(command.Name, command.Address, command.Temperature, command.Capacity, imageUrl, command.AccountId) 
     {}
     
     /// <summary>
@@ -71,12 +75,12 @@ public class Warehouse(
     /// <summary>
     ///     Constructs a new instance of the Warehouse class using an UpdateWarehouseCommand.
     /// </summary>
-    public void UpdateWarehouse(UpdateWarehouseInformationCommand command)
+    public void UpdateWarehouse(UpdateWarehouseInformationCommand command, ImageUrl imageUrl)
     {
         Name = ValidateName(command.Name);
         Address = command.NewAddress;
         Temperature = command.NewTempLimits;
         Capacity = command.TotalCapacity;
-        ImageUrl = command.ImageUrl;
+        ImageUrl = imageUrl;
     }
 }
