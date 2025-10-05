@@ -38,7 +38,6 @@ using System.Reflection;
 using System.Text;
 using Microsoft.AspNetCore.Authentication;
 using System.Text.Json;
-using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Services;
 using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Authentication;
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Pipeline.Middleware.Extensions;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.External.ACL;
@@ -47,6 +46,9 @@ using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Ser
 using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.CommandHandlers;
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Persistence.Repositories;
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Tokens.JWT.Configuration;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.OutboundServices.FileStorage;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.FileStorage.Cloudinary.Configuration;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.FileStorage.Cloudinary.Services;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.CommandServices;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.QueryServices;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Repositories;
@@ -195,6 +197,9 @@ builder.Services.AddSingleton<CustomGoogleTokenValidator>();
 builder.Services.AddScoped<ISecurityTokenValidator>(sp => sp.GetRequiredService<CustomGoogleTokenValidator>());
 builder.Services.AddScoped<IGoogleTokenValidator, CustomGoogleTokenValidatorAdapter>();
 
+// Register Cloudinary Configuration
+builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
+
 // Register user services
 builder.Services.AddScoped<IUserCommandService, UserCommandService>();
 builder.Services.AddScoped<IUserQueryService, UserQueryService>();
@@ -203,6 +208,9 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 //
 // Bounded Context Inventory Management
 //
+
+builder.Services.AddScoped<IInventoryImageService, InventoryImageService>();
+
 builder.Services.AddScoped<IBrandRepository, BrandRepository>();
 builder.Services.AddScoped<IBrandQueryService, BrandQueryService>();
 
@@ -577,9 +585,13 @@ else
 
 // Add middleware in the correct order
 app.UseHttpsRedirection();
+
 app.UseCors("AllowSpecificOrigins");
+
 app.UseRouting();
+
 app.UseAuthentication();
+
 app.UseAuthorization();
 
 // Configure endpoints
@@ -587,8 +599,6 @@ app.UseEndpoints(endpoints =>
 {
     endpoints.MapControllers();
 });
-
-app.UseAuthentication();
 
 // Configure the Authentication HTTP request pipeline.
 app.UseRequestAuthorization();
