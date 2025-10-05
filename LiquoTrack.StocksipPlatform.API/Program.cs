@@ -61,14 +61,13 @@ using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Converters.JSON;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Persistence.MongoDB.Repositories;
+using Microsoft.AspNetCore.Http.Features;
 
 
 GlobalMongoMappingHelper.RegisterAllBoundedContextMappings();
 
-// Create a builder for the web application
 var builder = WebApplication.CreateBuilder(args);
 
-// Add logger
 var logger = LoggerFactory.Create(config =>
 {
     config.AddConsole();
@@ -80,11 +79,14 @@ builder.Services.AddRouting(o => o.LowercaseUrls = true);
 builder.Services.AddControllers(o => o.Conventions.Add(new KebabCaseRouteNamingConvention()));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpContextAccessor();
-
-// Register MongoDB conventions for camel case naming
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 10 * 1024 * 1024; 
+    options.ValueLengthLimit = 10 * 1024 * 1024;
+    options.MultipartHeadersLengthLimit = 64 * 1024;
+});
 CamelCaseFieldNamingConvention.UseCamelCaseNamingConvention();
 
-// Add CORS policy
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigins",
@@ -92,6 +94,7 @@ builder.Services.AddCors(options =>
         {
             builder.WithOrigins(
                     "https://localhost:7164",
+                    "http://localhost:7164",    
                     "http://localhost:5283",
                     "https://localhost:44355"
                 )

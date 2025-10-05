@@ -31,8 +31,12 @@ public class CareGuideMapping : IEntityTypeConfiguration<CareGuide>
             map.MapMember(x => x.RecommendedMaxTemperature).SetElementName("recommendedMaxTemperature");
             map.MapMember(x => x.RecommendedPlaceStorage).SetElementName("recommendedPlaceStorage");
             map.MapMember(x => x.GeneralRecommendation).SetElementName("generalRecommendation");
-            
-            map.UnmapMember(x => x.ProductAssociated);
+            map.MapMember(x => x.GuideFileName).SetElementName("guideFileName"); 
+            map.MapMember(x => x.FileName).SetElementName("fileName");
+            map.MapMember(x => x.FileContentType).SetElementName("fileContentType");
+            map.MapMember(x => x.FileData).SetElementName("fileData");
+            map.MapMember(x => x.FileContentType).SetElementName("guideFileContentType"); 
+            map.MapMember(x => x.FileName).SetElementName("guideFileUrl"); 
         });
     }
 }

@@ -102,5 +102,18 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Intern
             await careGuideRepository.DeleteAsync(careGuideToDelete.Id.ToString());
             await unitOfWork.CompleteAsync();
         }
+        /// <summary>
+        /// Upload/Attach a file to an existing care guide
+        /// </summary>
+        /// <param name="command">UploadCareGuideFileCommand</param>
+        /// <returns>The updated care guide with file metadata.</returns>
+        public async Task<IEnumerable<CareGuide>> Handle(UploadCareGuideFileCommand command)
+        {
+            var careGuide = await careGuideRepository.GetById(command.careGuideId) ?? throw new Exception("CareGuide not found");
+            careGuide.AttachFile(command.fileName, command.contentType, command.data);
+            await careGuideRepository.UpdateAsync(careGuide);
+            await unitOfWork.CompleteAsync();
+            return new List<CareGuide> { careGuide };
+        }
     }
 }
