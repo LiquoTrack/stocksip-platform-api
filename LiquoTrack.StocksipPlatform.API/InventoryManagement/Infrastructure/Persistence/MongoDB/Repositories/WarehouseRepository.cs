@@ -154,18 +154,54 @@ public class WarehouseRepository(AppDbContext context) : BaseRepository<Warehous
         return _warehouseCollection.Find(filter).AnyAsync();
     }
 
-    public Task<string> FindAccountIdByWarehouseIdAsync(string warehouseId)
+    /// <summary>
+    ///     Get the account ID associated with a specific warehouse ID.
+    /// </summary>
+    /// <param name="warehouseId">
+    ///     The unique identifier of the warehouse.
+    /// </param>
+    /// <returns>
+    ///     The account ID associated with the warehouse.
+    /// </returns>
+    public async Task<string> FindAccountIdByWarehouseIdAsync(string warehouseId)
     {
-        throw new NotImplementedException();
+        var warehouseObjectId = ObjectId.Parse(warehouseId);
+        var filter = Builders<Warehouse>.Filter.Eq(w => w.Id, warehouseObjectId);
+        var projection = Builders<Warehouse>.Projection.Include(w => w.AccountId).Exclude(w => w.Id);
+        var result = await _warehouseCollection.Find(filter).Project<Warehouse>(projection).FirstOrDefaultAsync();
+        return result is null ? string.Empty : result.AccountId.GetId;
     }
 
-    public Task<string> FindImageUrlByWarehouseIdAsync(string warehouseId)
-    {
-        throw new NotImplementedException();
+    /// <summary>
+    ///     Get the image URL associated with a specific warehouse ID.
+    /// </summary>
+    /// <param name="warehouseId">
+    ///     The unique identifier of the warehouse.
+    /// </param>
+    /// <returns>
+    ///     The image URL associated with the warehouse.
+    /// </returns>
+    public async Task<string> FindImageUrlByWarehouseIdAsync(string warehouseId)
+    { 
+        var warehouseObjectId = ObjectId.Parse(warehouseId);
+        var filter = Builders<Warehouse>.Filter.Eq(w => w.Id, warehouseObjectId);
+        var projection = Builders<Warehouse>.Projection.Include(w => w.ImageUrl).Exclude(w => w.Id);
+        var result = await _warehouseCollection.Find(filter).Project<Warehouse>(projection).FirstOrDefaultAsync();
+        return result is null ? string.Empty : result.ImageUrl.GetValue();
     }
 
+    /// <summary>
+    ///     This method counts the number of warehouses associated with a specific account ID.
+    /// </summary>
+    /// <param name="accountId">
+    ///     The unique identifier of the account.
+    /// </param>
+    /// <returns>
+    ///     A task that represents the asynchronous operation, containing the count of warehouses.
+    /// </returns>
     public Task<int> CountByAccountIdAsync(AccountId accountId)
     {
-        throw new NotImplementedException();
+        var filter = Builders<Warehouse>.Filter.Eq(w => w.AccountId.GetId, accountId.GetId);
+        return _warehouseCollection.CountDocumentsAsync(filter).ContinueWith(t => (int)t.Result);
     }
 }
