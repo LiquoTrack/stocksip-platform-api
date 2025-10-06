@@ -8,5 +8,5 @@ public record UpdateProductInformationResource(
         decimal UnitPrice,
         string Code,
         int MinimumStock,
-        string ImageUrl
+        IFormFile Image
     );

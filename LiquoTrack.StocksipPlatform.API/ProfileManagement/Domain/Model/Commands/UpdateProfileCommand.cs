@@ -10,12 +10,12 @@ namespace LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Model.Command
 /// <param name="Name">The updated name of the person.</param>
 /// <param name="PersonContactNumber">The updated contact number.</param>
 /// <param name="ContactNumber">The contact number as string.</param>
-/// <param name="ProfilePictureUrl">The updated profile picture URL.</param>
+/// <param name="ProfilePicture">The updated profile picture.</param>
 public record UpdateProfileCommand(
     string ProfileId,
     PersonName Name,
     PersonContactNumber PersonContactNumber,
     string ContactNumber,
-    ImageUrl ProfilePictureUrl,
+    IFormFile? ProfilePicture,
     string AssignedRole
 );

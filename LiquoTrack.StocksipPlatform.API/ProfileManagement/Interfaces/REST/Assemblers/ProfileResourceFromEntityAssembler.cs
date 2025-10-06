@@ -14,14 +14,14 @@ public static class ProfileResourceFromEntityAssembler
     {
         return new ProfileResource(
             profile.Id.ToString(),
-            profile.Name.FirstName,
-            profile.Name.LastName,
-            profile.FullName,
-            profile.PersonContactNumber.PhoneNumber,
-            profile.ContactNumber,
-            profile.ProfilePictureUrl.ToString(),
+            profile.Name?.FirstName ?? string.Empty,
+            profile.Name?.LastName ?? string.Empty,
+            profile.FullName ?? string.Empty,
+            profile.PersonContactNumber.PhoneNumber ?? string.Empty,
+            profile.ContactNumber ?? string.Empty,
+            profile.ProfilePictureUrl.GetValue(),
             profile.UserId,
-            profile.AssignedRole
+            profile.AssignedRole.ToString()
         );
     }
 }

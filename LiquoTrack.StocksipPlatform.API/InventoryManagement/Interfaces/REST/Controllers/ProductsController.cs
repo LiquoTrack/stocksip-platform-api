@@ -71,32 +71,13 @@ public class ProductsController(
         OperationId = "RegisterProduct")]
     [SwaggerResponse(StatusCodes.Status201Created, "Product registered successfully.", typeof(ProductResource))]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Product could not be registered.")]
-    public async Task<IActionResult> RegisterProduct([FromBody] RegisterProductResource resource)
+    public async Task<IActionResult> RegisterProduct([FromForm] RegisterProductResource resource)
     {
         var registerProductCommand = RegisterProductCommandFromResourceAssembler.ToCommandFromResource(resource);
         var product = await productCommandService.Handle(registerProductCommand);
         if (product is null) return BadRequest("Product could not be registered.");
         var productResource = ProductResourceFromEntityAssembler.ToResourceFromEntity(product);
         return CreatedAtAction(nameof(GetProductById), new { id = product.Id.ToString() }, productResource);
-    }
-    
-    
-    [HttpGet("{accountId}")]
-    public Task<IActionResult> GetAllProductsByAccountId([FromQuery] string accountId)
-    {
-        throw new NotImplementedException();
-        
-        // TODO: Implement this method to retrieve all products by account ID when having the ACCOUNT context.
-        // This endpoint will be sent to the controller of accounts -> AccountProductsController
-    }
-    
-    [HttpGet("{warehouseId}")]
-    public Task<IActionResult> GetAllProductsByWarehouseId([FromQuery] string warehouseId)
-    {
-        throw new NotImplementedException();
-        
-        // TODO: Implement this method to retrieve all products by warehouse ID when having the WAREHOUSE entity.
-        // This endpoint will be sent to the controller of warehouses -> WarehouseProductsController
     }
     
     /// <summary>
@@ -144,7 +125,7 @@ public class ProductsController(
     [SwaggerResponse(StatusCodes.Status200OK, "Product updated successfully.", typeof(ProductResource))]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Product with the specified ID could not be updated.")]
     public async Task<IActionResult> UpdateProduct([FromRoute] string id,
-        [FromBody] UpdateProductInformationResource resource)
+        [FromForm] UpdateProductInformationResource resource)
     {
         var updateProductInformationCommand = UpdateProductInformationCommandFromResourceAssembler.ToCommandFromResource(id, resource);
         var product = await productCommandService.Handle(updateProductInformationCommand);
@@ -191,7 +172,7 @@ public class ProductsController(
     /// <returns>
     ///     A 204 No Content response if the product was successfully deleted, or a 400 Bad Request response if the product to delete could not be found.
     /// </returns>
-    [HttpDelete]
+    [HttpDelete("{id}")]
     [SwaggerOperation(
         Summary = "Delete a product by ID.",
         Description = "Deletes a product from the store by its unique identifier.",

@@ -11,6 +11,6 @@ public record RegisterWarehouseCommand(
         WarehouseAddress Address,
         WarehouseTemperature Temperature,
         WarehouseCapacity Capacity,
-        ImageUrl ImageUrl,
+        IFormFile? Image,
         AccountId AccountId
     );

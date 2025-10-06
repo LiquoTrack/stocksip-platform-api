@@ -6,14 +6,11 @@ using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Commands;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Queries;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Services;
-using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google;
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google.Responses;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 
-namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.CommandHandlers
+namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.CommandServices
 {
     public class GoogleSignInCommandHandler(IExternalAuthService _externalAuthService, IUserCommandService _userCommandService, IUserQueryService _userQueryService, IConfiguration _configuration, ILogger<GoogleSignInCommandHandler> _logger,IPaymentAndSubscriptionsFacade _paymentAndSubscriptionsFacade)
     {

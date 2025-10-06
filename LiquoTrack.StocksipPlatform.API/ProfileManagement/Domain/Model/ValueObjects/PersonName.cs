@@ -20,14 +20,11 @@ public record PersonName
     /// </summary>
     /// <param name="firstName">The first name of the person.</param>
     /// <param name="lastName">The last name of the person.</param>
-    /// <exception cref="ArgumentException">Thrown when firstName or lastName is null or whitespace.</exception>
+    /// <exception cref="ArgumentException">Thrown when the firstName is null or whitespace.</exception>
     public PersonName(string firstName, string lastName)
     {
         if (string.IsNullOrWhiteSpace(firstName))
             throw new ArgumentException("First name cannot be null or whitespace.", nameof(firstName));
-            
-        if (string.IsNullOrWhiteSpace(lastName))
-            throw new ArgumentException("Last name cannot be null or whitespace.", nameof(lastName));
 
         FirstName = firstName;
         LastName = lastName;

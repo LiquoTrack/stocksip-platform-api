@@ -22,7 +22,7 @@ public record PersonContactNumber
         if (string.IsNullOrWhiteSpace(phoneNumber))
             throw new ArgumentException("Phone number cannot be null or whitespace.", nameof(phoneNumber));
 
-        // Validate phone number format (basic validation, can be enhanced)
+        // Validate a phone number format (basic validation, can be enhanced)
         var cleanedNumber = phoneNumber.Replace(" ", "").Replace("-", "").Replace("(", "").Replace(")", "");
         if (!Regex.IsMatch(cleanedNumber, @"^\+?[1-9]\d{1,14}$"))
             throw new ArgumentException("Phone number format is invalid.", nameof(phoneNumber));

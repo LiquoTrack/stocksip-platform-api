@@ -4,6 +4,9 @@ using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Value
 
 namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.Converters.JSON;
 
+/// <summary>
+///     Converter for the BusinessName value object to and from JSON.
+/// </summary>
 public class BusinessNameJsonConverter : JsonConverter<BusinessName>
 {
     public override BusinessName? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)

@@ -1,5 +1,6 @@
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Repositories;
+using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Repositories;
 using MongoDB.Bson;
@@ -88,5 +89,24 @@ public class ProfileRepository(AppDbContext context) : BaseRepository<Profile>(c
         return await _profileCollection
             .Find(x => x.UserId == userId)
             .AnyAsync();
+    }
+    
+    /// <summary>
+    ///     Method to find the profile picture URL by profile ID. 
+    /// </summary>
+    /// <param name="profileId">
+    ///     The ID of the profile to find the picture URL for.
+    /// </param>
+    /// <returns>
+    ///     A string containing the URL of the profile picture.
+    /// </returns>
+    public async Task<string> FindProfilePictureUrlByIdAsync(ObjectId profileId)
+    {
+        var imageUrlValueObject = await _profileCollection
+            .Find(x => x.Id == profileId)
+            .Project(p => p.ProfilePictureUrl)
+            .FirstOrDefaultAsync();
+
+        return imageUrlValueObject?.GetValue() ?? string.Empty;
     }
 }

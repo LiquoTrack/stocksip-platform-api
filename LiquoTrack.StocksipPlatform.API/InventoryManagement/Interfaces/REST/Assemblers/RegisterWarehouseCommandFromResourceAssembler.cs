@@ -35,9 +35,6 @@ public static class RegisterWarehouseCommandFromResourceAssembler
         // Create the capacity object
         var capacity = new WarehouseCapacity(resource.Capacity);
         
-        // Create the image url object
-        var imageUrl = new ImageUrl(resource.ImageUrl);
-        
         // Create the account id object
         var accountId = new AccountId(resource.AccountId);
         
@@ -47,7 +44,7 @@ public static class RegisterWarehouseCommandFromResourceAssembler
                 address,
                 tempLimits,
                 capacity,
-                imageUrl,
+                resource.Image,
                 accountId
             );
     }

@@ -1,14 +1,19 @@
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.OutBoundServices.FileStorage;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Model.Commands;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Services;
+using MongoDB.Bson;
 
-namespace LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.CommandServices;
+namespace LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.CommandServices;
 
 /// <summary>
 /// Service implementation for handling profile commands.
 /// </summary>
-public class ProfileCommandService(IProfileRepository profileRepository) : IProfileCommandService
+public class ProfileCommandService(
+    IProfileRepository profileRepository,
+    IProfilesImageService profilesImageService
+    ) : IProfileCommandService
 {
     /// <summary>
     /// Method to handle the registration of a new profile.
@@ -28,8 +33,12 @@ public class ProfileCommandService(IProfileRepository profileRepository) : IProf
             throw new InvalidOperationException($"A profile already exists for user ID: {command.UserId}. Cannot create a new profile for the same user.");
         }
 
+        var imageUrl = command.ProfilePicture != null
+            ? profilesImageService.UploadImage(command.ProfilePicture)
+            : "https://res.cloudinary.com/deuy1pr9e/image/upload/v1759710739/Default-profile_xbpv55.jpg";
+
         // Creates the profile with the given details
-        var profile = new Profile(command);
+        var profile = new Profile(command, imageUrl);
 
         // Tries to add the profile to the repository
         try
@@ -63,8 +72,17 @@ public class ProfileCommandService(IProfileRepository profileRepository) : IProf
         var profileToUpdate = await profileRepository.FindByIdAsync(command.ProfileId)
                               ?? throw new InvalidOperationException($"Could not find the profile to update with identifier {command.ProfileId}.");
         
+        var currentImageUrl = await profileRepository.FindProfilePictureUrlByIdAsync(ObjectId.Parse(command.ProfileId));
+        var imageUrl = currentImageUrl;
+
+        if (command.ProfilePicture != null)
+        {
+            profilesImageService.DeleteImage(currentImageUrl);
+            imageUrl = profilesImageService.UploadImage(command.ProfilePicture);
+        }
+        
         // Updates the profile with the given details
-        profileToUpdate.UpdateInformation(command);
+        profileToUpdate.UpdateInformation(command, imageUrl);
 
         // Tries to update the profile in the repository
         try
@@ -100,10 +118,13 @@ public class ProfileCommandService(IProfileRepository profileRepository) : IProf
         {
             return false;
         }
+        
+        var imageUrl = await profileRepository.FindProfilePictureUrlByIdAsync(ObjectId.Parse(profileId));
 
         // Tries to delete the profile from the repository
         try
         {
+            profilesImageService.DeleteImage(imageUrl);
             await profileRepository.DeleteAsync(profileToDelete);
         }
         // If the profile could not be deleted, throws an exception

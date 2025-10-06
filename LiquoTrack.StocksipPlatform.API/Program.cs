@@ -20,7 +20,6 @@ using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google;
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Hashing.BCrypt.Services;
-using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Persistence.Repositories;
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Tokens.JWT.Services;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Converters.JSON;
@@ -39,21 +38,26 @@ using System.Reflection;
 using System.Text;
 using Microsoft.AspNetCore.Authentication;
 using System.Text.Json;
-using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Services;
 using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Authentication;
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Pipeline.Middleware.Extensions;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.External.ACL;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.CommandServices;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
-using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.CommandHandlers;
+using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Persistence.Repositories;
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Tokens.JWT.Configuration;
-using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.CommandServices;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.OutboundServices.FileStorage;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.FileStorage.Cloudinary.Services;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.ACL;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.CommandServices;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.OutBoundServices.FileStorage;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.QueryServices;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Converters.JSON;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.FileStorage.Cloudinary.Services;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Persistence.MongoDB.Repositories;
-using Microsoft.AspNetCore.Http.Features;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Interfaces.ACL;
+using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.FileStorage.Cloudinary.Configuration;
 using GoogleAuthService = LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Services.GoogleAuthService;
 
 // Register MongoDB mappings
@@ -74,12 +78,6 @@ builder.Services.AddRouting(o => o.LowercaseUrls = true);
 builder.Services.AddControllers(o => o.Conventions.Add(new KebabCaseRouteNamingConvention()));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpContextAccessor();
-builder.Services.Configure<FormOptions>(options =>
-{
-    options.MultipartBodyLengthLimit = 10 * 1024 * 1024; 
-    options.ValueLengthLimit = 10 * 1024 * 1024;
-    options.MultipartHeadersLengthLimit = 64 * 1024;
-});
 
 // Register MongoDB conventions for camel case naming
 CamelCaseFieldNamingConvention.UseCamelCaseNamingConvention();
@@ -150,9 +148,6 @@ builder.Services.AddSingleton<AppDbContext>();
 builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 builder.Services.AddScoped<DatabaseSeeder>();
 
-// Register Unit of Work
-builder.Services.AddScoped<IUnitOfWork, MongoUnitOfWork>();
-
 builder.Services.Configure<JsonOptions>(options =>
 {
     options.JsonSerializerOptions.Converters.Add(new AccountIdJsonConverter());
@@ -181,9 +176,6 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 // Register Hashing Service
 builder.Services.AddScoped<IHashingService, HashingService>();
 
-// Register Unit of Work
-builder.Services.AddScoped<IUnitOfWork, MongoUnitOfWork>();
-
 // Register token validator and authentication services
 builder.Services.AddSingleton<CustomGoogleTokenValidator>();
 builder.Services.AddScoped<ISecurityTokenValidator>(sp => sp.GetRequiredService<CustomGoogleTokenValidator>());
@@ -208,6 +200,9 @@ builder.Services.AddSingleton<CustomGoogleTokenValidator>();
 builder.Services.AddScoped<ISecurityTokenValidator>(sp => sp.GetRequiredService<CustomGoogleTokenValidator>());
 builder.Services.AddScoped<IGoogleTokenValidator, CustomGoogleTokenValidatorAdapter>();
 
+// Register Cloudinary Configuration
+builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
+
 // Register user services
 builder.Services.AddScoped<IUserCommandService, UserCommandService>();
 builder.Services.AddScoped<IUserQueryService, UserQueryService>();
@@ -216,6 +211,9 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 //
 // Bounded Context Inventory Management
 //
+
+builder.Services.AddScoped<IInventoryImageService, InventoryImageService>();
+
 builder.Services.AddScoped<IBrandRepository, BrandRepository>();
 builder.Services.AddScoped<IBrandQueryService, BrandQueryService>();
 
@@ -258,9 +256,13 @@ builder.Services.Configure<JsonOptions>(options =>
 //
 // Bounded Context Profile Management
 //
+builder.Services.AddScoped<IProfilesImageService, ProfilesImageService>();
+
 builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
 builder.Services.AddScoped<IProfileQueryService, ProfileQueryService>();
 builder.Services.AddScoped<IProfileCommandService, ProfileCommandService>();
+
+builder.Services.AddScoped<IProfileContextFacade, ProfileContextFacade>();
 
 builder.Services.Configure<JsonOptions>(options =>
 {
@@ -275,6 +277,7 @@ builder.Services.AddScoped<IPlanQueryService, PlanQueryService>();
 builder.Services.AddScoped<IAccountQueryService, AccountQueryService>();
 builder.Services.AddScoped<IAccountCommandService, AccountCommandService>();
 builder.Services.AddScoped<IBusinessCommandService, BusinessCommandService>();
+builder.Services.AddScoped<IBusinessQueryService, BusinessQueryService>();
 
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 builder.Services.AddScoped<IBusinessRepository, BusinessRepository>();
@@ -590,12 +593,20 @@ else
 
 // Add middleware in the correct order
 app.UseHttpsRedirection();
+
 app.UseCors("AllowSpecificOrigins");
+
 app.UseRouting();
-app.UseAuthentication();
-app.UseAuthorization();
 
 app.UseAuthentication();
+
+app.UseAuthorization();
+
+// Configure endpoints
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllers();
+});
 
 // Configure the Authentication HTTP request pipeline.
 app.UseRequestAuthorization();

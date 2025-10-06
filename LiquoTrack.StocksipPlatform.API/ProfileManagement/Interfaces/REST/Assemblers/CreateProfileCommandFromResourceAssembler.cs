@@ -16,13 +16,12 @@ public class CreateProfileCommandFromResourceAssembler
     {
         var personName = new PersonName(resource.FirstName, resource.LastName);
         var personContactNumber = new PersonContactNumber(resource.PhoneNumber);
-        var imageUrl = new ImageUrl(resource.ProfilePictureUrl);
 
         return new CreateProfileCommand(
             personName,
             personContactNumber,
             resource.PhoneNumber,
-            imageUrl,
+            resource.ProfilePicture,
             resource.UserId,
             resource.AssignedRole
         );

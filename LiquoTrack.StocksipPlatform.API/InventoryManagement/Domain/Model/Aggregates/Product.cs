@@ -85,8 +85,8 @@ public class Product(
     ///     The command that triggered the creation of the product.
     ///     It contains the information needed to create the product.   
     /// </param>
-    public Product(RegisterProductCommand command) : this(command.Name, command.Type, command.Brand, command.UnitPrice,
-        command.MinimumStock, command.Content, command.ImageUrl, command.AccountId, command.SupplierId)
+    public Product(RegisterProductCommand command, string imageUrl) : this(command.Name, command.Type, command.Brand, command.UnitPrice,
+        command.MinimumStock, command.Content, new ImageUrl(imageUrl), command.AccountId, command.SupplierId)
     { }
     
     /// <summary>
@@ -125,11 +125,11 @@ public class Product(
     /// <param name="command">
     ///     The command containing the new product information. 
     /// </param>
-    public void UpdateInformation(UpdateProductInformationCommand command) 
+    public void UpdateInformation(UpdateProductInformationCommand command, string imageUrl) 
     {
         Name = command.Name;
         UnitPrice = command.UnitPrice;
         MinimumStock = command.MinimumStock;
-        ImageUrl = command.ImageUrl;
+        ImageUrl = new ImageUrl(imageUrl);
     }
 }

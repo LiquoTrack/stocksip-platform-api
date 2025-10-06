@@ -18,7 +18,9 @@ public class ProductRepository(AppDbContext context) : BaseRepository<Product>(c
     ///     The MongoDB collection for the Product aggregate.   
     /// </summary>
     private readonly IMongoCollection<Product> _productCollection = context.GetCollection<Product>();
-    
+
+    private IProductRepository _productRepositoryImplementation;
+
     /// <summary>
     ///     Method to check if a product exists by a given name.
     /// </summary>
@@ -109,5 +111,15 @@ public class ProductRepository(AppDbContext context) : BaseRepository<Product>(c
         return await _productCollection
             .Find(x => x.AccountId.GetId == accountId.GetId)
             .ToListAsync();
+    }
+
+    public async Task<string> FindImageUrlByProductIdAsync(ObjectId productId)
+    {
+        var imageUrlValueObject = await _productCollection
+            .Find(x => x.Id == productId)
+            .Project(p => p.ImageUrl)
+            .FirstOrDefaultAsync();
+        
+        return imageUrlValueObject?.GetValue() ?? string.Empty;
     }
 }

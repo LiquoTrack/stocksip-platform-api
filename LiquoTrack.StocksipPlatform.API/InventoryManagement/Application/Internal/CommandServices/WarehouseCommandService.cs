@@ -1,4 +1,5 @@
-﻿using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Aggregates;
+﻿using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.OutboundServices.FileStorage;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Commands;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Exceptions;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Repositories;
@@ -14,7 +15,8 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Intern
 ///     The repository for handling the Warehouses in the database.
 /// </param>
 public class WarehouseCommandService(
-        IWarehouseRepository warehouseRepository
+        IWarehouseRepository warehouseRepository,
+        IInventoryImageService inventoryImageService
     ) : IWarehouseCommandService
 {
     /// <summary>
@@ -33,6 +35,10 @@ public class WarehouseCommandService(
         {
             throw new WarehouseFailedCreationException($"Warehouse with name {command.Name} already exists.");
         }
+        
+        string imageUrl = command.Image != null ? 
+            inventoryImageService.UploadImage(command.Image) 
+            : "https://res.cloudinary.com/deuy1pr9e/image/upload/v1759709826/Default-warehouse_qdgvkw.jpg"; 
         
         // Verifies that the warehouse does not already exist with the same address.
         if (await warehouseRepository.ExistsByStreetAndCityAndPostalCodeIgnoreCaseAndAccountIdAsync(
@@ -57,7 +63,7 @@ public class WarehouseCommandService(
         // string imageUrl = command.ImageUrl != null ? cloudinaryService.UploadImage(command.Image) : "https://res.cloudinary.com/deuy1pr9e/image/upload/v1750914969/default-warehouse_whqolq.avif";
         
         // Create the warehouse.
-        var warehouse = new Warehouse(command, command.ImageUrl);
+        var warehouse = new Warehouse(command, imageUrl);
 
         // Tries to add the warehouse to the repository.
         try
@@ -120,10 +126,10 @@ public class WarehouseCommandService(
         var newImageUrl = currentImageUrl;
         
         // Verifies that the image url is not empty.
-        if (string.IsNullOrWhiteSpace(command.ImageUrl.GetValue()) && string.IsNullOrEmpty(command.ImageUrl.GetValue()))
+        if (command.Image != null)
         {
-            // cloudinaryService.DeleteImage(currentImageUrl);
-            // newImageUrl = cloudinaryService.UploadImage(command.ImageUrl);
+            inventoryImageService.DeleteImage(currentImageUrl);
+            newImageUrl = inventoryImageService.UploadImage(command.Image);
         }
         
         // Updates the warehouse with the new details.
@@ -159,7 +165,7 @@ public class WarehouseCommandService(
         var imageUrl = await warehouseRepository.FindImageUrlByWarehouseIdAsync(command.WarehouseId);
         
         // Deletes the image from the cloudinary service.
-        // cloudinaryService.DeleteImage(imageUrl);
+        inventoryImageService.DeleteImage(imageUrl);
         
         // Deletes the warehouse from the repository.
         await warehouseRepository.DeleteAsync(warehouseToDelete.Id.ToString());
