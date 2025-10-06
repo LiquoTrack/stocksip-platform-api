@@ -65,8 +65,11 @@ public class InventoryImageService : IInventoryImageService
         
         var protectedImages = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            "default-warehouse_whqolq",
-            "default-product_lcmtsm"
+            // Default Products Image
+            "Default-product_kt9bxf",
+            
+            // Default Warehouse Image
+            "Default-warehouse_qdgvkw"
         };
 
         var uri = new Uri(imageUrl);
@@ -75,13 +78,17 @@ public class InventoryImageService : IInventoryImageService
         if (parts.Length < 3)
             throw new ArgumentException("Invalid Cloudinary URL format.");
 
-        var folder = parts[^2];
+        var folderIndex = Array.IndexOf(parts, "StockSip-MB");
+        if (folderIndex < 0 || folderIndex + 2 >= parts.Length)
+            throw new ArgumentException("Invalid Cloudinary URL structure.");
+        
+        var folderPath = string.Join('/', parts.Skip(folderIndex).Take(parts.Length - folderIndex - 1));
         var fileName = Path.GetFileNameWithoutExtension(parts[^1]);
         
         if (protectedImages.Contains(fileName))
             return false;
 
-        var publicId = $"{folder}/{fileName}";
+        var publicId = $"{folderPath}/{fileName}";
 
         var deletionParams = new DeletionParams(publicId);
         var result = _cloudinary.Destroy(deletionParams);

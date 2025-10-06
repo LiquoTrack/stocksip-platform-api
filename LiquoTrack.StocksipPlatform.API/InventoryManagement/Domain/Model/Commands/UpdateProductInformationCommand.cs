@@ -12,5 +12,5 @@ public record UpdateProductInformationCommand(
         string Name,
         Money UnitPrice,
         ProductMinimumStock MinimumStock,
-        ImageUrl ImageUrl
+        IFormFile? Image
     );

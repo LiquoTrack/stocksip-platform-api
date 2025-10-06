@@ -71,7 +71,7 @@ public class ProductsController(
         OperationId = "RegisterProduct")]
     [SwaggerResponse(StatusCodes.Status201Created, "Product registered successfully.", typeof(ProductResource))]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Product could not be registered.")]
-    public async Task<IActionResult> RegisterProduct([FromBody] RegisterProductResource resource)
+    public async Task<IActionResult> RegisterProduct([FromForm] RegisterProductResource resource)
     {
         var registerProductCommand = RegisterProductCommandFromResourceAssembler.ToCommandFromResource(resource);
         var product = await productCommandService.Handle(registerProductCommand);
@@ -125,7 +125,7 @@ public class ProductsController(
     [SwaggerResponse(StatusCodes.Status200OK, "Product updated successfully.", typeof(ProductResource))]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Product with the specified ID could not be updated.")]
     public async Task<IActionResult> UpdateProduct([FromRoute] string id,
-        [FromBody] UpdateProductInformationResource resource)
+        [FromForm] UpdateProductInformationResource resource)
     {
         var updateProductInformationCommand = UpdateProductInformationCommandFromResourceAssembler.ToCommandFromResource(id, resource);
         var product = await productCommandService.Handle(updateProductInformationCommand);

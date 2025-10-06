@@ -1,4 +1,5 @@
-﻿using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Aggregates;
+﻿using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.OutboundServices.FileStorage;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Commands;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Exceptions;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.ValueObjects;
@@ -8,7 +9,8 @@ using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Services;
 namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.CommandServices;
 
 public class ProductCommandService(
-        IProductRepository productRepository
+        IProductRepository productRepository,
+        IInventoryImageService inventoryImageService
     ) : IProductCommandService
 {
     /// <summary>
@@ -28,9 +30,13 @@ public class ProductCommandService(
         {
             throw new ProductFailedCreationException("This ${command.Name} is taken by another product. Cannot create a new product with the same name.");
         }
+        
+        string imageUrl = command.Image != null
+            ? inventoryImageService.UploadImage(command.Image)
+            : "https://res.cloudinary.com/deuy1pr9e/image/upload/v1759687115/StockSip-MB/inventories/69d07d02-1c92-46e6-ae24-b5c049f61d31.png";
 
         // Creates the product with the given details.
-        var product = new Product(command);
+        var product = new Product(command, imageUrl);
 
         // Tries to add the product to the repository.
         try
@@ -62,8 +68,17 @@ public class ProductCommandService(
         var productToUpdate = await productRepository.FindByIdAsync(command.ProductId.ToString())
                               ?? throw new ProductFailedUpdateException($"Could not find the product to update with identifier ${command.ProductId.ToString()}.");
         
+        var currentImageUrl = await productRepository.FindImageUrlByProductIdAsync(command.ProductId);
+        var imageUrl = currentImageUrl;
+
+        if (command.Image != null)
+        {
+            inventoryImageService.DeleteImage(currentImageUrl);
+            imageUrl = inventoryImageService.UploadImage(command.Image);
+        }
+        
         // Updates the product with the given details.
-        productToUpdate.UpdateInformation(command);
+        productToUpdate.UpdateInformation(command, imageUrl);
 
         // Tries to update the product in the repository.
         try
@@ -128,14 +143,18 @@ public class ProductCommandService(
     /// </returns>
     public async Task Handle(DeleteProductCommand command)
     {
-        Console.WriteLine(command.ProductId.ToString());
         // Verifies that the product exists.
-        var productToDelete = await productRepository.FindByIdAsync(command.ProductId.ToString())
-                              ?? throw new ProductFailedDeletionException($"Could not find the product to delete with identifier ${command.ProductId.ToString()}.");
+        var product = await productRepository.FindByIdAsync(command.ProductId.ToString());
+        if (product == null)
+            throw new ProductFailedDeletionException($"Could not find the product to delete with identifier {command.ProductId.ToString()}.");
 
+        
+        var imageUrl = await productRepository.FindImageUrlByProductIdAsync(command.ProductId);
+        
         // Tries to delete the product from the repository.
         try
         {
+            inventoryImageService.DeleteImage(imageUrl);
             await productRepository.DeleteAsync(command.ProductId.ToString());
         }
         // If the product could not be deleted, throws an exception.

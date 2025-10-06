@@ -68,7 +68,7 @@ public class WarehousesController(
         OperationId = "RegisterWarehouse")]
     [SwaggerResponse(StatusCodes.Status201Created, "Warehouse registered successfully.", typeof(WarehouseResource))]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid input data.")]
-    public async Task<IActionResult> RegisterWarehouse([FromBody] RegisterWarehouseResource resource)
+    public async Task<IActionResult> RegisterWarehouse([FromForm] RegisterWarehouseResource resource)
     {
         var registerWarehouseCommand = RegisterWarehouseCommandFromResourceAssembler.ToCommandFromResource(resource);
         var warehouse = await warehouseCommandService.Handle(registerWarehouseCommand);
@@ -98,7 +98,7 @@ public class WarehousesController(
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid input data.")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Warehouse with the specified ID was not found.")]
     public async Task<IActionResult> UpdateWarehouse([FromRoute] string id,
-        [FromBody] UpdateWarehouseInformationResource resource)
+        [FromForm] UpdateWarehouseInformationResource resource)
     {
         var updateWarehouseCommand = UpdateWarehouseInformationCommandFromResourceAssembler.ToCommandFromResource(id, resource);
         var warehouse = await warehouseCommandService.Handle(updateWarehouseCommand);

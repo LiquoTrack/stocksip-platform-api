@@ -67,4 +67,15 @@ public interface IProductRepository : IBaseRepository<Product>
     ///     The list of products associated with the specified account ID.
     /// </returns>
     Task<ICollection<Product>> FindByAccountIdAsync(AccountId accountId);
+    
+    /// <summary>
+    ///     Method to find the image URL associated with a product.   
+    /// </summary>
+    /// <param name="productId">
+    ///     The ID of the product. 
+    /// </param>
+    /// <returns>
+    ///     A string containing the image URL.
+    /// </returns>
+    Task<string> FindImageUrlByProductIdAsync(ObjectId productId);
 }
