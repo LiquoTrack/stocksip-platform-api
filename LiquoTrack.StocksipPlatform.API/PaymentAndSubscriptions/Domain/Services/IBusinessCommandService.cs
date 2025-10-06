@@ -18,4 +18,15 @@ public interface IBusinessCommandService
     ///     A task representing the asynchronous operation. The task result contains the newly created business.
     /// </returns>
     Task<Business?> Handle(CreateBusinessCommand command);
+    
+    /// <summary>
+    ///     Method to handle the update of an existing business. 
+    /// </summary>
+    /// <param name="command">
+    ///     The command containing the details for updating an existing business.
+    /// </param>
+    /// <returns>
+    ///     A task representing the asynchronous operation. The task result contains the updated business.
+    /// </returns>
+    Task<Business?> Handle(UpdateBusinessCommand command);
 }
