@@ -77,6 +77,12 @@ builder.Services.AddRouting(o => o.LowercaseUrls = true);
 builder.Services.AddControllers(o => o.Conventions.Add(new KebabCaseRouteNamingConvention()));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpContextAccessor();
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 10 * 1024 * 1024; 
+    options.ValueLengthLimit = 10 * 1024 * 1024;
+    options.MultipartHeadersLengthLimit = 64 * 1024;
+});
 
 // Register MongoDB conventions for camel case naming
 CamelCaseFieldNamingConvention.UseCamelCaseNamingConvention();

@@ -7,9 +7,13 @@ using LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Resour
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Net.Mime;
+using System;
+using System.Linq;
+using Microsoft.AspNetCore.Http;
+using System.IO;
 
-namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Controllers;
-
+namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Controllers
+{
     [ApiController]
     [Route("api/v1/[controller]")]
     [Produces(MediaTypeNames.Application.Json)]
@@ -33,6 +37,59 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Co
             }
             var resource = CareGuideResourceFromEntityAssembler.ToResourceFromEntity(careGuide);
             return Ok(resource);
+        }
+        [HttpPost("{careGuideId}/file")]
+        [Consumes("multipart/form-data")]
+        [SwaggerOperation(
+            Summary = "Upload Care Guide file",
+            Description = "Uploads a PDF file and attaches it to the specified care guide.",
+            OperationId = "UploadCareGuideFile")]
+        [SwaggerResponse(StatusCodes.Status201Created, "File uploaded and care guide updated", typeof(CareGuideResource))]
+        [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid file format or request")]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "Care Guide not found")]
+        public async Task<IActionResult> UploadCareGuideFile([FromRoute] string careGuideId, [FromForm] UploadCareGuideFileResource resource)
+        {
+            if (!ModelState.IsValid)
+            {
+                return ValidationProblem(ModelState);
+            }
+            if (string.IsNullOrWhiteSpace(careGuideId)) return BadRequest("careGuideId is required.");
+            if (resource == null || resource.File == null) return BadRequest("File is required.");
+
+            var isPdf = string.Equals(resource.File.ContentType, "application/pdf", StringComparison.OrdinalIgnoreCase) ||
+                        (resource.File.FileName?.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) ?? false);
+            if (!isPdf)
+            {
+                return BadRequest("Invalid file format. Only PDF is allowed.");
+            }
+            const long maxSize = 5 * 1024 * 1024;
+            if (resource.File.Length <= 0 || resource.File.Length > maxSize)
+            {
+                return BadRequest($"Invalid file size. Must be > 0 and <= {maxSize / (1024 * 1024)}MB.");
+            }
+
+            byte[] data;
+            using (var ms = new MemoryStream())
+            {
+                await resource.File.CopyToAsync(ms);
+                data = ms.ToArray();
+            }
+
+            try
+            {
+                var command = new UploadCareGuideFileCommand(careGuideId, resource.File.FileName, resource.File.ContentType ?? "application/pdf", data);
+                var updated = await careGuideCommandService.Handle(command);
+                var entity = updated.FirstOrDefault();
+                if (entity == null) return StatusCode(StatusCodes.Status500InternalServerError, "Failed to attach file");
+                var careGuideResource = CareGuideResourceFromEntityAssembler.ToResourceFromEntity(entity);
+                return CreatedAtAction(nameof(GetCareGuideById), new { careGuideId = entity.CareGuideId }, careGuideResource);
+            }
+            catch (Exception ex)
+            {
+                if (ex.Message.Contains("not found", StringComparison.OrdinalIgnoreCase))
+                    return NotFound($"Care guide with ID {careGuideId} not found...");
+                return BadRequest(ex.Message);
+            }
         }
         [HttpPost("{accountId}/care-guides")]
         [SwaggerOperation(
@@ -113,6 +170,7 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Co
             return Ok(resource);
         }
 
+
         [HttpPut("{careGuideId}")]
         [SwaggerOperation(
             Summary = "Update Care Guide",
@@ -175,3 +233,4 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Co
             { Message = $"Care Guide with ID {careGuideId} assigned to product with ID {productId} successfully." });
         }
     }
+}

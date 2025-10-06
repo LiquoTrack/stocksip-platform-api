@@ -1,4 +1,4 @@
-﻿using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Aggregates;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Commands;
 
 namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Services
@@ -10,6 +10,7 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Services
         Task<IEnumerable<CareGuide>> Handle(AssignCareGuideToProductCommand command);
         Task<IEnumerable<CareGuide>> Handle(UnassignCareGuideCommand command);
         Task<IEnumerable<CareGuide>> Handle(UpdateCareGuideCommand command);
+        Task<IEnumerable<CareGuide>> Handle(UploadCareGuideFileCommand command);
         Task Handle(DeleteCareGuideCommand command);
     }
 }
