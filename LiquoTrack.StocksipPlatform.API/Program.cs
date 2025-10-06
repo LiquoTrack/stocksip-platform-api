@@ -47,6 +47,7 @@ using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Persistence.
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Tokens.JWT.Configuration;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.OutboundServices.FileStorage;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.FileStorage.Cloudinary.Services;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.ACL;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.CommandServices;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.OutBoundServices.FileStorage;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.QueryServices;
@@ -55,6 +56,7 @@ using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Converters.JSON;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.FileStorage.Cloudinary.Services;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Persistence.MongoDB.Repositories;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Interfaces.ACL;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.FileStorage.Cloudinary.Configuration;
 using GoogleAuthService = LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Services.GoogleAuthService;
 
@@ -259,6 +261,8 @@ builder.Services.AddScoped<IProfilesImageService, ProfilesImageService>();
 builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
 builder.Services.AddScoped<IProfileQueryService, ProfileQueryService>();
 builder.Services.AddScoped<IProfileCommandService, ProfileCommandService>();
+
+builder.Services.AddScoped<IProfileContextFacade, ProfileContextFacade>();
 
 builder.Services.Configure<JsonOptions>(options =>
 {

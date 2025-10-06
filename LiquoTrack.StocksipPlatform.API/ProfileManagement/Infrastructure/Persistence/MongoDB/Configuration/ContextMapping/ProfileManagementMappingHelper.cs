@@ -1,5 +1,8 @@
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Persistence.MongoDB.Configuration.Serializers;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration.Serializers;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Serializers;
 
 namespace LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Persistence.MongoDB.Configuration.ContextMapping;
 
@@ -22,6 +25,9 @@ public static class ProfileManagementMappingHelper
 
         // PersonContactNumber Value Object serializer
         SerializerRegistrationHelper.TryRegisterSerializer(new PersonContactNumberSerializer());
+        
+        // ProfileRole Value Object serializer
+        SerializerRegistrationHelper.TryRegisterSerializer(new EnumSerializer<EProfileRole>(BsonType.String));
         
     }
 }

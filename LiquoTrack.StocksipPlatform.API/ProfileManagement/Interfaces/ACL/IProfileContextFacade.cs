@@ -18,8 +18,8 @@ public interface IProfileContextFacade
     Task<string> CreateProfileAsync(
         string userId,
         string firstName,
-        string lastName,
-        string phoneNumber,
-        IFormFile profilePicture,
+        string? lastName,
+        string? phoneNumber,
+        IFormFile? profilePicture,
         string assignedRole);
 }
