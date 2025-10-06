@@ -17,14 +17,13 @@ public class UpdateProfileCommandFromResourceAssembler
     {
         var personName = new PersonName(resource.FirstName, resource.LastName);
         var personContactNumber = new PersonContactNumber(resource.PhoneNumber);
-        var imageUrl = new ImageUrl(resource.ProfilePictureUrl);
 
         return new UpdateProfileCommand(
             profileId,
             personName,
             personContactNumber,
             resource.PhoneNumber,
-            imageUrl,
+            resource.ProfilePicture,
             resource.AssignedRole
         );
     }

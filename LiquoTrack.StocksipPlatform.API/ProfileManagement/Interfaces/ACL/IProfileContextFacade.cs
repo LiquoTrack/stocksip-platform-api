@@ -12,7 +12,7 @@ public interface IProfileContextFacade
     /// <param name="firstName">The first name of the profile owner.</param>
     /// <param name="lastName">The last name of the profile owner.</param>
     /// <param name="phoneNumber">The phone number of the profile owner.</param>
-    /// <param name="profilePictureUrl">The profile picture URL.</param>
+    /// <param name="profilePicture">The profile picture.</param>
     /// <param name="assignedRole">The role assigned to this profile.</param>
     /// <returns>The ID of the newly created profile.</returns>
     Task<string> CreateProfileAsync(
@@ -20,6 +20,6 @@ public interface IProfileContextFacade
         string firstName,
         string lastName,
         string phoneNumber,
-        string profilePictureUrl,
+        IFormFile profilePicture,
         string assignedRole);
 }

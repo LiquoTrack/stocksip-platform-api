@@ -32,7 +32,7 @@ namespace LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal
             string firstName,
             string lastName,
             string phoneNumber,
-            string profilePictureUrl,
+            IFormFile profilePicture,
             string assignedRole)
         {
             if (string.IsNullOrWhiteSpace(userId))
@@ -46,7 +46,7 @@ namespace LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal
                     new PersonName(firstName, lastName),
                     new PersonContactNumber(phoneNumber),
                     phoneNumber,
-                    new ImageUrl(profilePictureUrl),
+                    profilePicture,
                     userId,
                     assignedRole
                 );

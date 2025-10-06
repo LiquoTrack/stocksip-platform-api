@@ -1,4 +1,4 @@
-﻿namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.FileStorage.Cloudinary.Configuration;
+﻿namespace LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.FileStorage.Cloudinary.Configuration;
 
 /// <summary>
 /// This class holds the configuration settings for Cloudinary.

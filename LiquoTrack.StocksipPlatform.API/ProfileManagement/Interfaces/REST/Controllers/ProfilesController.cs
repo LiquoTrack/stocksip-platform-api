@@ -46,7 +46,7 @@ public class ProfilesController : ControllerBase
     [ProducesResponseType(typeof(ProfileResource), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> CreateProfile([FromBody] CreateProfileResource resource)
+    public async Task<IActionResult> CreateProfile([FromForm] CreateProfileResource resource)
     {
         try
         {
@@ -194,7 +194,7 @@ public class ProfilesController : ControllerBase
     [ProducesResponseType(typeof(ProfileResource), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateProfile(string id, [FromBody] UpdateProfileResource resource)
+    public async Task<IActionResult> UpdateProfile(string id, [FromForm] UpdateProfileResource resource)
     {
         try
         {

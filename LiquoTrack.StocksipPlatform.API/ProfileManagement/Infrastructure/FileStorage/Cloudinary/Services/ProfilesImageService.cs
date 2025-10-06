@@ -1,23 +1,20 @@
 ﻿using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
-using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.OutboundServices.FileStorage;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.OutBoundServices.FileStorage;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.FileStorage.Cloudinary.Configuration;
 using Microsoft.Extensions.Options;
 
-namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.FileStorage.Cloudinary.Services;
+namespace LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.FileStorage.Cloudinary.Services;
 
-/// <summary>
-/// This class implements the ICloudinaryService interface, providing methods to upload and delete images using Cloudinary.
-/// </summary>
-public class InventoryImageService : IInventoryImageService
+public class ProfilesImageService : IProfilesImageService
 {
-    private readonly CloudinaryDotNet.Cloudinary _cloudinary;
+   private readonly CloudinaryDotNet.Cloudinary _cloudinary;
 
     /// <summary>
     /// This constructor initializes the Cloudinary service with the provided Cloudinary settings.
     /// </summary>
     /// <param name="cloudinarySettings">The Cloudinary settings containing the cloud name, API key, and API secret.</param>
-    public InventoryImageService(IOptions<CloudinarySettings> cloudinarySettings)
+    public ProfilesImageService(IOptions<CloudinarySettings> cloudinarySettings)
     {
         var settings = cloudinarySettings.Value;
         var account = new Account(settings.CloudName, settings.ApiKey, settings.ApiSecret);
@@ -42,7 +39,7 @@ public class InventoryImageService : IInventoryImageService
         {
             File = new FileDescription(file.FileName, stream),
             PublicId = publicId,
-            Folder = "StockSip-MB/inventories"
+            Folder = "StockSip-MB/profiles"
         };
         
         var uploadResult = _cloudinary.Upload(uploadParams);
@@ -65,11 +62,8 @@ public class InventoryImageService : IInventoryImageService
         
         var protectedImages = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            // Default Products Image
-            "Default-product_kt9bxf",
-            
-            // Default Warehouse Image
-            "Default-warehouse_qdgvkw"
+            // Default Profile Image
+            "Default-profile_xbpv55"
         };
 
         var uri = new Uri(imageUrl);

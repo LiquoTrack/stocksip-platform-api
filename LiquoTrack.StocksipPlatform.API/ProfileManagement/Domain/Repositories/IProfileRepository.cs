@@ -69,4 +69,15 @@ public interface IProfileRepository
     /// <param name="userId">The user ID.</param>
     /// <returns>True if a profile exists; otherwise, false.</returns>
     Task<bool> ExistsByUserIdAsync(string userId);
+    
+    /// <summary>
+    ///     Checks if a profile exists by its ID.
+    /// </summary>
+    /// <param name="profileId">
+    ///     The ID of the profile to check for existence.
+    /// </param>
+    /// <returns>
+    ///     A task representing the asynchronous operation.
+    /// </returns>
+    Task<string> FindProfilePictureUrlByIdAsync(ObjectId profileId);
 }

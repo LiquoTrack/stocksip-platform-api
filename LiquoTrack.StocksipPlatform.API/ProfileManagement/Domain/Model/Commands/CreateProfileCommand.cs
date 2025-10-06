@@ -9,13 +9,13 @@ namespace LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Model.Command
 /// <param name="Name">The name of the person.</param>
 /// <param name="PersonContactNumber">The contact number of the person.</param>
 /// <param name="ContactNumber">The contact number as string.</param>
-/// <param name="ProfilePictureUrl">The profile picture URL.</param>
+/// <param name="ProfilePicture">The profile picture.</param>
 /// <param name="UserId">The user ID associated with this profile.</param>
 public record CreateProfileCommand(
     PersonName Name,
     PersonContactNumber PersonContactNumber,
     string ContactNumber,
-    ImageUrl ProfilePictureUrl,
+    IFormFile? ProfilePicture,
     string UserId,
     string AssignedRole
 );
