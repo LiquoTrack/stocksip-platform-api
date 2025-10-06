@@ -43,7 +43,6 @@ using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Pipeline.Mid
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.External.ACL;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.CommandServices;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
-using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.CommandHandlers;
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Persistence.Repositories;
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Tokens.JWT.Configuration;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.OutboundServices.FileStorage;
@@ -77,12 +76,6 @@ builder.Services.AddRouting(o => o.LowercaseUrls = true);
 builder.Services.AddControllers(o => o.Conventions.Add(new KebabCaseRouteNamingConvention()));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpContextAccessor();
-builder.Services.Configure<FormOptions>(options =>
-{
-    options.MultipartBodyLengthLimit = 10 * 1024 * 1024; 
-    options.ValueLengthLimit = 10 * 1024 * 1024;
-    options.MultipartHeadersLengthLimit = 64 * 1024;
-});
 
 // Register MongoDB conventions for camel case naming
 CamelCaseFieldNamingConvention.UseCamelCaseNamingConvention();
@@ -280,6 +273,7 @@ builder.Services.AddScoped<IPlanQueryService, PlanQueryService>();
 builder.Services.AddScoped<IAccountQueryService, AccountQueryService>();
 builder.Services.AddScoped<IAccountCommandService, AccountCommandService>();
 builder.Services.AddScoped<IBusinessCommandService, BusinessCommandService>();
+builder.Services.AddScoped<IBusinessQueryService, BusinessQueryService>();
 
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 builder.Services.AddScoped<IBusinessRepository, BusinessRepository>();

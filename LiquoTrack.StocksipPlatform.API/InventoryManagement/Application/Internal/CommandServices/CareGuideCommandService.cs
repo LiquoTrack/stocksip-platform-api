@@ -123,7 +123,6 @@ public class CareGuideCommandService(ICareGuideRepository careGuideRepository) :
             var careGuide = await careGuideRepository.GetById(command.careGuideId) ?? throw new Exception("CareGuide not found");
             careGuide.AttachFile(command.fileName, command.contentType, command.data);
             await careGuideRepository.UpdateAsync(careGuide);
-            await unitOfWork.CompleteAsync();
             return new List<CareGuide> { careGuide };
         }
     }
