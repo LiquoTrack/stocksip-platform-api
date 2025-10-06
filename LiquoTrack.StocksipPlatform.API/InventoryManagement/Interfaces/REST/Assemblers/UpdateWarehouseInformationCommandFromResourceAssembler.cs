@@ -20,7 +20,7 @@ public static class UpdateWarehouseInformationCommandFromResourceAssembler
     ///     The UpdateWarehouseInformationResource to convert.
     /// </param>
     /// <returns>
-    ///     A UpdateWarehouseInformationCommand representation of the UpdateWarehouseInformationResource.
+    ///     An UpdateWarehouseInformationCommand representation of the UpdateWarehouseInformationResource.
     /// </returns>
     public static UpdateWarehouseInformationCommand ToCommandFromResource(string warehouseId, UpdateWarehouseInformationResource resource)
     {
@@ -38,9 +38,6 @@ public static class UpdateWarehouseInformationCommandFromResourceAssembler
         // Create the updated capacity object
         var capacity = new WarehouseCapacity(resource.Capacity);
         
-        // Create the updated image url object
-        var imageUrl = new ImageUrl(resource.ImageUrl);
-        
         // Returns the command
         return new UpdateWarehouseInformationCommand(
             warehouseId,
@@ -48,7 +45,7 @@ public static class UpdateWarehouseInformationCommandFromResourceAssembler
             address,
             tempLimits,
             capacity,
-            imageUrl
+            resource.Image
         );
     }
 }

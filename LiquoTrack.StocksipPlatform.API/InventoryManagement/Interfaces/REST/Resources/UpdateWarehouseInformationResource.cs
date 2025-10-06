@@ -13,5 +13,5 @@ public record UpdateWarehouseInformationResource(
     decimal TemperatureMin,
     decimal TemperatureMax,
     double Capacity,
-    string ImageUrl
+    IFormFile? Image
     );

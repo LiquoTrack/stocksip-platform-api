@@ -12,4 +12,5 @@ public record UpdateWarehouseInformationCommand(
     WarehouseAddress NewAddress, 
     WarehouseTemperature NewTempLimits, 
     WarehouseCapacity TotalCapacity, 
-    ImageUrl ImageUrl);
+    IFormFile? Image
+    );

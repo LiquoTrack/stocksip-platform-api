@@ -57,8 +57,8 @@ public class Warehouse(
     /// <param name="imageUrl">
     ///     The image url of the warehouse.
     /// </param>
-    public Warehouse(RegisterWarehouseCommand command, ImageUrl imageUrl) 
-        : this(command.Name, command.Address, command.Temperature, command.Capacity, imageUrl, command.AccountId) 
+    public Warehouse(RegisterWarehouseCommand command, string imageUrl) 
+        : this(command.Name, command.Address, command.Temperature, command.Capacity, new ImageUrl(imageUrl), command.AccountId) 
     {}
     
     /// <summary>
