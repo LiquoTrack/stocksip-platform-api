@@ -13,6 +13,5 @@ public record RegisterWarehouseResource(
     decimal TemperatureMin,
     decimal TemperatureMax,
     double Capacity,
-    IFormFile? Image,
-    string AccountId
+    IFormFile? Image
     );
