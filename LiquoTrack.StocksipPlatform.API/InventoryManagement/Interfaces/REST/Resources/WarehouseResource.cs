@@ -14,6 +14,5 @@ public record WarehouseResource(
         double Capacity,
         decimal TemperatureMin,
         decimal TemperatureMax,
-        string ImageUrl,
-        string AccountId
+        string ImageUrl
     );
