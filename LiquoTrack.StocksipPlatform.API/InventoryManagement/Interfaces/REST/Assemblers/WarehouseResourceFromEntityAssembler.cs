@@ -31,8 +31,7 @@ public static class WarehouseResourceFromEntityAssembler
             entity.Capacity.GetValue(),
             entity.Temperature.GetMinTemperature(),
             entity.Temperature.GetMaxTemperature(),
-            entity.ImageUrl.GetValue(),
-            entity.AccountId.GetId
+            entity.ImageUrl.GetValue()
         );
     }
 }

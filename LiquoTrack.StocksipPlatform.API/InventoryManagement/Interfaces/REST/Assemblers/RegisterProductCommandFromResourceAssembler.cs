@@ -19,7 +19,7 @@ public static class RegisterProductCommandFromResourceAssembler
     /// <returns>
     ///     A RegisterProductCommand representation of the RegisterProductResource.
     /// </returns>
-    public static RegisterProductCommand ToCommandFromResource(RegisterProductResource resource)
+    public static RegisterProductCommand ToCommandFromResource(RegisterProductResource resource, string AccountId)
     {
         return new RegisterProductCommand(
                 resource.Name,
@@ -29,7 +29,7 @@ public static class RegisterProductCommandFromResourceAssembler
                 new ProductMinimumStock(resource.MinimumStock),
                 new ProductContent(resource.Content),
                 resource.Image!,
-                new AccountId(resource.AccountId),
+                new AccountId(AccountId),
                 new AccountId(resource.SupplierId)
             );
     }

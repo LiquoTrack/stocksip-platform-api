@@ -221,6 +221,10 @@ builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductQueryService, ProductQueryService>();
 builder.Services.AddScoped<IProductCommandService, ProductCommandService>();
 
+builder.Services.AddScoped<IWarehouseRepository, WarehouseRepository>();
+builder.Services.AddScoped<IWarehouseCommandService, WarehouseCommandService>();
+builder.Services.AddScoped<IWarehouseQueryService, WarehouseQueryService>();
+
 builder.Services.AddScoped<ICareGuideRepository, CareGuideRepository>();
 builder.Services.AddScoped<ICareGuideQueryService, CareGuideQueryService>();
 builder.Services.AddScoped<ICareGuideCommandService, CareGuideCommandService>();

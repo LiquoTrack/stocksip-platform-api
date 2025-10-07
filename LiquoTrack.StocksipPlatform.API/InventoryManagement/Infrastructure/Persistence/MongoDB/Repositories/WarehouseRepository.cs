@@ -52,7 +52,7 @@ public class WarehouseRepository(AppDbContext context) : BaseRepository<Warehous
     {
         var filter = Builders<Warehouse>.Filter.And(
             Builders<Warehouse>.Filter.Regex(w => w.Name, new BsonRegularExpression($"^{Regex.Escape(name)}$", "i")),
-            Builders<Warehouse>.Filter.Eq(w => w.AccountId.GetId, accountId.GetId)
+            Builders<Warehouse>.Filter.Eq(w => w.AccountId, accountId)
         );
         
         return await _warehouseCollection.Find(filter).AnyAsync();
@@ -79,7 +79,7 @@ public class WarehouseRepository(AppDbContext context) : BaseRepository<Warehous
         
         var filter = Builders<Warehouse>.Filter.And(
             Builders<Warehouse>.Filter.Regex(w => w.Name, new BsonRegularExpression($"^{Regex.Escape(name)}$", "i")),
-            Builders<Warehouse>.Filter.Eq(w => w.AccountId.GetId, accountId.GetId),
+            Builders<Warehouse>.Filter.Eq(w => w.AccountId, accountId),
             Builders<Warehouse>.Filter.Ne(w => w.Id, warehouseObjectId)
         );
         
@@ -108,10 +108,10 @@ public class WarehouseRepository(AppDbContext context) : BaseRepository<Warehous
         AccountId accountId)
     {
         var filter = Builders<Warehouse>.Filter.And(
-            Builders<Warehouse>.Filter.Regex(w => w.Address.Street, new BsonRegularExpression($"^{Regex.Escape(street)}$", "i")),
-            Builders<Warehouse>.Filter.Regex(w => w.Address.City, new BsonRegularExpression($"^{Regex.Escape(city)}$", "i")),
-            Builders<Warehouse>.Filter.Regex(w => w.Address.PostalCode, new BsonRegularExpression($"^{Regex.Escape(postalCode)}$", "i")),
-            Builders<Warehouse>.Filter.Eq(w => w.AccountId.GetId, accountId.GetId)
+            Builders<Warehouse>.Filter.Regex("Address.Street", new BsonRegularExpression($"^{Regex.Escape(street)}$", "i")),
+            Builders<Warehouse>.Filter.Regex("Address.City", new BsonRegularExpression($"^{Regex.Escape(city)}$", "i")),
+            Builders<Warehouse>.Filter.Regex("Address.PostalCode", new BsonRegularExpression($"^{Regex.Escape(postalCode)}$", "i")),
+            Builders<Warehouse>.Filter.Eq(w => w.AccountId, accountId)
         );
         
         return _warehouseCollection.Find(filter).AnyAsync();
@@ -144,10 +144,10 @@ public class WarehouseRepository(AppDbContext context) : BaseRepository<Warehous
         var warehouseObjectId = ObjectId.Parse(warehouseId);
         
         var filter = Builders<Warehouse>.Filter.And(
-            Builders<Warehouse>.Filter.Regex(w => w.Address.Street, new BsonRegularExpression($"^{Regex.Escape(street)}$", "i")),
-            Builders<Warehouse>.Filter.Regex(w => w.Address.City, new BsonRegularExpression($"^{Regex.Escape(city)}$", "i")),
-            Builders<Warehouse>.Filter.Regex(w => w.Address.PostalCode, new BsonRegularExpression($"^{Regex.Escape(postalCode)}$", "i")),
-            Builders<Warehouse>.Filter.Eq(w => w.AccountId.GetId, accountId.GetId),
+            Builders<Warehouse>.Filter.Regex("Address.Street", new BsonRegularExpression($"^{Regex.Escape(street)}$", "i")),
+            Builders<Warehouse>.Filter.Regex("Address.City", new BsonRegularExpression($"^{Regex.Escape(city)}$", "i")),
+            Builders<Warehouse>.Filter.Regex("Address.PostalCode", new BsonRegularExpression($"^{Regex.Escape(postalCode)}$", "i")),
+            Builders<Warehouse>.Filter.Eq(w => w.AccountId, accountId),
             Builders<Warehouse>.Filter.Ne(w => w.Id, warehouseObjectId)
         );
         
@@ -201,7 +201,7 @@ public class WarehouseRepository(AppDbContext context) : BaseRepository<Warehous
     /// </returns>
     public Task<int> CountByAccountIdAsync(AccountId accountId)
     {
-        var filter = Builders<Warehouse>.Filter.Eq(w => w.AccountId.GetId, accountId.GetId);
+        var filter = Builders<Warehouse>.Filter.Eq(w => w.AccountId, accountId);
         return _warehouseCollection.CountDocumentsAsync(filter).ContinueWith(t => (int)t.Result);
     }
 }

@@ -20,6 +20,7 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Co
 [Produces(MediaTypeNames.Application.Json)]
 [Tags("Accounts")]
 public class AccountWarehousesController(
+        IWarehouseCommandService warehouseCommandService,
         IWarehouseQueryService warehouseQueryService
     ) : ControllerBase
 {
@@ -50,5 +51,30 @@ public class AccountWarehousesController(
             .Select(WarehouseResourceFromEntityAssembler.ToResourceFromEntity)
             .ToList();
         return Ok(resources);
+    }
+    
+    /// <summary>
+    ///     Endpoint to handle the registration of a new warehouse.
+    /// </summary>
+    /// <param name="resource">
+    ///     The request body containing the details of the warehouse to be registered.
+    /// </param>
+    /// <returns>
+    ///     A 201 Created response with the details of the newly registered warehouse, or a 400 Bad Request response if the warehouse could not be registered.   
+    /// </returns>
+    [HttpPost]
+    [SwaggerOperation(
+        Summary = "Register a new warehouse.",
+        Description = "Registers a new warehouse with the provided details.",
+        OperationId = "RegisterWarehouse")]
+    [SwaggerResponse(StatusCodes.Status201Created, "Warehouse registered successfully.", typeof(WarehouseResource))]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid input data.")]
+    public async Task<IActionResult> RegisterWarehouse([FromForm] RegisterWarehouseResource resource, [FromRoute] string accountId)
+    {
+        var registerWarehouseCommand = RegisterWarehouseCommandFromResourceAssembler.ToCommandFromResource(resource, accountId);
+        var warehouse = await warehouseCommandService.Handle(registerWarehouseCommand);
+        if (warehouse is null) return BadRequest("Warehouse could not be registered.");
+        var warehouseResource = WarehouseResourceFromEntityAssembler.ToResourceFromEntity(warehouse);
+        return Ok(warehouseResource);
     }
 }
