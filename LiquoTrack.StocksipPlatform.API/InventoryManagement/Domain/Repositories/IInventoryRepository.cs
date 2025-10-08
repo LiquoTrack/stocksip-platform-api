@@ -22,7 +22,9 @@ public interface IInventoryRepository : IBaseRepository<Inventory>
     /// <param name="expirationDate">
     ///     The expiration date of the inventory item to find.
     /// </param>
-    /// <returns></returns>
+    /// <returns>
+    ///     An inventory item if found; otherwise, null.
+    /// </returns>
     Task<Inventory?> GetByProductIdWarehouseIdAndExpirationDateAsync(ObjectId productId, ObjectId warehouseId, ProductExpirationDate expirationDate);
     
     /// <summary>
@@ -37,7 +39,9 @@ public interface IInventoryRepository : IBaseRepository<Inventory>
     /// <param name="expirationDate">
     ///     The expiration date of the inventory item to find.
     /// </param>
-    /// <returns></returns>
+    /// <returns>
+    ///     A boolean indicating whether an inventory item exists.
+    /// </returns>
     Task<bool> ExistsByProductIdWarehouseIdAndExpirationDateAsync(ObjectId productId, ObjectId warehouseId, ProductExpirationDate expirationDate);
     
     /// <summary>
