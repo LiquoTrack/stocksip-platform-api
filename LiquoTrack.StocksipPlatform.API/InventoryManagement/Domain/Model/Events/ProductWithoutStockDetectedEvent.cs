@@ -1,4 +1,5 @@
-﻿using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Events;
+﻿using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.ValueObjects;
+using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Events;
 
 namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Events;
 
@@ -8,7 +9,8 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Event
 public class ProductWithoutStockDetectedEvent(
         string accountId, 
         string productId,
-        string warehouseId
+        string warehouseId,
+        ProductExpirationDate? expirationDate
     ) : IDomainEvent
 {
     /// <summary>
@@ -26,6 +28,11 @@ public class ProductWithoutStockDetectedEvent(
     /// </summary>
     public string WarehouseId { get; private set; } = warehouseId;
 
+    /// <summary>
+    ///     The expiration date of the product inventory.
+    /// </summary>
+    public ProductExpirationDate? ExpirationDate { get; private set; } = expirationDate;
+    
     /// <summary>
     ///     Date and time when the event occurred.
     /// </summary>

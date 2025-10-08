@@ -151,7 +151,8 @@ public class Inventory(
             var productProblemEvent = new ProductWithLowStockDetectedEvent(
                     accountId.GetId,
                     ProductId.ToString(),
-                    WarehouseId.ToString()
+                    WarehouseId.ToString(),
+                    ExpirationDate
                 );
 
             AddDomainEvent(productProblemEvent);
@@ -167,7 +168,8 @@ public class Inventory(
             var productProblemEvent = new ProductWithoutStockDetectedEvent(
                 accountId.GetId,
                 ProductId.ToString(),
-                WarehouseId.ToString()
+                WarehouseId.ToString(),
+                ExpirationDate
             );
 
             AddDomainEvent(productProblemEvent);

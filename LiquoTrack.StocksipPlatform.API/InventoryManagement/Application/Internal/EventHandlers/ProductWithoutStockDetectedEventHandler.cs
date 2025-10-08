@@ -8,17 +8,17 @@ using MongoDB.Bson;
 namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.EventHandlers;
 
 /// <summary>
-///     Handler for the <see cref="ProductWithLowStockDetectedEvent"/> event.
+///     Handler for the <see cref="ProductWithoutStockDetectedEvent"/> event.
 /// </summary>
 /// <param name="alertsAndNotificationsService">
 ///     The external service for creating alerts and notifications.
 /// </param>
-public class ProductWithLowStockDetectedEventHandler(
-        ExternalAlertsAndNotificationsService alertsAndNotificationsService,
-        IInventoryRepository inventoryRepository,
-        IProductRepository productRepository,
-        IWarehouseRepository warehouseRepository
-    ) : IEventHandler<ProductWithLowStockDetectedEvent>
+public class ProductWithoutStockDetectedEventHandler(
+    ExternalAlertsAndNotificationsService alertsAndNotificationsService,
+    IInventoryRepository inventoryRepository,
+    IProductRepository productRepository,
+    IWarehouseRepository warehouseRepository
+) : IEventHandler<ProductWithoutStockDetectedEvent>
 {
     /// <summary>
     ///     Method to handle the event.
@@ -29,13 +29,13 @@ public class ProductWithLowStockDetectedEventHandler(
     /// <param name="cancellationToken">
     ///     The cancellation token.
     /// </param>
-    public async Task Handle(ProductWithLowStockDetectedEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(ProductWithoutStockDetectedEvent notification, CancellationToken cancellationToken)
     {
         var inventoryId = await On(notification);
         Console.WriteLine($"[ProductLowStock] Inventory ID: {inventoryId}");
     }
     
-    private async Task<string> On(ProductWithLowStockDetectedEvent domainEvent)
+    private async Task<string> On(ProductWithoutStockDetectedEvent domainEvent)
     {
         Inventory inventory;
 
@@ -62,10 +62,10 @@ public class ProductWithLowStockDetectedEventHandler(
         var warehouse = await warehouseRepository.FindByIdAsync(domainEvent.WarehouseId.ToString()) 
                         ?? throw new ArgumentException("The warehouse does not exist.");
         
-        var title = "Low Stock Level Warning";
-        var message = $"Product {product.Name} in warehouse {warehouse.Name} has reached the minimum stock level.";;
-        var severity = "Warning";
-        var type = "ProductLowStock";
+        var title = "Zero Stock Level Warning";
+        var message = $"Product {product.Name} in warehouse {warehouse.Name} does not have any stock left.";;
+        var severity = "Critical";
+        var type = "ProductOutOfStock";
 
         alertsAndNotificationsService.CreateAlert(
             title,

@@ -1,4 +1,4 @@
-using LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Domain.Model.Commands;
+﻿using LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Domain.Model.Commands;
 using LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
@@ -8,10 +8,6 @@ namespace LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Domain.Model.Ag
 
 public class Alert: Entity
 {
-    /// <summary>
-    /// The unique identifier of the alert, generated as a new GUID.
-    /// </summary>
-    public ObjectId Id { get; private set; }
     /// <summary>
     /// The title of the alert, providing a brief description of the alert.
     /// </summary>
