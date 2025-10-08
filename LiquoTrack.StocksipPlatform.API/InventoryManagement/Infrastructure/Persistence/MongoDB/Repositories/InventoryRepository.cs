@@ -38,14 +38,37 @@ public class InventoryRepository(AppDbContext context, IMediator mediator)
     public async Task<Inventory?> GetByProductIdWarehouseIdAndExpirationDateAsync(ObjectId productId, ObjectId warehouseId,
         ProductExpirationDate expirationDate)
     {
-        if (string.IsNullOrWhiteSpace(warehouseId.ToString()) && string.IsNullOrWhiteSpace(productId.ToString()))
-            throw new ArgumentException("WarehouseId or ProductId cannot be null or empty.", nameof(warehouseId));
-        
         return await _inventoryCollection
             .Find(x => x.ProductId == productId 
-                       && x.WarehouseId == warehouseId 
-                       && x.ExpirationDate == expirationDate)
+                       && x.WarehouseId == warehouseId
+                       && x.ExpirationDate != null
+                       && x.ExpirationDate.GetValue() == expirationDate.GetValue())
             .FirstOrDefaultAsync();
+    }
+
+    /// <summary>
+    ///     Method to get an inventory item by product ID and warehouse ID.
+    ///     Used when the inventory does not have an expiration date.
+    /// </summary>
+    /// <param name="productId">
+    ///     The ID of the product to find inventory items for.
+    /// </param>
+    /// <param name="warehouseId">
+    ///     The ID of the warehouse to find inventory items for.
+    /// </param>
+    /// <returns>
+    ///     An inventory item if found; otherwise, null.
+    /// </returns>
+    public async Task<Inventory?> GetByProductIdWarehouseIdAsync(ObjectId productId, ObjectId warehouseId)
+    {
+        var filter = Builders<Inventory>.Filter.And(
+            Builders<Inventory>.Filter.Eq(x => x.ProductId, productId),
+            Builders<Inventory>.Filter.Eq(x => x.WarehouseId, warehouseId),
+            Builders<Inventory>.Filter.Exists(x => x.ExpirationDate, false)
+        );
+
+        return await _inventoryCollection.Find(filter).FirstOrDefaultAsync();
+
     }
 
     /// <summary>
@@ -74,6 +97,53 @@ public class InventoryRepository(AppDbContext context, IMediator mediator)
                        && x.WarehouseId == warehouseId 
                        && x.ExpirationDate == expirationDate)
             .AnyAsync();
+    }
+
+    /// <summary>
+    ///     Method to check if an inventory item exists by product ID, warehouse ID and without expiration date.
+    /// </summary>
+    /// <param name="productId">
+    ///     The ID of the product to find inventory items for.
+    /// </param>
+    /// <param name="warehouseId">
+    ///     The ID of the warehouse to find inventory items for.
+    /// </param>
+    /// <returns>
+    ///     A boolean indicating whether an inventory item exists.
+    /// </returns>
+    public async Task<bool> ExistsByProductIdWarehouseIdAsync(ObjectId productId, ObjectId warehouseId)
+    {
+        if (string.IsNullOrWhiteSpace(warehouseId.ToString()) && string.IsNullOrWhiteSpace(productId.ToString()))
+            throw new ArgumentException("WarehouseId or ProductId cannot be null or empty.", nameof(warehouseId));
+        
+        return await _inventoryCollection
+            .Find(x => x.ProductId == productId 
+                       && x.WarehouseId == warehouseId 
+                       && x.ExpirationDate == null)
+            .AnyAsync();
+    }
+
+    /// <summary>
+    ///     Method to check if an inventory item has an expiration date.
+    /// </summary>
+    /// <param name="productId">
+    ///     The ID of the product to find inventory items for.
+    /// </param>
+    /// <param name="warehouseId">
+    ///     The ID of the warehouse to find inventory items for.
+    /// </param>
+    /// <returns>
+    ///     A boolean indicating whether an inventory item has an expiration date.
+    /// </returns>
+    public async Task<bool> HasExpirationDateAsync(ObjectId productId, ObjectId warehouseId)
+    {
+        var filter = Builders<Inventory>.Filter.And(
+            Builders<Inventory>.Filter.Eq(x => x.ProductId, productId),
+            Builders<Inventory>.Filter.Eq(x => x.WarehouseId, warehouseId),
+            Builders<Inventory>.Filter.Exists(x => x.ExpirationDate, true)
+        );
+
+        return await _inventoryCollection.Find(filter).AnyAsync();
     }
 
     /// <summary>
