@@ -63,19 +63,39 @@ using Microsoft.OpenApi.Models;
 using MongoDB.Driver;
 using System.Reflection;
 using System.Text.Json;
+using Cortex.Mediator.Behaviors;
+using Cortex.Mediator.DependencyInjection;
 using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Authentication;
 using AppGoogleAuthService = LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Services.GoogleAuthService;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.External.ACL;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
+using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Persistence.Repositories;
+using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Tokens.JWT.Configuration;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.ACL;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.EventHandlers;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.OutboundServices.FileStorage;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Events;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.FileStorage.Cloudinary.Services;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.ACL;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.CommandServices;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.OutBoundServices.FileStorage;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.QueryServices;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Repositories;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Services;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Converters.JSON;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.FileStorage.Cloudinary.Services;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Persistence.MongoDB.Repositories;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Interfaces.ACL;
+using LiquoTrack.StocksipPlatform.API.Shared.Application.Internal.EventHandlers;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.FileStorage.Cloudinary.Configuration;
 
-
+// Register MongoDB mappings
 GlobalMongoMappingHelper.RegisterAllBoundedContextMappings();
 
+// Create a builder for the web application
 var builder = WebApplication.CreateBuilder(args);
 
-// Logger
+// Add logger
 var loggerFactory = LoggerFactory.Create(config =>
 {
     config.AddConsole();
@@ -95,6 +115,10 @@ builder.Services.AddEndpointsApiExplorer();
 // HttpContextAccessor
 builder.Services.AddHttpContextAccessor();
 
+// Register MongoDB conventions for camel case naming
+CamelCaseFieldNamingConvention.UseCamelCaseNamingConvention();
+
+// Add CORS policy
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigins", policyBuilder =>
@@ -109,29 +133,67 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Add Cortex Mediator
+builder.Services.AddCortexMediator(
+    builder.Configuration,
+    [typeof(Program)],
+    options => options.AddOpenCommandPipelineBehavior(typeof(LoggingCommandBehavior<>)));
+
+// Dependency Injection
+
+// Register Google Auth Services with fully qualified names
+builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
+
+// Register Google SignIn Command Handler and its dependencies
+builder.Services.AddScoped<GoogleSignInCommandHandler>();
+
+// Register External Auth Service (Google) with a fully qualified name
+builder.Services.AddScoped<IExternalAuthService, 
+    LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google.GoogleAuthService>();
+
+// Register the custom token validator first
+builder.Services.AddSingleton<ISecurityTokenValidator, CustomGoogleTokenValidator>();
+
+// Register Google Token Validator with configuration
+builder.Services.AddScoped<IGoogleTokenValidator>(sp => 
+    new CustomGoogleTokenValidatorAdapter(
+        sp.GetRequiredService<ISecurityTokenValidator>(),
+        sp.GetRequiredService<ILogger<CustomGoogleTokenValidatorAdapter>>(),
+        sp.GetRequiredService<IConfiguration>()));
+
+// Registers the MongoDB client as a singleton service
 builder.Services.AddSingleton<IMongoClient>(sp =>
 {
-    var cs = configuration["MongoDB:ConnectionString"];
-    if (string.IsNullOrWhiteSpace(cs))
-        throw new InvalidOperationException("MongoDB connection string is not configured (MongoDB:ConnectionString).");
-    return new MongoClient(cs);
+    var cs = builder.Configuration["MongoDB:ConnectionString"];
+    return string.IsNullOrEmpty(cs) 
+        ? throw new InvalidOperationException("MongoDB connection string is not configured") 
+        : new MongoClient(cs);
 });
 
+// Register IMongoDatabase
 builder.Services.AddScoped<IMongoDatabase>(sp =>
 {
     var client = sp.GetRequiredService<IMongoClient>();
     var dbName = configuration["MongoDB:DatabaseName"];
-    if (string.IsNullOrWhiteSpace(dbName))
-        throw new InvalidOperationException("MongoDB database name is not configured (MongoDB:DatabaseName).");
-    return client.GetDatabase(dbName);
+    return string.IsNullOrEmpty(dbName) 
+        ? throw new InvalidOperationException("MongoDB database name is not configured") 
+        : client.GetDatabase(dbName);
 });
 
+// Add service for MongoDB client
 builder.Services.AddSingleton<AppDbContext>();
+
+//
+// Bounded Context Shared
+//
+
+builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<DatabaseSeeder>();
 
+// Shared JSON converters
 builder.Services.Configure<JsonOptions>(options =>
 {
-    // Shared converters
     options.JsonSerializerOptions.Converters.Add(new AccountIdJsonConverter());
     options.JsonSerializerOptions.Converters.Add(new UserIdJsonConverter());
     options.JsonSerializerOptions.Converters.Add(new EmailJsonConverter());
@@ -141,8 +203,88 @@ builder.Services.Configure<JsonOptions>(options =>
     options.JsonSerializerOptions.Converters.Add(new PurchaseOrderIdJsonConverter());
     options.JsonSerializerOptions.Converters.Add(new CatalogIdJsonConverter());
     options.JsonSerializerOptions.Converters.Add(new MoneyJsonConverter());
+});
 
-    // Inventory converters
+//
+// Bounded Context Alerts and Notifications
+//
+
+builder.Services.AddScoped<IAlertRepository,AlertRepository>();
+builder.Services.AddScoped<IAlertCommandService,AlertCommandService>();
+builder.Services.AddScoped<IAlertQueryService,AlertQueryService>();
+builder.Services.AddScoped<IAlertsAndNotificationsContextFacade, AlertsAndNotificationsContextFacade>();
+
+//
+// Authentication Bounded Context
+//
+
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserCommandService, UserCommandService>();
+builder.Services.AddScoped<IUserQueryService, UserQueryService>();
+
+// JWT Configuration
+builder.Services.Configure<TokenSettings>(
+    builder.Configuration.GetSection("Jwt"));
+
+// Register Token Service
+builder.Services.AddScoped<ITokenService, TokenService>();
+
+// Register Hashing Service
+builder.Services.AddScoped<IHashingService, HashingService>();
+
+// Register token validator and authentication services
+builder.Services.AddSingleton<CustomGoogleTokenValidator>();
+builder.Services.AddScoped<ISecurityTokenValidator>(sp => sp.GetRequiredService<CustomGoogleTokenValidator>());
+builder.Services.AddScoped<IGoogleTokenValidator, CustomGoogleTokenValidatorAdapter>();
+
+// Using a fully qualified name to resolve ambiguity
+builder.Services.AddScoped<IExternalAuthService, 
+    LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google.GoogleAuthService>();
+
+// JWT Configuration
+builder.Services.Configure<LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Tokens.JWT.Configuration.TokenSettings>(
+    builder.Configuration.GetSection("Jwt"));
+
+// Register Token Service
+builder.Services.AddScoped<ITokenService, TokenService>();
+
+// Google Auth Service 
+builder.Services.AddScoped<IGoogleAuthService, AppGoogleAuthService>();
+builder.Services.AddScoped<GoogleSignInCommandHandler>();
+builder.Services.AddScoped<IExternalAuthService, LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google.GoogleAuthService>();
+
+//
+// Bounded context Inventory
+//
+
+builder.Services.AddScoped<IBrandRepository, BrandRepository>();
+builder.Services.AddScoped<IBrandQueryService, BrandQueryService>();
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<IProductQueryService, ProductQueryService>();
+builder.Services.AddScoped<IProductCommandService, ProductCommandService>();
+
+builder.Services.AddScoped<IInventoryCommandService, InventoryCommandService>();
+builder.Services.AddScoped<IInventoryQueryService, InventoryQueryService>();
+builder.Services.AddScoped<IInventoryRepository, InventoryRepository>();
+
+builder.Services.AddScoped<IInventoryImageService, InventoryImageService>();
+builder.Services.AddScoped<ExternalAlertsAndNotificationsService>();
+
+builder.Services.AddScoped<IWarehouseRepository, WarehouseRepository>();
+builder.Services.AddScoped<IWarehouseCommandService, WarehouseCommandService>();
+builder.Services.AddScoped<IWarehouseQueryService, WarehouseQueryService>();
+
+builder.Services.AddScoped<ICareGuideRepository, CareGuideRepository>();
+builder.Services.AddScoped<ICareGuideQueryService, CareGuideQueryService>();
+builder.Services.AddScoped<ICareGuideCommandService, CareGuideCommandService>();
+
+// Registers the events handlers for the events of the context
+builder.Services.AddScoped<IEventHandler<ProductWithLowStockDetectedEvent>, ProductWithLowStockDetectedEventHandler>();
+builder.Services.AddScoped<IEventHandler<ProductWithoutStockDetectedEvent>, ProductWithoutStockDetectedEventHandler>();
+
+// Registers the JSON Converts of the context
+builder.Services.Configure<JsonOptions>(options =>
+{
     options.JsonSerializerOptions.Converters.Add(new EBrandNamesJsonConverter());
     options.JsonSerializerOptions.Converters.Add(new EProductStatesJsonConverter());
     options.JsonSerializerOptions.Converters.Add(new EProductTypesJsonConverter());
@@ -155,12 +297,57 @@ builder.Services.Configure<JsonOptions>(options =>
     options.JsonSerializerOptions.Converters.Add(new WarehouseCapacityJsonConverter());
     options.JsonSerializerOptions.Converters.Add(new WarehouseTemperatureJsonConverter());
     options.JsonSerializerOptions.Converters.Add(new CareGuideJsonConverter());
+});
 
-    // Profile converters
+//
+// Bounded Context Procurement Ordering
+//
+
+//
+// Bounded Context Order Management
+//
+
+//
+// Bounded Context Profile Management
+//
+builder.Services.AddScoped<IProfilesImageService, ProfilesImageService>();
+builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
+builder.Services.AddScoped<IProfileQueryService, ProfileQueryService>();
+builder.Services.AddScoped<IProfileCommandService, ProfileCommandService>();
+
+builder.Services.AddScoped<IProfileContextFacade, ProfileContextFacade>();
+
+// Profile converters
+builder.Services.Configure<JsonOptions>(options =>
+{
     options.JsonSerializerOptions.Converters.Add(new PersonContactNumberJsonConverter());
     options.JsonSerializerOptions.Converters.Add(new PersonNameJsonConverter());
+});    
 
-    // Payment converters
+//
+// Bounded context Payment & Subscriptions
+//
+
+builder.Services.AddScoped<IPlanQueryService, PlanQueryService>();
+builder.Services.AddScoped<IPlanRepository, PlanRepository>();
+
+builder.Services.AddScoped<IAccountQueryService, AccountQueryService>();
+builder.Services.AddScoped<IAccountCommandService, AccountCommandService>();
+builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+
+builder.Services.AddScoped<IBusinessCommandService, BusinessCommandService>();
+builder.Services.AddScoped<IBusinessQueryService, BusinessQueryService>();
+builder.Services.AddScoped<IBusinessRepository, BusinessRepository>();
+
+builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
+
+builder.Services.AddScoped<IPaymentAndSubscriptionsFacade, PaymentAndSubscriptionsFacade>();
+
+builder.Services.Configure<CloudinarySettings>(configuration.GetSection("Cloudinary"));
+
+// Payment converters
+builder.Services.Configure<JsonOptions>(options =>
+{
     options.JsonSerializerOptions.Converters.Add(new BusinessEmailJsonConverter());
     options.JsonSerializerOptions.Converters.Add(new BusinessNameJsonConverter());
     options.JsonSerializerOptions.Converters.Add(new EAccountRoleJsonConverter());
@@ -170,52 +357,7 @@ builder.Services.Configure<JsonOptions>(options =>
     options.JsonSerializerOptions.Converters.Add(new ESubscriptionStatusJsonConverter());
     options.JsonSerializerOptions.Converters.Add(new PlanLimitsJsonConverter());
     options.JsonSerializerOptions.Converters.Add(new RucJsonConverter());
-});
-
-builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IUserCommandService, UserCommandService>();
-builder.Services.AddScoped<IUserQueryService, UserQueryService>();
-
-// Google Auth Service 
-builder.Services.AddScoped<IGoogleAuthService, AppGoogleAuthService>();
-builder.Services.AddScoped<GoogleSignInCommandHandler>();
-builder.Services.AddScoped<IExternalAuthService, LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google.GoogleAuthService>();
-
-// Bounded context Inventory
-builder.Services.AddScoped<IInventoryImageService, InventoryImageService>();
-builder.Services.AddScoped<IBrandRepository, BrandRepository>();
-builder.Services.AddScoped<IBrandQueryService, BrandQueryService>();
-builder.Services.AddScoped<IProductRepository, ProductRepository>();
-builder.Services.AddScoped<IProductQueryService, ProductQueryService>();
-builder.Services.AddScoped<IProductCommandService, ProductCommandService>();
-builder.Services.AddScoped<IWarehouseRepository, WarehouseRepository>();
-builder.Services.AddScoped<IWarehouseCommandService, WarehouseCommandService>();
-builder.Services.AddScoped<IWarehouseQueryService, WarehouseQueryService>();
-builder.Services.AddScoped<ICareGuideRepository, CareGuideRepository>();
-builder.Services.AddScoped<ICareGuideQueryService, CareGuideQueryService>();
-builder.Services.AddScoped<ICareGuideCommandService, CareGuideCommandService>();
-
-// Bounded context Profile
-builder.Services.AddScoped<IProfilesImageService, ProfilesImageService>();
-builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
-builder.Services.AddScoped<IProfileQueryService, ProfileQueryService>();
-builder.Services.AddScoped<IProfileCommandService, ProfileCommandService>();
-builder.Services.AddScoped<IProfileContextFacade, ProfileContextFacade>();
-
-// Bounded context Payment & Subscriptions
-builder.Services.AddScoped<IPlanQueryService, PlanQueryService>();
-builder.Services.AddScoped<IAccountQueryService, AccountQueryService>();
-builder.Services.AddScoped<IAccountCommandService, AccountCommandService>();
-builder.Services.AddScoped<IBusinessCommandService, BusinessCommandService>();
-builder.Services.AddScoped<IBusinessQueryService, BusinessQueryService>();
-builder.Services.AddScoped<IAccountRepository, AccountRepository>();
-builder.Services.AddScoped<IBusinessRepository, BusinessRepository>();
-builder.Services.AddScoped<IPlanRepository, PlanRepository>();
-builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
-builder.Services.AddScoped<IPaymentAndSubscriptionsFacade, PaymentAndSubscriptionsFacade>();
-
-builder.Services.Configure<CloudinarySettings>(configuration.GetSection("Cloudinary"));
+});                          
 
 // Authentication: hashing & token service
 builder.Services.AddScoped<IHashingService, HashingService>(); // BCrypt

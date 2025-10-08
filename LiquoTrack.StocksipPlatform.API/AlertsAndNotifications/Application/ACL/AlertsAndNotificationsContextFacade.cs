@@ -14,8 +14,10 @@ namespace LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Application.ACL
     /// <param name="alertQueryService">
     /// The query service for retrieving alert information.
     /// </param>
-    public class AlertsAndNotificationsContextFacade(IAlertCommandService alertCommandService,
-    IAlertQueryService alertQueryService) : IAlertsAndNotificationsContextFacade
+    public class AlertsAndNotificationsContextFacade(
+        IAlertCommandService alertCommandService,
+        IAlertQueryService alertQueryService
+        ) : IAlertsAndNotificationsContextFacade
     {
         /// <summary>
         /// Creates a new alert.

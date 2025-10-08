@@ -1,3 +1,4 @@
+﻿using Cortex.Mediator;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration;
@@ -14,13 +15,18 @@ namespace LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.Mong
 ///     It requires the entity type to be passed as a generic parameter.
 ///     It also requires the context to be passed in the constructor.
 /// </remarks>
-public class BaseRepository<T>(AppDbContext context) : IBaseRepository<T> where T : Entity
+public class BaseRepository<T>(AppDbContext context, IMediator mediator) : IBaseRepository<T> where T : Entity
 {
     /// <summary>
     ///    The MongoDB collection for the entity type T
     /// </summary>
     private readonly IMongoCollection<T> _collection = context.GetCollection<T>();
-
+    
+    /// <summary>
+    ///     The mediator for publishing domain events.
+    /// </summary>
+    private readonly IMediator _mediator = mediator;
+    
     /// <summary>
     ///     Adds an entity to the repository
     /// </summary>
@@ -89,5 +95,28 @@ public class BaseRepository<T>(AppDbContext context) : IBaseRepository<T> where 
     public async Task<IEnumerable<T>> GetAllAsync()
     {
         return await _collection.Find(_ => true).ToListAsync();
+    }
+
+    /// <summary>
+    ///     Method to save changes related to an event.
+    /// </summary>
+    /// <param name="aggregate">
+    ///     The aggregate to save.
+    /// </param>
+    /// <returns>
+    ///     A Task representing the asynchronous operation.
+    /// </returns>
+    public async Task PublishEventsAsync(T aggregate)
+    {
+        ArgumentNullException.ThrowIfNull(aggregate);
+
+        var domainEvents = aggregate.DomainEvents.ToList();
+
+        aggregate.ClearDomainEvents();
+
+        foreach (var domainEvent in domainEvents)
+        {
+            await _mediator.PublishAsync(domainEvent);
+        }
     }
 }

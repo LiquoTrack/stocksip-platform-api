@@ -1,3 +1,4 @@
+using Cortex.Mediator;
 using LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
@@ -10,7 +11,7 @@ namespace LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Infrastructure.
     /// <summary>
     /// This class implements the IAlertRepository interface, providing methods to interact with the Alert aggregate.
     /// </summary>
-    public class AlertRepository(AppDbContext context) : BaseRepository<Alert>(context), IAlertRepository
+    public class AlertRepository(AppDbContext context, IMediator mediator) : BaseRepository<Alert>(context, mediator), IAlertRepository
     {
         private readonly IMongoCollection<Alert> _collection = context.GetCollection<Alert>();
         /// <summary>

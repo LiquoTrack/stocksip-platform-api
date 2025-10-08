@@ -1,4 +1,5 @@
-﻿using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Entities;
+﻿using Cortex.Mediator;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
@@ -11,8 +12,7 @@ namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure
 /// <summary>
 ///     Repository implementation for Plans entity.
 /// </summary>
-/// <param name="context"></param>
-public class PlanRepository(AppDbContext context) : BaseRepository<Plan>(context), IPlanRepository
+public class PlanRepository(AppDbContext context, IMediator mediator) : BaseRepository<Plan>(context, mediator), IPlanRepository
 {
 
     /// <summary>
