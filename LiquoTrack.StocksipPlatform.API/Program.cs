@@ -1,3 +1,10 @@
+using LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Application.ACL;
+using LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Application.Internal.CommandServices;
+using LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Application.Internal.QueryServices;
+using LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Domain.Repositories;
+using LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Domain.Services;
+using LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Infrastructure.Persistence.EFC.Repositories;
+using LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Interfaces.ACL;
 using System.Diagnostics;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.CommandServices;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.QueryServices;
@@ -146,6 +153,7 @@ builder.Services.AddSingleton<AppDbContext>();
 // Bounded Context Shared
 //
 builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
+builder.Services.AddScoped<IUnitOfWork, LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Repositories.UnitOfWork>();
 builder.Services.AddScoped<DatabaseSeeder>();
 
 builder.Services.Configure<JsonOptions>(options =>
@@ -160,6 +168,12 @@ builder.Services.Configure<JsonOptions>(options =>
     options.JsonSerializerOptions.Converters.Add(new CatalogIdJsonConverter());
     options.JsonSerializerOptions.Converters.Add(new MoneyJsonConverter());
 });
+
+// Bounded Context Alerts and Notifications
+builder.Services.AddScoped<IAlertRepository,AlertRepository>();
+builder.Services.AddScoped<IAlertCommandService,AlertCommandService>();
+builder.Services.AddScoped<IAlertQueryService,AlertQueryService>();
+builder.Services.AddScoped<IAlertsAndNotificationsContextFacade, AlertsAndNotificationsContextFacade>();
 
 //
 // Authentication Bounded Context
@@ -570,6 +584,13 @@ var app = builder.Build();
 // Use the seeding methods when the application starts
 using (var scope = app.Services.CreateScope())
 {
+    app.UseSwagger();
+    app.UseSwaggerUI(c => 
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "StockSip Platform API V1");
+        c.RoutePrefix = string.Empty; 
+    });
+
     var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
     await seeder.SeedAsync();
 }
