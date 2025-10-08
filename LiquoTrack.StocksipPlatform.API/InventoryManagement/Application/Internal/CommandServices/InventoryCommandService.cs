@@ -127,6 +127,9 @@ public class InventoryCommandService(
         // Updates the inventory in the repository.
         await inventoryRepository.UpdateAsync(inventoryToUpdate.Id.ToString(), inventoryToUpdate);
         
+        // Publishes the events related to the inventory.
+        await inventoryRepository.PublishEventsAsync(inventoryToUpdate);
+        
         // Returns the updated inventory.
         return inventoryToUpdate;
     }
@@ -159,6 +162,9 @@ public class InventoryCommandService(
         
         // Updates the inventory in the repository.
         await inventoryRepository.UpdateAsync(inventoryToUpdate.Id.ToString(), inventoryToUpdate);
+        
+        // Publishes the events related to the inventory.
+        await inventoryRepository.PublishEventsAsync(inventoryToUpdate);
         
         // Returns the updated inventory.
         return inventoryToUpdate;
