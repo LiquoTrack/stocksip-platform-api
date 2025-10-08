@@ -1,6 +1,7 @@
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Commands;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Queries;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.ValueObjects;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Assemblers;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Resources;
@@ -13,8 +14,10 @@ using System.IO;
 using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
 using MongoDB.Bson;
+using MongoDB.Driver;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 using System.Collections.Generic;
+using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration;
 
 namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Controllers
 {
@@ -27,15 +30,30 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Co
         private readonly ICareGuideCommandService _careGuideCommandService;
         private readonly ICareGuideQueryService _careGuideQueryService;
         private readonly IProductQueryService _productQueryService;
+        private readonly IMongoCollection<Product> _products;
 
         public CareGuidesController(
             ICareGuideCommandService careGuideCommandService,
             ICareGuideQueryService careGuideQueryService,
-            IProductQueryService productQueryService)
+            IProductQueryService productQueryService,
+            AppDbContext dbContext)
         {
             _careGuideCommandService = careGuideCommandService;
             _careGuideQueryService = careGuideQueryService;
             _productQueryService = productQueryService;
+            _products = dbContext.GetCollection<Product>();
+        }
+
+        private async Task<(string ProductId, string ImageUrl)?> TryResolveProductByNameAsync(string accountId, string productName)
+        {
+            if (string.IsNullOrWhiteSpace(accountId) || string.IsNullOrWhiteSpace(productName)) return null;
+            var filter = Builders<Product>.Filter.And(
+                Builders<Product>.Filter.Eq(p => p.AccountId, new AccountId(accountId)),
+                Builders<Product>.Filter.Eq(p => p.Name, productName)
+            );
+            var prod = await _products.Find(filter).FirstOrDefaultAsync();
+            if (prod == null) return null;
+            return (prod.Id.ToString(), prod.ImageUrl.GetValue());
         }
 
         private async Task<CareGuideResource> EnrichWithProductInfo(CareGuideResource resource)
@@ -68,7 +86,7 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Co
             }
         }
 
-        [HttpGet("{careGuideId}")]
+        [HttpGet("{careGuideId:guid}")]
         [SwaggerOperation(
             Summary = "Get Care Guide by ID",
             Description = "Retrieves a care guide by its unique identifier.",
@@ -88,7 +106,7 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Co
             return Ok(enriched);
         }
 
-        [HttpGet("{accountId}")]
+        [HttpGet("{accountId:length(24)}")] 
         [SwaggerOperation(
             Summary = "Get All Care Guides by Account ID",
             Description = "Retrieves the list of care guides for a specific account.",
@@ -105,7 +123,7 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Co
             var careGuides = await _careGuideQueryService.Handle(query);
             var list = careGuides.ToList();
             if (list.Count == 0)
-                return NotFound($"Care guides for Account ID {accountId} not found...");
+                return Ok(new List<CareGuideResource>());
 
             var resources = new List<CareGuideResource>();
             foreach (var cg in list)
@@ -197,11 +215,6 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Co
             if (string.IsNullOrWhiteSpace(resource.ProductName))
                 return BadRequest("ProductName is required.");
 
-            var products = await _productQueryService.Handle(new GetAllProductsByAccountIdQuery(new AccountId(accountId)));
-            var product = products.FirstOrDefault(p => string.Equals(p.Name, resource.ProductName, StringComparison.Ordinal));
-            if (product == null)
-                return NotFound($"Product with name '{resource.ProductName}' not found for account {accountId}.");
-
             var finalCareGuideId = Guid.NewGuid().ToString();
 
             var (storagePlace, recommendation) = productType switch
@@ -212,27 +225,69 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Co
                 _ => ("Cool, dry place", $"Store {productType} in a cool, dry place.")
             };
 
-            var createCommand = new CreateCareGuideCommand(
-                careGuideId: finalCareGuideId,
-                accountId: accountId,
-                productAssociated: product.Name,
-                productId: product.Id.ToString(),
-                title: resource.Title,
-                summary: resource.Summary,
-                recommendedMinTemperature: resource.RecommendedMinTemperature,
-                recommendedMaxTemperature: resource.RecommendedMaxTemperature,
-                recommendedPlaceStorage: storagePlace,
-                generalRecommendation: recommendation
-            );
-
-            var careGuides = await _careGuideCommandService.Handle(createCommand);
+            var hasProductLink = false;
+            string? resolvedProductId = null;
+            string? resolvedImageUrl = null;
+            var resolved = await TryResolveProductByNameAsync(accountId, resource.ProductName);
+            if (resolved.HasValue)
+            {
+                hasProductLink = true;
+                resolvedProductId = resolved.Value.ProductId;
+                resolvedImageUrl = resolved.Value.ImageUrl;
+            }
+            IEnumerable<CareGuide> careGuides;
+            if (hasProductLink)
+            {
+                var createWithProduct = new CreateCareGuideCommand(
+                    careGuideId: finalCareGuideId,
+                    accountId: accountId,
+                    productAssociated: resource.ProductName,
+                    productId: resolvedProductId!,
+                    title: resource.Title,
+                    summary: resource.Summary,
+                    recommendedMinTemperature: resource.RecommendedMinTemperature,
+                    recommendedMaxTemperature: resource.RecommendedMaxTemperature,
+                    recommendedPlaceStorage: storagePlace,
+                    generalRecommendation: recommendation,
+                    imageUrl: resolvedImageUrl
+                );
+                careGuides = await _careGuideCommandService.Handle(createWithProduct);
+            }
+            else
+            {
+                var createWithoutProduct = new CreateCareGuideWithoutProductIdCommand(
+                    careGuideId: finalCareGuideId,
+                    accountId: accountId,
+                    productAssociated: resource.ProductName,
+                    title: resource.Title,
+                    summary: resource.Summary,
+                    recommendedMinTemperature: resource.RecommendedMinTemperature,
+                    recommendedMaxTemperature: resource.RecommendedMaxTemperature,
+                    recommendedPlaceStorage: storagePlace,
+                    generalRecommendation: recommendation
+                );
+                careGuides = await _careGuideCommandService.Handle(createWithoutProduct);
+            }
             var createdCareGuide = careGuides.FirstOrDefault();
             if (createdCareGuide == null)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, "Failed to create care guide");
             }
             var careGuideResource = CareGuideResourceFromEntityAssembler.ToResourceFromEntity(createdCareGuide);
-            var enrichedCreated = await EnrichWithProductInfo(careGuideResource);
+            var enrichedCreated = new CareGuideResource(
+                CareGuideId: careGuideResource.CareGuideId,
+                AccountId: careGuideResource.AccountId,
+                ProductId: careGuideResource.ProductId,
+                Title: careGuideResource.Title,
+                Summary: careGuideResource.Summary,
+                RecommendedMinTemperature: careGuideResource.RecommendedMinTemperature,
+                RecommendedMaxTemperature: careGuideResource.RecommendedMaxTemperature,
+                RecommendedPlaceStorage: careGuideResource.RecommendedPlaceStorage,
+                GeneralRecommendation: careGuideResource.GeneralRecommendation,
+                TypeOfLiquor: productType.ToString(),
+                ProductName: resource.ProductName,
+                ImageUrl: hasProductLink ? resolvedImageUrl : null
+            );
             return CreatedAtAction(nameof(GetCareGuideById), new { accountId, careGuideId = createdCareGuide.Id }, enrichedCreated);
         }
 
