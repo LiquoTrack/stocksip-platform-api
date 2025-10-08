@@ -11,7 +11,7 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Con
 public class EBrandNamesJsonConverter : JsonConverter<EBrandNames>
 {
     public override EBrandNames Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-    {
+    {   
         var value = reader.GetString();
         return Enum.Parse<EBrandNames>(value ?? throw new InvalidOperationException());
     }

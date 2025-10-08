@@ -6,6 +6,7 @@ using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Commands;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Interfaces.ACL;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Repositories;
 
@@ -20,10 +21,10 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
     /// </remarks>
     public class UserCommandService(
         IUserRepository userRepository,
-        IUnitOfWork unitOfWork,
         ITokenService tokenService,
         IHashingService hashingService,
-        IPaymentAndSubscriptionsFacade paymentAndSubscriptionsFacade
+        IPaymentAndSubscriptionsFacade paymentAndSubscriptionsFacade,
+        IProfileContextFacade profileContextFacade
     ) : IUserCommandService
     {
         /// <summary>
@@ -53,7 +54,6 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
             try
             {
                 await userRepository.AddAsync(user);
-                await unitOfWork.CompleteAsync();
                 return user;
             }
             catch (Exception ex)
@@ -97,7 +97,6 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
             try
             {
                 await userRepository.AddAsync(user);
-                await unitOfWork.CompleteAsync();
                 return user;
             }
             catch (Exception ex)
@@ -120,7 +119,6 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
 
             var token = tokenService.GenerateToken(user);
             
-            await unitOfWork.CompleteAsync();
             return (user, token);
         }
 
@@ -160,8 +158,17 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
                     hashedPassword,
                     account.Id.ToString()
                 );
+                
+                await profileContextFacade.CreateProfileAsync(
+                    userId: user.Id.ToString(),
+                    firstName: user.Username,
+                    lastName: "",
+                    phoneNumber: "+10000000000",
+                    profilePicture: null,
+                    assignedRole: "Admin"
+                );
+                
                 await userRepository.AddAsync(user);
-                await unitOfWork.CompleteAsync();
                 return user;
             }
             catch (Exception ex)

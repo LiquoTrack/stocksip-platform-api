@@ -1,12 +1,8 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using System.Linq;
-using MongoDB.Driver;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Repositories;
-using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
-using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Repositories;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration;
+using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Repositories;
+using MongoDB.Driver;
 
 namespace LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Persistence.Repositories
 {

@@ -9,6 +9,6 @@
         /// <summary>
         /// The Google client ID.
         /// </summary>
-        public string ClientId { get; set; } = default!;
+        public string ClientId { get; set; } = default;
     }
 }

@@ -31,7 +31,7 @@ public static class UpdateProductInformationCommandFromResourceAssembler
                 resource.Name,
                 new Money(resource.UnitPrice, new Currency(resource.Code)),
                 new ProductMinimumStock(resource.MinimumStock),
-                new ImageUrl(resource.ImageUrl)
+                resource.Image
             );
     }
 }

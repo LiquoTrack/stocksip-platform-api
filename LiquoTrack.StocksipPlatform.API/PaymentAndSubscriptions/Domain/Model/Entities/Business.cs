@@ -1,4 +1,5 @@
-﻿using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.ValueObjects;
+﻿using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Commands;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Entities;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
@@ -54,5 +55,22 @@ public class Business : Entity
         BusinessName = businessName ?? throw new ArgumentNullException(nameof(businessName));
         BusinessEmail = businessEmail;
         Ruc = ruc;
+    }
+
+    /// <summary>
+    ///     Method to update the business information.
+    /// </summary>
+    /// <param name="command">
+    ///     The command containing the details for updating the business information.
+    /// </param>
+    /// <returns>
+    ///     A new instance of the Business with the updated information.
+    /// </returns>
+    public Business UpdateBusiness(UpdateBusinessCommand command)
+    {
+        BusinessName = new BusinessName(command.BusinessName);
+        BusinessEmail = new BusinessEmail(command.BusinessEmail);
+        Ruc = new Ruc(command.Ruc);
+        return this;
     }
 }

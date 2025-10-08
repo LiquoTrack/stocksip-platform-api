@@ -1,13 +1,14 @@
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Aggregates;
-using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.ValueObjects;
+using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration.Serializers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
-using MongoDB.Bson.Serialization.Serializers;
 
-namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Persistence.MongoDB.Configuration;
+namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Persistence.MongoDB.Configuration.Serializers;
 
+/// <summary>
+///     Mapping configuration for the CareGuide entity.
+/// </summary>
 public class CareGuideMapping : IEntityTypeConfiguration<CareGuide>
 {
     public void Configure(EntityTypeBuilder<CareGuide> builder){}
@@ -20,8 +21,10 @@ public class CareGuideMapping : IEntityTypeConfiguration<CareGuide>
         {
             map.AutoMap();
             
+            map.SetIgnoreExtraElements(true);
+            
             map.MapMember(x => x.AccountId)
-               .SetSerializer(new LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration.Serializers.AccountIdSerializer())
+               .SetSerializer(new AccountIdSerializer())
                .SetElementName("accountId");
                
             map.MapMember(x => x.ProductId).SetElementName("productId");

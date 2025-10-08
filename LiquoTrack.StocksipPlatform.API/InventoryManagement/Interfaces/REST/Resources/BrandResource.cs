@@ -1,4 +1,4 @@
-﻿namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Resources;
+namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Resources;
 
 /// <summary>
 ///     Record that represents a brand resource.
