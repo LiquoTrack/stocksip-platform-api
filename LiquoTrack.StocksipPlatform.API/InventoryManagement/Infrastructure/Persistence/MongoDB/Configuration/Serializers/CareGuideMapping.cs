@@ -21,8 +21,6 @@ public class CareGuideMapping : IEntityTypeConfiguration<CareGuide>
         {
             map.AutoMap();
             
-            map.SetIgnoreExtraElements(true);
-            
             map.MapMember(x => x.AccountId)
                .SetSerializer(new AccountIdSerializer())
                .SetElementName("accountId");

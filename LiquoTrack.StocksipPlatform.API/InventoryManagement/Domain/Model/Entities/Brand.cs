@@ -1,4 +1,4 @@
-using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.ValueObjects;
+﻿using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Entities;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;

@@ -1,4 +1,4 @@
-﻿namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Resources
+namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Resources
 {
     /// <summary>
     /// This record defines the care guide resource.
@@ -12,6 +12,9 @@
         double RecommendedMinTemperature,
         double RecommendedMaxTemperature,
         string RecommendedPlaceStorage,
-        string GeneralRecommendation
+        string GeneralRecommendation,
+        string? TypeOfLiquor,
+        string? ProductName,
+        string? ImageUrl
     );
 }

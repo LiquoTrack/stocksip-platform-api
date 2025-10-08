@@ -16,7 +16,10 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.As
                 RecommendedMinTemperature: entity.RecommendedMinTemperature,
                 RecommendedMaxTemperature: entity.RecommendedMaxTemperature,
                 RecommendedPlaceStorage: entity.RecommendedPlaceStorage,
-                GeneralRecommendation: entity.GeneralRecommendation
+                GeneralRecommendation: entity.GeneralRecommendation,
+                TypeOfLiquor: null,
+                ProductName: null,
+                ImageUrl: null
             );
         }
     }
