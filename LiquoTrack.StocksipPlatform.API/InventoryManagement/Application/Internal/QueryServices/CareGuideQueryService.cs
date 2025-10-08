@@ -8,7 +8,7 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Intern
     public class CareGuideQueryService(ICareGuideRepository careGuideRepository) : ICareGuideQueryService
     {
         public async Task<IEnumerable<CareGuide>> Handle(GetAllCareGuidesByAccountId query){
-            return await careGuideRepository.GetAllByAccountId(query.AccountId.ToString());
+            return await careGuideRepository.GetAllByAccountId(query.AccountId.GetId);
         }
         public async Task<CareGuide?> Handle(GetCareGuideByIdQuery query) {
             return await careGuideRepository.GetById(query.Id);

@@ -38,6 +38,8 @@ public class CareGuideMapping : IEntityTypeConfiguration<CareGuide>
             map.MapMember(x => x.FileData).SetElementName("fileData");
             map.MapMember(x => x.FileContentType).SetElementName("guideFileContentType"); 
             map.MapMember(x => x.FileName).SetElementName("guideFileUrl"); 
+            map.MapMember(x => x.ProductName).SetElementName("productName");
+            map.MapMember(x => x.ImageUrl).SetElementName("imageUrl");
         });
     }
 }

@@ -12,6 +12,8 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Aggre
         public AccountId AccountId { get; set; }
         public Product ProductAssociated { get; set; }
         public string ProductId { get; set; }
+        public string? ProductName { get; set; }
+        public string? ImageUrl { get; set; }
         public string Title { get; set; }
         public string Summary { get; set; }
         public double RecommendedMinTemperature { get; set; }
@@ -42,6 +44,7 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Aggre
             AccountId = accountId;
             ProductAssociated = productAssociated;
             ProductId = productId;
+            ProductName = productAssociated?.Name;
             Title = title;
             Summary = summary;
             RecommendedMinTemperature = recommendedMinTemperature;
@@ -75,6 +78,7 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Aggre
             AccountId = accountId;
             ProductAssociated = productAssociated;
             ProductId = null;
+            ProductName = productAssociated?.Name;
             Title = title;
             Summary = summary;
             RecommendedMinTemperature = recommendedMinTemperature;

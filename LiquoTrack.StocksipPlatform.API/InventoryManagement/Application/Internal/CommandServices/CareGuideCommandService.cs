@@ -38,6 +38,8 @@ public class CareGuideCommandService(ICareGuideRepository careGuideRepository) :
                 command.recommendedPlaceStorage,
                 command.generalRecommendation
             );
+            careGuide.ProductName = command.productAssociated;
+            careGuide.ImageUrl = command.imageUrl;
     
             await careGuideRepository.AddAsync(careGuide);
             return new List<CareGuide> { careGuide };
@@ -62,6 +64,7 @@ public class CareGuideCommandService(ICareGuideRepository careGuideRepository) :
             command.recommendedPlaceStorage,
             command.generalRecommendation
             );
+            careGuide.ProductName = command.productAssociated;
             
             await careGuideRepository.AddAsync(careGuide);
             return new List<CareGuide> { careGuide };
