@@ -24,26 +24,17 @@ public static class InventoryManagementMappingHelper
         // Use of EBrandNames Value Object serializer
         SerializerRegistrationHelper.TryRegisterSerializer(new EnumSerializer<EBrandNames>(BsonType.String));
         
-        // Use of EProductStates Value Object serializer
-        SerializerRegistrationHelper.TryRegisterSerializer(new EnumSerializer<EProductTypes>(BsonType.String));
-        
         // Use of EProductTypes Value Object serializer
         SerializerRegistrationHelper.TryRegisterSerializer(new EnumSerializer<EProductTypes>(BsonType.String));
         
         // Use of ProductContent Value Object serializer
         SerializerRegistrationHelper.TryRegisterSerializer(new ProductContentSerializer());
         
-        // Use of ProductExpirationDate Value Object serializer
-        SerializerRegistrationHelper.TryRegisterSerializer(new ProductExpirationDateSerializer());
-        
         // Use of ProductMinimumStock Value Object serializer
         SerializerRegistrationHelper.TryRegisterSerializer(new ProductMinimumStockSerializer());
         
         // Use of ProductName Value Object serializer
         SerializerRegistrationHelper.TryRegisterSerializer(new ProductNameSerializer());
-        
-        // Use of ProductStock Value Object serializer
-        SerializerRegistrationHelper.TryRegisterSerializer(new ProductStockSerializer());
 
         //
         // Register CareGuide mapping and serializers
@@ -59,5 +50,18 @@ public static class InventoryManagementMappingHelper
         
         // Use of WarehouseAddress Value Object serializer
         SerializerRegistrationHelper.TryRegisterSerializer(new WarehouseAddressSerializer());
+        
+        //
+        // Use of Inventory-related Value Object
+        //
+        
+        // Use of ProductExpirationDate Value Object serializer
+        SerializerRegistrationHelper.TryRegisterSerializer(new ProductExpirationDateSerializer());
+        
+        // Use of ProductStock Value Object serializer
+        SerializerRegistrationHelper.TryRegisterSerializer(new ProductStockSerializer());
+        
+        // Use of EProductStates Value Object serializer
+        SerializerRegistrationHelper.TryRegisterSerializer(new EnumSerializer<EProductStates>(BsonType.String));
     }
 }

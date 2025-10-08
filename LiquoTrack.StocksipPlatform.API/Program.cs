@@ -45,6 +45,8 @@ using System.Reflection;
 using System.Text;
 using Microsoft.AspNetCore.Authentication;
 using System.Text.Json;
+using Cortex.Mediator.Behaviors;
+using Cortex.Mediator.DependencyInjection;
 using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Authentication;
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Pipeline.Middleware.Extensions;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.External.ACL;
@@ -52,7 +54,10 @@ using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Intern
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Persistence.Repositories;
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Tokens.JWT.Configuration;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.ACL;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.EventHandlers;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.OutboundServices.FileStorage;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Events;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.FileStorage.Cloudinary.Services;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.ACL;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.CommandServices;
@@ -64,6 +69,7 @@ using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Converter
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.FileStorage.Cloudinary.Services;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Persistence.MongoDB.Repositories;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Interfaces.ACL;
+using LiquoTrack.StocksipPlatform.API.Shared.Application.Internal.EventHandlers;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.FileStorage.Cloudinary.Configuration;
 using GoogleAuthService = LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Services.GoogleAuthService;
 
@@ -104,6 +110,12 @@ builder.Services.AddCors(options =>
                 .AllowCredentials();
         });
 });
+
+// Add Cortex Mediator
+builder.Services.AddCortexMediator(
+    builder.Configuration,
+    [typeof(Program)],
+    options => options.AddOpenCommandPipelineBehavior(typeof(LoggingCommandBehavior<>)));
 
 // Dependency Injection
 
@@ -153,7 +165,7 @@ builder.Services.AddSingleton<AppDbContext>();
 // Bounded Context Shared
 //
 builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
-builder.Services.AddScoped<IUnitOfWork, LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Repositories.UnitOfWork>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<DatabaseSeeder>();
 
 builder.Services.Configure<JsonOptions>(options =>
@@ -169,7 +181,10 @@ builder.Services.Configure<JsonOptions>(options =>
     options.JsonSerializerOptions.Converters.Add(new MoneyJsonConverter());
 });
 
+//
 // Bounded Context Alerts and Notifications
+//
+
 builder.Services.AddScoped<IAlertRepository,AlertRepository>();
 builder.Services.AddScoped<IAlertCommandService,AlertCommandService>();
 builder.Services.AddScoped<IAlertQueryService,AlertQueryService>();
@@ -178,6 +193,7 @@ builder.Services.AddScoped<IAlertsAndNotificationsContextFacade, AlertsAndNotifi
 //
 // Authentication Bounded Context
 //
+
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 // JWT Configuration
@@ -235,6 +251,11 @@ builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductQueryService, ProductQueryService>();
 builder.Services.AddScoped<IProductCommandService, ProductCommandService>();
 
+builder.Services.AddScoped<IInventoryCommandService, InventoryCommandService>();
+builder.Services.AddScoped<IInventoryQueryService, InventoryQueryService>();
+builder.Services.AddScoped<IInventoryRepository, InventoryRepository>();
+builder.Services.AddScoped<ExternalAlertsAndNotificationsService>();
+
 builder.Services.AddScoped<IWarehouseRepository, WarehouseRepository>();
 builder.Services.AddScoped<IWarehouseCommandService, WarehouseCommandService>();
 builder.Services.AddScoped<IWarehouseQueryService, WarehouseQueryService>();
@@ -243,6 +264,11 @@ builder.Services.AddScoped<ICareGuideRepository, CareGuideRepository>();
 builder.Services.AddScoped<ICareGuideQueryService, CareGuideQueryService>();
 builder.Services.AddScoped<ICareGuideCommandService, CareGuideCommandService>();
 
+// Registers the events handlers for the events of the context
+builder.Services.AddScoped<IEventHandler<ProductWithLowStockDetectedEvent>, ProductWithLowStockDetectedEventHandler>();
+builder.Services.AddScoped<IEventHandler<ProductWithoutStockDetectedEvent>, ProductWithoutStockDetectedEventHandler>();
+
+// Registers the JSON Converts of the context
 builder.Services.Configure<JsonOptions>(options =>
 {
     options.JsonSerializerOptions.Converters.Add(new EBrandNamesJsonConverter());
