@@ -1,4 +1,5 @@
-﻿using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Aggregates;
+﻿using Cortex.Mediator;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
@@ -12,15 +13,13 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Per
 /// <summary>
 ///     Repository implementation for the Product aggregate. 
 /// </summary>
-public class ProductRepository(AppDbContext context) : BaseRepository<Product>(context), IProductRepository
+public class ProductRepository(AppDbContext context, IMediator mediator) : BaseRepository<Product>(context, mediator), IProductRepository
 {
     /// <summary>
     ///     The MongoDB collection for the Product aggregate.   
     /// </summary>
     private readonly IMongoCollection<Product> _productCollection = context.GetCollection<Product>();
-
-    private IProductRepository _productRepositoryImplementation;
-
+    
     /// <summary>
     ///     Method to check if a product exists by a given name.
     /// </summary>

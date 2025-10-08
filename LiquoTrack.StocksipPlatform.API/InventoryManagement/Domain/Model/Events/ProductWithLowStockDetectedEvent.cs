@@ -13,7 +13,7 @@ public class ProductWithLowStockDetectedEvent(
         string accountId, 
         string productId,
         string warehouseId
-    ) : IEvent
+    ) : IDomainEvent
 {
     /// <summary>
     ///     The title of the alert to be created.
@@ -49,4 +49,6 @@ public class ProductWithLowStockDetectedEvent(
     ///     The identifier of the warehouse where the product with low stock is located.
     /// </summary>
     public string WarehouseId { get; private set; } = warehouseId;
+
+    public DateTime OccurredOn { get; }
 }

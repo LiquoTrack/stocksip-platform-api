@@ -1,3 +1,4 @@
+using Cortex.Mediator;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
@@ -11,7 +12,7 @@ namespace LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Persi
 /// <summary>
 ///     Repository implementation for the Profile aggregate. 
 /// </summary>
-public class ProfileRepository(AppDbContext context) : BaseRepository<Profile>(context), IProfileRepository
+public class ProfileRepository(AppDbContext context, IMediator mediator) : BaseRepository<Profile>(context, mediator), IProfileRepository
 {
     /// <summary>
     ///     The MongoDB collection for the Profile aggregate.   

@@ -1,4 +1,4 @@
-using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Entities;
+﻿using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Entities;
 
 namespace LiquoTrack.StocksipPlatform.API.Shared.Domain.Repositories;
 
@@ -49,4 +49,15 @@ public interface IBaseRepository<TEntity> where TEntity : Entity
     /// </summary>
     /// <returns>An Enumerable containing all entity objects</returns>
     Task<IEnumerable<TEntity>> GetAllAsync();
+    
+    /// <summary>
+    ///     Method to save changes related to an event.
+    /// </summary>
+    /// <param name="aggregate">
+    ///     The aggregate to save.
+    /// </param>
+    /// <returns>
+    ///     A Task representing the asynchronous operation.
+    /// </returns>
+    Task PublishEventsAsync(TEntity aggregate);
 }

@@ -9,7 +9,7 @@ namespace LiquoTrack.StocksipPlatform.API.Shared.Application.Internal.EventHandl
 /// <typeparam name="TEvent">
 ///     The type of event to handle.
 /// </typeparam>
-public interface IEventHandler<in TEvent> : INotificationHandler<TEvent> where TEvent : IEvent
+public interface IEventHandler<in TEvent> : INotificationHandler<TEvent> where TEvent : IDomainEvent
 {
     
 }
