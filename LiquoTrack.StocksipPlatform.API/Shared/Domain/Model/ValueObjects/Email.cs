@@ -13,7 +13,7 @@ public partial record Email()
     /// <summary>
     ///     This is the value of the Email Value Object.
     /// </summary>
-    private string Value { get; } = string.Empty;
+    public string Value { get; init; } = string.Empty;
     
     /// <summary>
     ///     Default constructor for the Email Value Object.
