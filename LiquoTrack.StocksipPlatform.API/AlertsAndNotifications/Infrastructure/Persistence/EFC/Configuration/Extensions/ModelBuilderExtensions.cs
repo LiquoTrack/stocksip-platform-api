@@ -36,14 +36,14 @@ namespace LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Infrastructure.
                     .IsRequired()
                     .HasConversion(
                         v => v.ToString(),
-                        v => (ESeverityTypes)Enum.Parse(typeof(ESeverityTypes), v, true))
+                        v => Enum.Parse<ESeverityTypes>(v, true))
                     .HasColumnName("severity");
 
                 entity.Property(a => a.Type)
                     .IsRequired()
                     .HasConversion(
                         v => v.ToString(),
-                        v => (EAlertTypes)Enum.Parse(typeof(EAlertTypes), v, true))
+                        v => Enum.Parse<EAlertTypes>(v, true))
                     .HasColumnName("type");
         
                 entity.Property(a => a.GeneratedAt)
