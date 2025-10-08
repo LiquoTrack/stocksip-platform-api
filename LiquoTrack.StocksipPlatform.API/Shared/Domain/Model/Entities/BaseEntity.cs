@@ -42,13 +42,16 @@ public abstract class Entity
     ///     Method to add a domain event to the entity.
     /// </summary>
     /// <param name="eventItem">
-    ///       
+    ///     The domain event to add.
     /// </param>
     protected void AddDomainEvent(IDomainEvent eventItem)
     {
         _domainEvents.Add(eventItem);
     }
 
+    /// <summary>
+    ///     Method to clear the domain events associated with the entity.
+    /// </summary>
     public void ClearDomainEvents()
     {
         _domainEvents.Clear();

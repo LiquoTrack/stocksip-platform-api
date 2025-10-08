@@ -3,9 +3,9 @@
 namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Events;
 
 /// <summary>
-///     Class that represents an event for a product with low stock.
+///     This event is raised when a product with stock 0 is detected.
 /// </summary>
-public class ProductWithLowStockDetectedEvent(
+public class ProductWithoutStockDetectedEvent(
         string accountId, 
         string productId,
         string warehouseId
