@@ -10,5 +10,6 @@ public record AuthenticatedUserResource(
         string Token,
         string UserId,
         string Email,
-        string Username
+        string Username,
+        string AccountId
     );
