@@ -203,7 +203,7 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
                 var result = await _userCommandService.Handle(signUpCommand);
 
                 _logger.LogInformation($"{LogPrefix} User registered successfully: {signUpResource.Email}");
-                return Ok(new { message = "User created successfully", userId = result?.Id });
+                return Ok(new { message = "User registered successfully" });
             }
             catch (Exception ex)
             {
