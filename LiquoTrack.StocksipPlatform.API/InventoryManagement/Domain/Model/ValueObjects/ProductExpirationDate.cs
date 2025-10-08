@@ -19,15 +19,16 @@ public record ProductExpirationDate()
     /// <summary>
     ///     Default constructor for the ProductExpirationDate Value Object.
     /// </summary>
-    /// <param name="date">
+    /// <param name="expirationDate">
     ///     The expiration date.
     /// </param>
     /// <exception cref="ValueObjectValidationException">
     ///     Thrown when the provided expiration date is in the past.   
     /// </exception>
-    public ProductExpirationDate(DateOnly date) : this()
+    public ProductExpirationDate(DateOnly? expirationDate) : this()
     {
-        Value = date;
+        if (expirationDate != null) 
+            Value = expirationDate.Value;
     }
     
     /// <summary>

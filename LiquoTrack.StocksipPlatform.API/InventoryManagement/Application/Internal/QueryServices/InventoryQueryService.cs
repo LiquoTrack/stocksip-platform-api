@@ -56,4 +56,18 @@ public class InventoryQueryService(
     {
         return await inventoryRepository.GetByProductIdWarehouseIdAndExpirationDateAsync(query.ProductId, query.WarehouseId, query.ExpirationDate);
     }
+
+    /// <summary>
+    ///     Method to handle the retrieval of an inventory by product ID and warehouse ID.
+    /// </summary>
+    /// <param name="query">
+    ///     The query object containing the product ID and warehouse ID for which an inventory is to be retrieved.
+    /// </param>
+    /// <returns>
+    ///     The inventory if found; otherwise, null.   
+    /// </returns>
+    public async Task<Inventory?> Handle(GetInventoryByProductIdAndWarehouseIdQuery query)
+    {
+        return await inventoryRepository.GetByProductIdWarehouseIdAsync(query.ProductId, query.WarehouseId);
+    }
 }

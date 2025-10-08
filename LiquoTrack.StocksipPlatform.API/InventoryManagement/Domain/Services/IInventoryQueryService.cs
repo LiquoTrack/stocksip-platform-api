@@ -40,4 +40,15 @@ public interface IInventoryQueryService
     ///     The inventory if found; otherwise, null.
     /// </returns>
     Task<Inventory?> Handle(GetInventoryByProductIdWarehouseIdAndExpirationDateQuery query);
+
+    /// <summary>
+    ///     Method to handle the retrieval of an inventory by product ID and warehouse ID.
+    /// </summary>
+    /// <param name="query">
+    ///     The query object containing the product ID and warehouse ID for which an inventory is to be retrieved.
+    /// </param>
+    /// <returns>
+    ///     The inventory if found; otherwise, null.   
+    /// </returns>
+    Task<Inventory?> Handle(GetInventoryByProductIdAndWarehouseIdQuery query);
 }
