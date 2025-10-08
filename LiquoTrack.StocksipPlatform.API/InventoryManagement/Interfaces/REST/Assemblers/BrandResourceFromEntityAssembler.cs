@@ -1,4 +1,4 @@
-﻿using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Entities;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Resources;
 using Microsoft.OpenApi.Extensions;
 
