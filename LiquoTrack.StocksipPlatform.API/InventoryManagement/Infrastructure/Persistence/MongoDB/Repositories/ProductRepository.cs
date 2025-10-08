@@ -1,4 +1,4 @@
-﻿using Cortex.Mediator;
+using Cortex.Mediator;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Repositories;

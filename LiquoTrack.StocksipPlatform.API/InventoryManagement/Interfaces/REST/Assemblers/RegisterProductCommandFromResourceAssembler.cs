@@ -1,4 +1,4 @@
-﻿using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Commands;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Commands;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Resources;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;

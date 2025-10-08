@@ -55,10 +55,9 @@ public class CareGuideRepository : BaseRepository<CareGuide>, ICareGuideReposito
     {
         if (string.IsNullOrEmpty(accountId))
             return Enumerable.Empty<CareGuide>();
-
-        return await _careGuideCollection
-            .Find(x => x.AccountId == new AccountId(accountId))
-            .ToListAsync();
+        // Use direct field filter to avoid LINQ translation issues with value objects
+        var filter = Builders<CareGuide>.Filter.Eq("accountId", accountId);
+        return await _careGuideCollection.Find(filter).ToListAsync();
     }
     
     /// <summary>
