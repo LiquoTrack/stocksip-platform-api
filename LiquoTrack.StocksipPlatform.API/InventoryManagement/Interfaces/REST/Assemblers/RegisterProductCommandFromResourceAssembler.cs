@@ -28,7 +28,7 @@ public static class RegisterProductCommandFromResourceAssembler
                 new Money(resource.UnitPrice, new Currency(resource.Code)),
                 new ProductMinimumStock(resource.MinimumStock),
                 new ProductContent(resource.Content),
-                resource.Image!,
+                resource.Image,
                 new AccountId(AccountId),
                 new AccountId(resource.SupplierId)
             );

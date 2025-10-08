@@ -1,11 +1,12 @@
 using LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Domain.Model.Commands;
 using LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Domain.Model.ValueObjects;
+using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 using MongoDB.Bson;
 
 namespace LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Domain.Model.Aggregates;
 
-public class Alert: IEntity
+public class Alert: Entity
 {
     /// <summary>
     /// The unique identifier of the alert, generated as a new GUID.
