@@ -242,7 +242,7 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Co
                     careGuideId: finalCareGuideId,
                     accountId: accountId,
                     productAssociated: resource.ProductName,
-                    productId: resolvedProductId!,
+                    productId: resolvedProductId ?? throw new InvalidOperationException(),
                     title: resource.Title,
                     summary: resource.Summary,
                     recommendedMinTemperature: resource.RecommendedMinTemperature,
