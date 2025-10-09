@@ -127,10 +127,10 @@ public class ProfilesController : ControllerBase
     /// <returns>The profile resource.</returns>
     /// <response code="200">Returns the profile.</response>
     /// <response code="404">If the profile is not found.</response>
-    [HttpGet("user/{userId}")]
+    [HttpGet]
     [ProducesResponseType(typeof(ProfileResource), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetProfileByUserId(string userId)
+    public async Task<IActionResult> GetProfileByUserId([FromQuery] string userId)
     {
         try
         {
@@ -152,32 +152,6 @@ public class ProfilesController : ControllerBase
         {
             _logger.LogError(ex, "Error getting profile for UserId: {UserId}", userId);
             return StatusCode(500, "An error occurred while retrieving the profile.");
-        }
-    }
-
-    /// <summary>
-    /// Gets all profiles.
-    /// </summary>
-    /// <returns>A collection of profile resources.</returns>
-    /// <response code="200">Returns all profiles.</response>
-    [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<ProfileResource>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAllProfiles()
-    {
-        try
-        {
-            _logger.LogInformation("Getting all profiles");
-
-            var query = new GetAllProfilesQuery();
-            var profiles = await _profileQueryService.Handle(query);
-
-            var resources = profiles.Select(ProfileResourceFromEntityAssembler.ToResourceFromEntity);
-            return Ok(resources);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting all profiles");
-            return StatusCode(500, "An error occurred while retrieving profiles.");
         }
     }
 
