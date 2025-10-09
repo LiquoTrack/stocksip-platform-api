@@ -1,9 +1,6 @@
-using System;
 using System.Diagnostics;
-using System.Linq;
 using System.Security.Claims;
 using System.Text;
-using System.Threading.Tasks;
 using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.CommandServices;
 using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Hashing;
 using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Token;
