@@ -1,4 +1,6 @@
 using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Authentication;
+using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Aggregates;
+using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google.Responses;
 using Microsoft.Extensions.Options;
 
@@ -8,7 +10,7 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External
     /// This class is used to validate the Google authentication.
     /// It is used to validate the Google authentication in the app settings .json file.
     /// </summary>
-    public class GoogleAuthService : IExternalAuthService
+    public class GoogleAuthService : IExternalAuthService, IGoogleAuthService
     {
         private readonly IGoogleTokenValidator _tokenValidator;
         private readonly ILogger<GoogleAuthService> _logger;
@@ -34,20 +36,18 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External
             try
             {
                 var validationResult = await _tokenValidator.ValidateIdTokenAsync(idToken);
-                
-                if (!validationResult.IsValid)
-                {
-                    _logger.LogWarning("Invalid Google ID token: {Error}", validationResult.ErrorMessage);
-                    return new ExternalAuthResult { Success = false, Error = validationResult.ErrorMessage };
-                }
 
-                return new ExternalAuthResult
-                {
-                    Success = true,
-                    Email = validationResult.Email,
-                    ProviderUserId = validationResult.UserId,
-                    Name = validationResult.Name
-                };
+                if (validationResult.IsValid)
+                    return new ExternalAuthResult
+                    {
+                        Success = true,
+                        Email = validationResult.Email,
+                        ProviderUserId = validationResult.UserId,
+                        Name = validationResult.Name
+                    };
+                _logger.LogWarning("Invalid Google ID token: {Error}", validationResult.ErrorMessage);
+                return new ExternalAuthResult { Success = false, Error = validationResult.ErrorMessage };
+
             }
             catch (Exception ex)
             {
@@ -58,6 +58,11 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External
                     Error = $"Error validating Google ID token: {ex.Message}" 
                 };
             }
+        }
+
+        public async Task<(User? user, string? token, string? error)> AuthenticateWithGoogleAsync(string idToken, string? clientId = null)
+        {
+            throw new NotImplementedException();
         }
     }
 }
