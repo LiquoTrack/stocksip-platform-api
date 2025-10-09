@@ -257,6 +257,9 @@ builder.Services.AddScoped<IGoogleAuthService, AppGoogleAuthService>();
 builder.Services.AddScoped<GoogleSignInCommandHandler>();
 builder.Services.AddScoped<IExternalAuthService, LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google.GoogleAuthService>();
 
+// Cloudinary Settings Configuration
+builder.Services.Configure<CloudinarySettings>(configuration.GetSection("CloudinarySettings"));
+
 //
 // Bounded context Inventory
 //
@@ -346,8 +349,6 @@ builder.Services.AddScoped<IBusinessRepository, BusinessRepository>();
 builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
 
 builder.Services.AddScoped<IPaymentAndSubscriptionsFacade, PaymentAndSubscriptionsFacade>();
-
-builder.Services.Configure<CloudinarySettings>(configuration.GetSection("Cloudinary"));
 
 // Payment converters
 builder.Services.Configure<JsonOptions>(options =>
