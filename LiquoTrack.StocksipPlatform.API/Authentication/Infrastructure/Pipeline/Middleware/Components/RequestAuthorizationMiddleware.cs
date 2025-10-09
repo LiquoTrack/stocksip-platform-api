@@ -29,7 +29,16 @@ public class RequestAuthorizationMiddleware(RequestDelegate next,
             await next(context);
             return;
         }
-        
+
+        var requestPath = context.Request.Path.Value ?? string.Empty;
+        if (requestPath.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase) ||
+            requestPath.StartsWith("/health", StringComparison.OrdinalIgnoreCase) ||
+            requestPath.Equals("/", StringComparison.OrdinalIgnoreCase))
+        {
+            await next(context);
+            return;
+        }
+
         var endpoint  = context.GetEndpoint();
         var allowAnon = endpoint?.Metadata.Any(m => m is Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute) ?? false;
 

@@ -685,7 +685,7 @@ if (app.Environment.IsDevelopment())
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "LiquoTrack API V1");
         c.OAuthClientId("520776661353-aq0nbie37i8742tnn0167ak4bdadk2cu.apps.googleusercontent.com");
-        c.OAuthAppName("LiquoTrack API - Swagger");
+        c.OAuthAppName("LiquoTrack API - Swagger"); 
         c.OAuthUsePkce(); 
         c.OAuth2RedirectUrl("https://localhost:7164/swagger/oauth2-redirect.html");
     });
@@ -694,18 +694,23 @@ else
 {
     app.UseExceptionHandler("/error");
     app.UseHsts();
+
+    var enableSwaggerInProduction = configuration.GetValue<bool>("EnableSwaggerInProduction");
+    if (enableSwaggerInProduction)
+    {
+        app.UseSwagger();
+        app.UseSwaggerUI(c =>
+        {
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "LiquoTrack API V1");
+        });
+    }
 }
-
-app.UseHttpsRedirection();
-
-app.UseDefaultFiles();
 
 app.UseStaticFiles();
 
 app.UseRouting();
 
 app.UseAuthentication();
-
 app.UseAuthorization();
 
 app.UseCors("AllowSpecificOrigins");
