@@ -1,3 +1,4 @@
+using Cortex.Mediator;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration;
@@ -13,8 +14,7 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Persiste
         /// <summary>
         /// Initializes a new instance of the <see cref="UserRepository"/> class.
         /// </summary>
-        /// <param name="context">The database context.</param>
-        public UserRepository(AppDbContext context) : base(context)
+        public UserRepository(AppDbContext context, IMediator mediator) : base(context, mediator)
         {
             _collection = context.GetCollection<User>();
         }

@@ -6,13 +6,14 @@ using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.
 using MongoDB.Bson;
 using MongoDB.Driver;
 using System.Text.RegularExpressions;
+using Cortex.Mediator;
 
 namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Persistence.MongoDB.Repositories;
 
 /// <summary>
 ///     Repository implementation for the Warehouse aggregate.
 /// </summary>
-public class WarehouseRepository(AppDbContext context) : BaseRepository<Warehouse>(context), IWarehouseRepository
+public class WarehouseRepository(AppDbContext context, IMediator mediator) : BaseRepository<Warehouse>(context, mediator), IWarehouseRepository
 {
     
     /// <summary>

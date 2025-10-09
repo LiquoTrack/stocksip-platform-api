@@ -1,9 +1,10 @@
-﻿using System.Net.Mime;
+using System.Net.Mime;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Queries;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Assemblers;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Resources;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -29,6 +30,7 @@ public class BrandsController(
     /// <returns>
     ///     The list of all brands. 
     /// </returns>
+    [AllowAnonymous]
     [HttpGet]
     [SwaggerOperation(
         Summary = "Get all brands.",

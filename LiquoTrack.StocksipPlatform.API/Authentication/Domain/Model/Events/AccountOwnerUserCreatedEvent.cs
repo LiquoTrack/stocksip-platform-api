@@ -4,7 +4,7 @@ using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 
 namespace LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Events;
 
-public class AccountOwnerUserCreatedEvent: IEvent
+public class AccountOwnerUserCreatedEvent: IDomainEvent
 {
     public int Id { get; set; }
     public Email Email { get; set; }
@@ -15,4 +15,5 @@ public class AccountOwnerUserCreatedEvent: IEvent
     public required AccountId AccountId { get; set; }
     public Role UserRole { get; set; }
     public string UserRoleId { get; set; }
+    public DateTime OccurredOn { get; }
 }

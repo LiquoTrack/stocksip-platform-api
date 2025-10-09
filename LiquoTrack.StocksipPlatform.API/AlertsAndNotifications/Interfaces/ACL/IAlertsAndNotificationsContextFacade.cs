@@ -8,6 +8,6 @@ namespace LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Interfaces.ACL
         /// <summary>
         /// This method creates a new alert in the system with the specified parameters.
         /// </summary>
-        Task<string> CreateAlert(string title, string message, string severity, string type, string productId, string profileId);
+        Task<string> CreateAlert(string title, string message, string severity, string type, string inventoryId, string profileId);
     }
 }

@@ -1,3 +1,4 @@
+using Cortex.Mediator;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
@@ -21,8 +22,7 @@ public class CareGuideRepository : BaseRepository<CareGuide>, ICareGuideReposito
     /// <summary>
     ///     Initializes a new instance of the <see cref="CareGuideRepository"/> class.
     /// </summary>
-    /// <param name="context">The MongoDB database context.</param>
-    public CareGuideRepository(AppDbContext context) : base(context)
+    public CareGuideRepository(AppDbContext context, IMediator mediator) : base(context, mediator)
     {
         _careGuideCollection = context.GetCollection<CareGuide>();
     }

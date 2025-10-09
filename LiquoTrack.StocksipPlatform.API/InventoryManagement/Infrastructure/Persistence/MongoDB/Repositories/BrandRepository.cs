@@ -1,4 +1,5 @@
-﻿using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Entities;
+﻿using Cortex.Mediator;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration;
@@ -10,7 +11,7 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Per
 /// <summary>
 ///     Repository implementation for the Brand entity.
 /// </summary>
-public class BrandRepository(AppDbContext context) : BaseRepository<Brand>(context), IBrandRepository
+public class BrandRepository(AppDbContext context, IMediator mediator) : BaseRepository<Brand>(context, mediator), IBrandRepository
 {
     /// <summary>
     ///     The MongoDB collection for the Brand entity.   
