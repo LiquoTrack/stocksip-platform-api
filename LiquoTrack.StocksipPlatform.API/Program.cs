@@ -747,3 +747,6 @@ catch (Exception ex)
 }
 
 app.Run();
+
+// For usage of testing projects
+public partial class Program { }
