@@ -94,6 +94,7 @@ using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Persisten
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Interfaces.ACL;
 using LiquoTrack.StocksipPlatform.API.Shared.Application.Internal.EventHandlers;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.FileStorage.Cloudinary.Configuration;
+using Microsoft.AspNetCore.Authentication.Google;
 
 // Register MongoDB mappings
 GlobalMongoMappingHelper.RegisterAllBoundedContextMappings();
@@ -464,6 +465,8 @@ var googleClientId = googleAuthSection["ClientId"] ??
 var googleClientSecret = googleAuthSection["ClientSecret"] ?? 
                          throw new InvalidOperationException("Google ClientSecret no está configurado en appsettings.json");
 
+
+
 if (!string.IsNullOrWhiteSpace(googleClientId))
 {
     builder.Services.AddAuthentication(options =>
@@ -473,50 +476,180 @@ if (!string.IsNullOrWhiteSpace(googleClientId))
     })
     .AddJwtBearer(options =>
     {
-        options.Authority = "https://accounts.google.com";
-        options.RequireHttpsMetadata = true;
+        options.SaveToken = true;
+        options.IncludeErrorDetails = true;
+        options.RequireHttpsMetadata = false; // For development only
 
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidIssuers = ["accounts.google.com", "https://accounts.google.com"],
-            ValidateAudience = true,
-            ValidAudience = googleClientId,
-            ValidateLifetime = configuration.GetValue<bool>("Jwt:ValidateLifetime", true),
-            ClockSkew = TimeSpan.FromMinutes(configuration.GetValue<int>("Jwt:ClockSkew", 5)),
-            
-            ValidateIssuerSigningKey = false,
-            RequireExpirationTime = true,
-            RequireSignedTokens = true
-        };
+        var jwtSettings = builder.Configuration.GetSection("Jwt");
+                // JWT configuration
+                var key = Encoding.ASCII.GetBytes(jwtSettings["Secret"] ?? 
+                    throw new InvalidOperationException("JWT Secret no está configurado"));
 
+                // Get JWT settings from configuration
+                var validateIssuer = jwtSettings.GetValue<bool>("ValidateIssuer");
+                var validateAudience = jwtSettings.GetValue<bool>("ValidateAudience");
+                var validateLifetime = jwtSettings.GetValue<bool>("ValidateLifetime");
+                var validateIssuerSigningKey = jwtSettings.GetValue<bool>("ValidateIssuerSigningKey");
+                var requireExpirationTime = jwtSettings.GetValue<bool>("RequireExpirationTime", true);
+                var clockSkew = TimeSpan.FromMinutes(jwtSettings.GetValue<int>("ClockSkew", 30));
+                
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    // Validate issuer
+                    ValidateIssuer = validateIssuer,
+                    ValidIssuers = [jwtSettings["Issuer"], "https://accounts.google.com"],
+                    
+                    // Validate audience
+                    ValidateAudience = validateAudience,
+                    ValidAudiences = [jwtSettings["Audience"], jwtSettings["ClientId"]],
+                    
+                    // Validate token lifetime
+                    ValidateLifetime = validateLifetime,
+                    ClockSkew = clockSkew,
+                    
+                    // Configure issuer signing key
+                    ValidateIssuerSigningKey = validateIssuerSigningKey,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    
+                    // Other settings
+                    RequireExpirationTime = requireExpirationTime,
+                    RequireSignedTokens = jwtSettings.GetValue<bool>("RequireSignedTokens", false),
+                    
+                    // Configuración de claims
+                    NameClaimType = ClaimTypes.Name,
+                    RoleClaimType = ClaimTypes.Role
+                };
+                
+                // Log the JWT validation parameters for debugging
+                logger.LogInformation("JWT Validation Parameters:");
+                logger.LogInformation("- ValidateIssuer: {ValidateIssuer}", validateIssuer);
+                logger.LogInformation("- ValidateAudience: {ValidateAudience}", validateAudience);
+                logger.LogInformation("- ValidateLifetime: {ValidateLifetime}", validateLifetime);
+                logger.LogInformation("- ValidateIssuerSigningKey: {ValidateIssuerSigningKey}", validateIssuerSigningKey);
+                logger.LogInformation("- ClockSkew: {ClockSkew}", clockSkew);   
+                
         options.Events = new JwtBearerEvents
         {
             OnMessageReceived = context =>
             {
-                var authHeader = context.Request.Headers.Authorization.FirstOrDefault();
-                if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                var accessToken = context.Request.Headers.Authorization.ToString();
+                if (!string.IsNullOrEmpty(accessToken) && accessToken.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
                 {
-                    context.Token = authHeader["Bearer ".Length..].Trim();
+                    context.Token = accessToken["Bearer ".Length..].Trim();
                 }
                 return Task.CompletedTask;
             },
             OnTokenValidated = context =>
             {
                 var tokenLogger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                tokenLogger.LogInformation("Token validado para {sub}", context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+                var identity = context.Principal?.Identity as ClaimsIdentity;
+                
+                tokenLogger.LogInformation("=== TOKEN VALIDADO ===");
+                tokenLogger.LogInformation("Usuario autenticado: {User}", context.Principal?.Identity?.Name);
+                tokenLogger.LogInformation("Autenticado: {IsAuthenticated}", context.Principal?.Identity?.IsAuthenticated);
+                
+                tokenLogger.LogInformation("=== CLAIMS DEL TOKEN ===");
+                Debug.Assert(context.Principal != null, "context.Principal != null");
+                
+                foreach (var claim in context.Principal.Claims)
+                {
+                    tokenLogger.LogInformation("Claim - Tipo: {Type}, Valor: {Value}", claim.Type, claim.Value);
+
+                    if (claim.Type is not ("role" or "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"))
+                        continue;
+                    
+                    tokenLogger.LogInformation("Rol encontrado: {Role}", claim.Value);
+                    
+                    if (context.Principal.HasClaim(c => c.Type == ClaimTypes.Role && c.Value == claim.Value))
+                        continue;
+                    
+                    var newClaim = new Claim(ClaimTypes.Role, claim.Value);
+                    identity?.AddClaim(newClaim);
+                    tokenLogger.LogInformation("Añadido claim de rol: {Role}", claim.Value);
+                }
+                
+                var hasAdminRole = context.Principal.IsInRole("Admin");
+                tokenLogger.LogInformation("¿Tiene rol Admin? {HasAdminRole}", hasAdminRole);
+                
+                tokenLogger.LogInformation("=== FIN DE VALIDACIÓN DE TOKEN ===");
+                
                 return Task.CompletedTask;
             },
             OnAuthenticationFailed = context =>
             {
                 var localLogger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                localLogger.LogError(context.Exception, "JWT authentication error");
-                // If expired, add header for the client
+                localLogger.LogError(context.Exception, "Error de autenticación");
+                
                 if (context.Exception is SecurityTokenExpiredException)
                 {
                     context.Response.Headers.Append("Token-Expired", "true");
+                    logger.LogError("El token ha expirado");
                 }
+                
+                switch (context.Exception)
+                {
+                    case SecurityTokenInvalidIssuerException:
+                        logger.LogError("Emisor del token no válido. Se esperaba: {ValidIssuers}", context.Options.TokenValidationParameters.ValidIssuers);
+                        break;
+                    
+                    case SecurityTokenInvalidAudienceException:
+                        logger.LogError("Audiencia del token no válida. Se esperaba: {Join}", string.Join(", ", context.Options.TokenValidationParameters.ValidAudiences));
+                        break;
+                }
+
                 return Task.CompletedTask;
+            }
+        };
+    })
+    .AddGoogle(GoogleDefaults.AuthenticationScheme, options =>
+    {
+        options.ClientId = builder.Configuration["Authentication:Google:ClientId"] ?? throw new InvalidOperationException();
+        options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"] ?? throw new InvalidOperationException();
+        options.CallbackPath = "/signin-google";
+        options.AuthorizationEndpoint = "https://accounts.google.com/o/oauth2/v2/auth";
+        options.TokenEndpoint = "https://oauth2.googleapis.com/token";
+        options.UserInformationEndpoint = "https://www.googleapis.com/oauth2/v2/userinfo";
+        
+        options.Scope.Clear();
+        options.Scope.Add("openid");
+        options.Scope.Add("profile");
+        options.Scope.Add("email");
+        
+        options.SaveTokens = true;
+        
+        options.Events.OnCreatingTicket = async context =>
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, context.Options.UserInformationEndpoint);
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", context.AccessToken);
+                
+                var response = await context.Backchannel.SendAsync(request, context.HttpContext.RequestAborted);
+                response.EnsureSuccessStatusCode();
+                
+                var user = await response.Content.ReadFromJsonAsync<JsonElement>();
+                
+                var claims = new List<Claim>
+                {
+                    new(ClaimTypes.NameIdentifier, user.GetString("id") ?? string.Empty),
+                    new(ClaimTypes.Name, user.GetString("name") ?? string.Empty),
+                    new(ClaimTypes.Email, user.GetString("email") ?? string.Empty),
+                    new(ClaimTypes.GivenName, user.GetString("given_name") ?? string.Empty),
+                    new(ClaimTypes.Surname, user.GetString("family_name") ?? string.Empty),
+                    new("http://schemas.microsoft.com/identity/claims/identityprovider", "Google"),
+                    new Claim(ClaimTypes.Role, "User")
+                };
+
+                var identity = new ClaimsIdentity(claims, context.Scheme.Name);
+                context.Principal = new ClaimsPrincipal(identity);
+                
+                context.Success();
+            }
+            catch (Exception ex)
+            {
+                var localLogger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                localLogger.LogError(ex, "Error creating authentication ticket");
+                context.Fail(ex);
             }
         };
     });
