@@ -10,40 +10,30 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External
     /// <summary>
     /// Adapter that implements IGoogleTokenValidator using the CustomGoogleTokenValidator
     /// </summary>
-    public class CustomGoogleTokenValidatorAdapter : IGoogleTokenValidator
+    public class CustomGoogleTokenValidatorAdapter(
+        ISecurityTokenValidator tokenValidator,
+        ILogger<CustomGoogleTokenValidatorAdapter> logger,
+        IConfiguration configuration)
+        : IGoogleTokenValidator
     {
-        private readonly ISecurityTokenValidator _tokenValidator;
-        private readonly ILogger<CustomGoogleTokenValidatorAdapter> _logger;
-        private readonly IConfiguration _configuration;
-
-        public CustomGoogleTokenValidatorAdapter(
-            ISecurityTokenValidator tokenValidator, 
-            ILogger<CustomGoogleTokenValidatorAdapter> logger,
-            IConfiguration configuration)
-        {
-            _tokenValidator = tokenValidator;
-            _logger = logger;
-            _configuration = configuration;
-        }
-
         public async Task<GoogleTokenValidationResult> ValidateIdTokenAsync(string idToken)
         {
-            _logger.LogInformation("=== Starting Google token validation ===");
-            _logger.LogInformation("Token: {Token}", idToken);
+            logger.LogInformation("=== Starting Google token validation ===");
+            logger.LogInformation("Token: {Token}", idToken);
             
             if (string.IsNullOrWhiteSpace(idToken))
             {
-                _logger.LogError("ID token is null or empty");
+                logger.LogError("ID token is null or empty");
                 return new GoogleTokenValidationResult { IsValid = false, ErrorMessage = "ID token is required" };
             }
 
             try
             {
-                _logger.LogInformation("Starting token validation...");
-                _logger.LogDebug("Token: {Token}", idToken);
+                logger.LogInformation("Starting token validation...");
+                logger.LogDebug("Token: {Token}", idToken);
                 
-                var googleSettings = _configuration.GetSection("Authentication:Google");
-                var jwtSettings = _configuration.GetSection("Jwt");
+                var googleSettings = configuration.GetSection("Authentication:Google");
+                var jwtSettings = configuration.GetSection("Jwt");
                 
                 var parameters = new TokenValidationParameters
                 {
@@ -67,55 +57,53 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External
                     ValidateTokenReplay = false,
                     RoleClaimType = ClaimTypes.Role,
                     NameClaimType = ClaimTypes.Name,
-                    ValidateIssuerSigningKey = jwtSettings.GetValue<bool>("ValidateIssuerSigningKey")
+                    ValidateIssuerSigningKey = jwtSettings.GetValue<bool>("ValidateIssuerSigningKey"),
+                    // For development, we'll disable signature validation
+                    // In production; you should validate the token signature using Google's public keys
+                    SignatureValidator = (token, parameters) => new JwtSecurityToken(token)
                 };
-                
-                // For development, we'll disable signature validation
-                // In production, you should validate the token signature using Google's public keys
-                parameters.SignatureValidator = (token, parameters) => new JwtSecurityToken(token);
+
                 parameters.RequireSignedTokens = false;
                 parameters.ValidateIssuerSigningKey = false;
                 
-                _logger.LogInformation("Token validation parameters:");
-                _logger.LogInformation($"- ValidateIssuer: {parameters.ValidateIssuer}");
-                _logger.LogInformation($"- ValidIssuers: {string.Join(", ", parameters.ValidIssuers ?? Array.Empty<string>())}");
-                _logger.LogInformation($"- ValidateAudience: {parameters.ValidateAudience}");
-                _logger.LogInformation($"- ValidAudiences: {string.Join(", ", parameters.ValidAudiences ?? Array.Empty<string>())}");
-                _logger.LogInformation($"- ValidateLifetime: {parameters.ValidateLifetime}");
-                _logger.LogInformation($"- ClockSkew: {parameters.ClockSkew}");
-                _logger.LogInformation($"- RequireSignedTokens: {parameters.RequireSignedTokens}");
-                _logger.LogInformation($"- RequireExpirationTime: {parameters.RequireExpirationTime}");
-                _logger.LogInformation($"- ValidateIssuerSigningKey: {parameters.ValidateIssuerSigningKey}");
+                logger.LogInformation("Token validation parameters:");
+                logger.LogInformation($"- ValidateIssuer: {parameters.ValidateIssuer}");
+                logger.LogInformation($"- ValidIssuers: {string.Join(", ", parameters.ValidIssuers ?? Array.Empty<string>())}");
+                logger.LogInformation($"- ValidateAudience: {parameters.ValidateAudience}");
+                logger.LogInformation($"- ValidAudiences: {string.Join(", ", parameters.ValidAudiences ?? Array.Empty<string>())}");
+                logger.LogInformation($"- ValidateLifetime: {parameters.ValidateLifetime}");
+                logger.LogInformation($"- ClockSkew: {parameters.ClockSkew}");
+                logger.LogInformation($"- RequireSignedTokens: {parameters.RequireSignedTokens}");
+                logger.LogInformation($"- RequireExpirationTime: {parameters.RequireExpirationTime}");
+                logger.LogInformation($"- ValidateIssuerSigningKey: {parameters.ValidateIssuerSigningKey}");
 
-                _logger.LogInformation("Validating token with parameters: {Parameters}", 
-                    $"Issuers: {string.Join(", ", parameters.ValidIssuers ?? Array.Empty<string>())}, " +
-                    $"Audiences: {string.Join(", ", parameters.ValidAudiences ?? Array.Empty<string>())}");
+                logger.LogInformation("Validating token with parameters: {Parameters}", 
+                    $"Issuers: {string.Join(", ", parameters.ValidIssuers ?? [])}, " +
+                    $"Audiences: {string.Join(", ", parameters.ValidAudiences ?? [])}");
 
-                _logger.LogInformation("Validating token with parameters:");
-                _logger.LogInformation("- ValidateIssuer: {ValidateIssuer}", parameters.ValidateIssuer);
-                _logger.LogInformation("- ValidIssuers: {ValidIssuers}", string.Join(", ", parameters.ValidIssuers ?? Array.Empty<string>()));
-                _logger.LogInformation("- ValidateAudience: {ValidateAudience}", parameters.ValidateAudience);
-                _logger.LogInformation("- ValidAudiences: {ValidAudiences}", string.Join(", ", parameters.ValidAudiences ?? Array.Empty<string>()));
-                _logger.LogInformation("- ValidateLifetime: {ValidateLifetime}", parameters.ValidateLifetime);
-                _logger.LogInformation("- ClockSkew: {ClockSkew}", parameters.ClockSkew);
-                _logger.LogInformation("- ValidateIssuerSigningKey: {ValidateIssuerSigningKey}", parameters.ValidateIssuerSigningKey);
+                logger.LogInformation("Validating token with parameters:");
+                logger.LogInformation("- ValidateIssuer: {ValidateIssuer}", parameters.ValidateIssuer);
+                logger.LogInformation("- ValidIssuers: {ValidIssuers}", string.Join(", ", parameters.ValidIssuers ?? []));
+                logger.LogInformation("- ValidateAudience: {ValidateAudience}", parameters.ValidateAudience);
+                logger.LogInformation("- ValidAudiences: {ValidAudiences}", string.Join(", ", parameters.ValidAudiences ?? []));
+                logger.LogInformation("- ValidateLifetime: {ValidateLifetime}", parameters.ValidateLifetime);
+                logger.LogInformation("- ClockSkew: {ClockSkew}", parameters.ClockSkew);
+                logger.LogInformation("- ValidateIssuerSigningKey: {ValidateIssuerSigningKey}", parameters.ValidateIssuerSigningKey);
 
-                SecurityToken validatedToken;
-                var principal = _tokenValidator.ValidateToken(idToken, parameters, out validatedToken);
-                var jwtToken = validatedToken as JwtSecurityToken;
-                
-                if (jwtToken == null)
+                var principal = tokenValidator.ValidateToken(idToken, parameters, out var validatedToken);
+
+                if (validatedToken is not JwtSecurityToken jwtToken)
                 {
-                    _logger.LogError("Failed to parse JWT token");
+                    logger.LogError("Failed to parse JWT token");
                     return new GoogleTokenValidationResult { IsValid = false, ErrorMessage = "Invalid JWT token format" };
                 }
 
-                _logger.LogInformation("Token validated successfully. Claims: {Claims}", 
+                logger.LogInformation("Token validated successfully. Claims: {Claims}", 
                     string.Join(", ", jwtToken.Claims.Select(c => $"{c.Type}: {c.Value}")));
 
                 if (jwtToken == null)
                 {
-                    _logger.LogError("Failed to parse JWT token");
+                    logger.LogError("Failed to parse JWT token");
                     return new GoogleTokenValidationResult
                     {
                         IsValid = false,
@@ -123,11 +111,11 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External
                     };
                 }
 
-                _logger.LogInformation("JWT Token parsed successfully");
-                _logger.LogInformation("Token Issuer: {Issuer}", jwtToken.Issuer);
-                _logger.LogInformation("Token Audience: {Audience}", string.Join(", ", jwtToken.Audiences ?? Array.Empty<string>()));
-                _logger.LogInformation("Token Valid To: {ValidTo}", jwtToken.ValidTo);
-                _logger.LogInformation("Token Claims: {Claims}", 
+                logger.LogInformation("JWT Token parsed successfully");
+                logger.LogInformation("Token Issuer: {Issuer}", jwtToken.Issuer);
+                logger.LogInformation("Token Audience: {Audience}", string.Join(", ", jwtToken.Audiences ?? []));
+                logger.LogInformation("Token Valid To: {ValidTo}", jwtToken.ValidTo);
+                logger.LogInformation("Token Claims: {Claims}", 
                     string.Join(", ", jwtToken.Claims.Select(c => $"{c.Type}: {c.Value}")));
 
                 var email = principal.FindFirst(ClaimTypes.Email)?.Value
@@ -139,9 +127,16 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External
                 var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value
                     ?? jwtToken.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
 
-                if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(userId))
+                if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(userId))
+                    return new GoogleTokenValidationResult
+                    {
+                        IsValid = true,
+                        Email = email,
+                        Name = name,
+                        UserId = userId
+                    };
                 {
-                    _logger.LogWarning("Missing required claims. Available claims: {Claims}", 
+                    logger.LogWarning("Missing required claims. Available claims: {Claims}", 
                         string.Join(", ", jwtToken.Claims.Select(c => $"{c.Type}: {c.Value}")));
 
                     return new GoogleTokenValidationResult
@@ -151,17 +146,10 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External
                     };
                 }
 
-                return new GoogleTokenValidationResult
-                {
-                    IsValid = true,
-                    Email = email,
-                    Name = name,
-                    UserId = userId
-                };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error validating Google token");
+                logger.LogError(ex, "Error validating Google token");
                 return new GoogleTokenValidationResult
                 {
                     IsValid = false,
