@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LiquoTrack.StocksipPlatform
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LiquoTrack.StocksipPlatform.Tests", "LiquoTrack.StocksipPlatform.Tests\LiquoTrack.StocksipPlatform.Tests.csproj", "{521FA62A-54C8-4655-86FA-D0BA80E12042}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LiquoTrack.StocksipPlatform.AcceptanceTests", "LiquoTrack.StocksipPlatform.AcceptanceTests\LiquoTrack.StocksipPlatform.AcceptanceTests.csproj", "{6E1C3BDA-AFF2-4961-A9E1-9AB80A658095}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{521FA62A-54C8-4655-86FA-D0BA80E12042}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{521FA62A-54C8-4655-86FA-D0BA80E12042}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{521FA62A-54C8-4655-86FA-D0BA80E12042}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6E1C3BDA-AFF2-4961-A9E1-9AB80A658095}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6E1C3BDA-AFF2-4961-A9E1-9AB80A658095}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6E1C3BDA-AFF2-4961-A9E1-9AB80A658095}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6E1C3BDA-AFF2-4961-A9E1-9AB80A658095}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

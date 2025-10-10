@@ -1,9 +1,6 @@
-using System;
 using System.Diagnostics;
-using System.Linq;
 using System.Security.Claims;
 using System.Text;
-using System.Threading.Tasks;
 using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.CommandServices;
 using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Hashing;
 using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Token;
@@ -260,6 +257,9 @@ builder.Services.AddScoped<IGoogleAuthService, AppGoogleAuthService>();
 builder.Services.AddScoped<GoogleSignInCommandHandler>();
 builder.Services.AddScoped<IExternalAuthService, LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google.GoogleAuthService>();
 
+// Cloudinary Settings Configuration
+builder.Services.Configure<CloudinarySettings>(configuration.GetSection("CloudinarySettings"));
+
 //
 // Bounded context Inventory
 //
@@ -349,8 +349,6 @@ builder.Services.AddScoped<IBusinessRepository, BusinessRepository>();
 builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
 
 builder.Services.AddScoped<IPaymentAndSubscriptionsFacade, PaymentAndSubscriptionsFacade>();
-
-builder.Services.Configure<CloudinarySettings>(configuration.GetSection("Cloudinary"));
 
 // Payment converters
 builder.Services.Configure<JsonOptions>(options =>
@@ -747,3 +745,6 @@ catch (Exception ex)
 }
 
 app.Run();
+
+// For usage of testing projects
+public partial class Program { }

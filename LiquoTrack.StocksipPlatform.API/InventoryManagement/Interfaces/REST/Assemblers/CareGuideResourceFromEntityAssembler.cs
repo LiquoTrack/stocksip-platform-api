@@ -7,9 +7,13 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.As
     {
         public static CareGuideResource ToResourceFromEntity(CareGuide entity)
         {
+            var typeOfLiquor = entity.ProductAssociated?.Type.ToString();
+            var productName = entity.ProductName ?? entity.ProductAssociated?.Name;
+            var imageUrl = entity.ImageUrl ?? entity.ProductAssociated?.ImageUrl?.GetValue();
+
             return new CareGuideResource(
                 CareGuideId: entity.CareGuideId,
-                AccountId: entity.AccountId.ToString(),
+                AccountId: entity.AccountId.GetId,
                 ProductId: entity.ProductId,
                 Title: entity.Title,
                 Summary: entity.Summary,
@@ -17,9 +21,9 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.As
                 RecommendedMaxTemperature: entity.RecommendedMaxTemperature,
                 RecommendedPlaceStorage: entity.RecommendedPlaceStorage,
                 GeneralRecommendation: entity.GeneralRecommendation,
-                TypeOfLiquor: null,
-                ProductName: null,
-                ImageUrl: null
+                TypeOfLiquor: typeOfLiquor,
+                ProductName: productName,
+                ImageUrl: imageUrl
             );
         }
     }
