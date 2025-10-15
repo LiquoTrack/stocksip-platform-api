@@ -1,0 +1,28 @@
+﻿using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Commands;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Resources;
+
+namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Assemblers
+{
+    /// <summary>
+    /// This class is responsible for transforming an UpdateCareGuideResource into an UpdateCareGuideCommand.
+    /// </summary>
+    public static class UpdateCareGuideCommandFromResourceAssembler
+    {
+        /// <summary>
+        /// Transforms an UpdateCareGuideResource into an UpdateCareGuideCommand.
+        /// </summary>
+        /// <returns>
+        /// The created UpdateCareGuideCommand.
+        /// </returns>
+        public static UpdateCareGuideCommand ToCommandFromResource(UpdateCareGuideResource resource, string careGuideId) { 
+            return new UpdateCareGuideCommand(
+                careGuideId,
+                resource.Title,
+                resource.Summary,
+                resource.RecommendedMinTemperature,
+                resource.RecommendedMaxTemperature,
+                resource.RecommendedPlaceStorage,
+                resource.GeneralRecommendation);
+        }
+    }
+}
