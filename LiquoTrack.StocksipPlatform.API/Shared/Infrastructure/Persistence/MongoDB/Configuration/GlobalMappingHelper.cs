@@ -1,4 +1,9 @@
-﻿using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration.ContextMapping;
+﻿using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Persistence.MongoDB.Configuration;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Persistence.MongoDB.Configuration.ContextMapping;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Events;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.Persistence.MongoDB.Configuration.ContextMapping;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Persistence.MongoDB.Configuration.ContextMapping;
+using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration.ContextMapping;
 
 namespace LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration;
 
@@ -17,21 +22,35 @@ public static class GlobalMongoMappingHelper
         if (_initialized) return;
         
         // Shared Bounded Context
+        Console.WriteLine("Registering Shared Mappings...");
         SharedMappingHelper.RegisterSharedMappings();
+        Console.WriteLine("Shared Mappings Registered!");
         
         // IAM Bounded Context
+        Console.WriteLine("Registering Authentication Mappings...");
+        AuthenticationMappingHelper.RegisterAuthenticationMappings();
+        Console.WriteLine("Authentication Mappings Registered!");
         
         // Inventory Bounded Context
+        Console.WriteLine("Registering Inventory Management Mappings...");
+        InventoryManagementMappingHelper.RegisterInventoryManagementMappings();
+        Console.WriteLine("Inventory Management Mappings Registered!");
         
         // Order Management Bounded Context
         
         // Procurement Ordering Bounded Context
         
         // Subscription Bounded Context
+        Console.WriteLine("Registering Payment and Subscriptions Mappings...");
+        PaymentAndSubscriptionsMappingHelper.RegisterPaymentAndSubscriptionsMappings();
+        Console.WriteLine("Payment and Subscriptions Mappings Registered!");
         
         // Alerts Bounded Context
         
         // Profiles Bounded Context
+        Console.WriteLine("Registering Profile Management Mappings...");
+        ProfileManagementMappingHelper.RegisterProfileManagementMappings();
+        Console.WriteLine("Profile Management Mappings Registered!");
         
         _initialized = true;
     }

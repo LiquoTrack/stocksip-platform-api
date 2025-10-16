@@ -23,11 +23,14 @@ public static class SerializerRegistrationHelper
         try
         {
             BsonSerializer.RegisterSerializer(serializer);
+            Console.WriteLine($"Registering serializer for {typeof(T).Name}");
         }
         catch (BsonSerializationException ex)
         {
-            if (!ex.Message.Contains("There is already a serializer registered"))
-                throw;
+            if (ex.Message.Contains("There is already a serializer registered"))
+            {
+                Console.WriteLine($"There is already a registered serializer for {typeof(T).Name}, ignoring it.");
+            }
         }
     }
 }
