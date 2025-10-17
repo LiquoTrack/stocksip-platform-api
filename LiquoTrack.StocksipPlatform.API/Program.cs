@@ -43,6 +43,7 @@ using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Intern
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.Converters.JSON;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.PaymentProviders.MercadoPago.Configuration;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.Persistence.MongoDB.Repositories;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.ACL;
@@ -170,7 +171,7 @@ builder.Services.AddScoped<IMongoDatabase>(sp =>
 builder.Services.AddSingleton<AppDbContext>();
 
 // Mercado Pago Configuration
-MercadoPagoConfig.AccessToken = builder.Configuration["MercadoPago:AccessToken"];
+builder.Services.Configure<MercadoPagoSettings>(builder.Configuration.GetSection("MercadoPagoSettings"));
 
 //
 // Bounded Context Shared
@@ -243,7 +244,7 @@ builder.Services.AddScoped<GoogleSignInCommandHandler>();
 builder.Services.AddScoped<IExternalAuthService, GoogleAuthService>();
 
 // Cloudinary Settings Configuration
-builder.Services.Configure<CloudinarySettings>(configuration.GetSection("CloudinarySettings"));
+builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
 
 //
 // Bounded context Inventory
