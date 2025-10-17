@@ -92,6 +92,11 @@ using LiquoTrack.StocksipPlatform.API.ProfileManagement.Interfaces.ACL;
 using LiquoTrack.StocksipPlatform.API.Shared.Application.Internal.EventHandlers;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.FileStorage.Cloudinary.Configuration;
 using Microsoft.AspNetCore.Authentication.Google;
+using LiquoTrack.StocksipPlatform.API.OrderManagement.Domain.Repositories;
+using LiquoTrack.StocksipPlatform.API.OrderManagement.Infrastructure.Persistence.MongoDB.Repositories;
+using LiquoTrack.StocksipPlatform.API.OrderManagement.Domain.Services;
+using LiquoTrack.StocksipPlatform.API.OrderManagement.Application.Internal.CommandServices;
+using LiquoTrack.StocksipPlatform.API.OrderManagement.Application.Internal.QueryServices;
 
 // Register MongoDB mappings
 GlobalMongoMappingHelper.RegisterAllBoundedContextMappings();
@@ -309,10 +314,12 @@ builder.Services.Configure<JsonOptions>(options =>
 //
 // Bounded Context Procurement Ordering
 //
-
-//
 // Bounded Context Order Management
 //
+
+builder.Services.AddScoped<ISalesOrderRepository, SalesOrderRepository>();
+builder.Services.AddScoped<ISalesOrderCommandService, SalesOrderCommandService>();
+builder.Services.AddScoped<ISalesOrderQueryService, SalesOrderQueryService>();
 
 //
 // Bounded Context Profile Management
