@@ -39,11 +39,13 @@ using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.FileSto
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Persistence.MongoDB.Repositories;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.External.ACL;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.CommandServices;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.OutBoundServices.PaymentProviders;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.QueryServices;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.Converters.JSON;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.PaymentProviders.MercadoPago.Configuration;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.PaymentProviders.MercadoPago.Services;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.Persistence.MongoDB.Repositories;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.ACL;
@@ -170,6 +172,12 @@ builder.Services.AddScoped<IMongoDatabase>(sp =>
 // Add service for MongoDB client
 builder.Services.AddSingleton<AppDbContext>();
 
+// Cloudinary Settings Configuration
+builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
+
+// Register Mercado Pago Service
+builder.Services.AddScoped<IMercadoPagoService, MercadoPagoService>();
+
 // Mercado Pago Configuration
 builder.Services.Configure<MercadoPagoSettings>(builder.Configuration.GetSection("MercadoPagoSettings"));
 
@@ -242,9 +250,6 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IGoogleAuthService, AppGoogleAuthService>();
 builder.Services.AddScoped<GoogleSignInCommandHandler>();
 builder.Services.AddScoped<IExternalAuthService, GoogleAuthService>();
-
-// Cloudinary Settings Configuration
-builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
 
 //
 // Bounded context Inventory
@@ -333,6 +338,7 @@ builder.Services.AddScoped<IBusinessQueryService, BusinessQueryService>();
 builder.Services.AddScoped<IBusinessRepository, BusinessRepository>();
 
 builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
+builder.Services.AddScoped<ISubscriptionsCommandService, SubscriptionCommandService>();
 
 builder.Services.AddScoped<IPaymentAndSubscriptionsFacade, PaymentAndSubscriptionsFacade>();
 

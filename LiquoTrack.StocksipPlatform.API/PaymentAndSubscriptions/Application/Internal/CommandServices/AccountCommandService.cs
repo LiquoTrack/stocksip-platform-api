@@ -12,7 +12,9 @@ namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.In
 /// <param name="accountRepository">
 ///     The repository used to manage Account entities.
 /// </param>
-public class AccountCommandService(IAccountRepository accountRepository) : IAccountCommandService
+public class AccountCommandService(
+    IAccountRepository accountRepository,
+    IPlanRepository planRepository) : IAccountCommandService
 {
     /// <summary>
     ///     The repository used to manage Account entities.
