@@ -2,7 +2,6 @@
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Entities;
-using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
@@ -34,9 +33,6 @@ public class Account(
     [BsonRepresentation(BsonType.String)]
     public EAccountRole Role { get; private set; } = role;
     
-    
-    public Subscription? Subscription { get; set; }
-    
     /// <summary>
     ///     Factory method to create a new Account aggregate root from a CreateAccountCommand.
     /// </summary>
@@ -50,22 +46,16 @@ public class Account(
         command.BusinessId,
         EAccountStatuses.Inactive,
         Enum.Parse<EAccountRole>(command.AccountRole)) {}
-
+    
     /// <summary>
-    ///     Method to initialize the subscription of the account with a free plan.
+    ///     Method to activate the account.
     /// </summary>
-    /// <param name="freePlan">
-    ///     The free <see cref="Plan"/> to be assigned to the account's subscription.
-    /// </param>
-    public void InitializeSubscription(Plan freePlan)
-    {
-        Subscription = new Subscription(
-            accountId: this.Id.ToString(),
-            planId: freePlan.Id.ToString(),
-            status: ESubscriptionStatus.Active,
-            expirationDate: DateTime.MaxValue
-        );
-    }
+    public void ActivateAccount() => this.Status = EAccountStatuses.Active;
+    
+    /// <summary>
+    ///     Method to deactivate the account.
+    /// </summary>
+    public void DeactivateAccount() => this.Status = EAccountStatuses.Inactive;
 
     /// <summary>
     ///     Method to get the creation date of the account in "yyyy-MM-dd HH:mm:ss" format.

@@ -6,7 +6,7 @@
 /// <param name="AccountId">
 ///     The unique identifier of the account for which the paid subscription is to be activated.
 /// </param>
-/// <param name="PlanId">
+/// <param name="SelectedPlanId">
 ///     The unique identifier of the plan to be activated.
 /// </param>
-public record ActivatePaidCommand(string AccountId, string PlanId);
+public record InitialSubscriptionCommand(string AccountId, string SelectedPlanId);
