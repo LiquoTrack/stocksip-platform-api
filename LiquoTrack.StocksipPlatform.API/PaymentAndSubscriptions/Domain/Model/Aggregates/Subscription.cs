@@ -11,9 +11,7 @@ namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.A
 /// </summary>
 public class Subscription(
     string accountId,
-    string planId,
-    ESubscriptionStatus status,
-    DateTime expirationDate
+    string planId
     ) : Entity
 {
     /// <summary>
@@ -35,7 +33,7 @@ public class Subscription(
     /// <summary>
     ///     The expiration date of the subscription.
     /// </summary>
-    public DateTime? ExpirationDate { get; set; } = expirationDate;
+    public DateTime ExpirationDate { get; set; }
 
     /// <summary>
     ///     Method to activate a trial subscription for a given premium plan.
@@ -49,6 +47,32 @@ public class Subscription(
         Status = ESubscriptionStatus.Trial;
         ExpirationDate = DateTime.UtcNow.AddDays(14);
     }
+    
+    /// <summary>
+    ///     Method to activate a free subscription for a given free plan.   
+    /// </summary>
+    /// <param name="freePlan">
+    ///     Free plan to activate the subscription for.
+    /// </param>
+    public void ActivateFreePlan(Plan freePlan)
+    {
+        PlanId = freePlan.Id.ToString();
+        Status = ESubscriptionStatus.Active;
+        ExpirationDate = CalculateExpirationDate(freePlan);
+    }
+    
+    /// <summary>
+    ///     Method to activate a premium subscription for a given premium plan.  
+    /// </summary>
+    /// <param name="premiumPlan">
+    ///     Premium plan to activate the subscription for. 
+    /// </param>
+    public void ActivatePremiumPlan(Plan premiumPlan)
+    {
+        PlanId = premiumPlan.Id.ToString();
+        Status = ESubscriptionStatus.Active;
+        ExpirationDate = CalculateExpirationDate(premiumPlan);
+    }
 
     /// <summary>
     ///     Method to activate a paid subscription for a given paid plan.
@@ -56,7 +80,7 @@ public class Subscription(
     /// <param name="paidPlan">
     ///     The paid plan to activate the subscription for.
     /// </param>
-    public void ActivatePaidPlan(Plan paidPlan)
+    public void ActivateEnterprisePlan(Plan paidPlan)
     {
         PlanId = paidPlan.Id.ToString();
         Status = ESubscriptionStatus.Active;
@@ -69,7 +93,7 @@ public class Subscription(
     public void CancelSubscription()
     {
         Status = ESubscriptionStatus.Canceled;
-        ExpirationDate = null;
+        ExpirationDate = DateTime.UtcNow;
     }
     
     /// <summary>
@@ -107,6 +131,7 @@ public class Subscription(
     {
         return plan.PaymentFrequency switch
         {
+            EPaymentFrequency.None => DateTime.MaxValue,
             EPaymentFrequency.Monthly => DateTime.UtcNow.AddMonths(1),
             EPaymentFrequency.Yearly => DateTime.UtcNow.AddYears(1),
             _ => throw new ArgumentOutOfRangeException()
