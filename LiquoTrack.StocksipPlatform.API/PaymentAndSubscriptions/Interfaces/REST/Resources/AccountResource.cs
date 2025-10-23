@@ -9,8 +9,5 @@ public record AccountResource(
         string BusinessId,
         string Status,
         string Role,
-        string CreationDate,
-        string PlanId,
-        string PlanStatus,
-        string? ExpirationDate
+        string CreationDate
     );
