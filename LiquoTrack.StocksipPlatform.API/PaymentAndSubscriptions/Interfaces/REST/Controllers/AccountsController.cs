@@ -43,4 +43,29 @@ public class AccountsController(IAccountQueryService accountQueryService) : Cont
         var resource = AccountResourceFromEntityAssembler.ToResourceFromEntity(account);
         return Ok(resource);
     }
+    
+    /// <summary>
+    ///     Method to handle the retrieval of an account's status by its ID.'
+    /// </summary>
+    /// <param name="accountId">
+    ///     The ID of the account to retrieve.
+    /// </param>
+    /// <returns>
+    ///     A 200 OK response with the status of the account, or a 404 Not Found response if the account does not exist.   
+    /// </returns>
+    [HttpGet("{accountId}/status")]
+    [SwaggerOperation(
+        Summary = "Get Account Status By ID",
+        Description = "Retrieves the status of an account by its ID.",
+        OperationId = "GetAccountStatusById")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Account status returned successfully.", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Account not found."
+        )]
+    public async Task<IActionResult> GetAccountStatusById([FromRoute] string accountId)
+    {
+        var status = await accountQueryService.Handle(new GetAccountStatusByIdQuery(accountId));
+        if (status is null) return NotFound($"Account with ID {accountId} not found.");
+        var resource = AccountStatusResourceFromEntityAssembler.ToResourceFromEntity(status);
+        return Ok(resource);
+    }
 }

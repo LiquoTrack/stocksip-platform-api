@@ -78,6 +78,12 @@ public class SubscriptionCommandService(
                 throw new InvalidOperationException("Unknown plan type.");
         }
 
+        if (account.Status == EAccountStatuses.Inactive)
+        {
+            account.ActivateAccount();
+            await accountRepository.UpdateAsync(account);
+        }
+
         await subscriptionRepository.AddAsync(subscription);
         return (preferenceId, initPoint);
     }
