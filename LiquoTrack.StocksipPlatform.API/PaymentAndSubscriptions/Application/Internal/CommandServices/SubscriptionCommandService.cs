@@ -32,49 +32,54 @@ public class SubscriptionCommandService(
     /// <exception cref="InvalidOperationException">
     ///     A thrown when an unknown plan type is encountered.
     /// </exception>
-    public async Task<(Subscription?, string?)> Handle(InitialSubscriptionCommand command)
+    public async Task<(string?, string?)> Handle(InitialSubscriptionCommand command)
     {
-        
         var account = await accountRepository.FindByIdAsync(command.AccountId)
                       ?? throw new Exception($"Account with ID {command.AccountId} not found.");
-        
+
         var plan = await planRepository.FindByIdAsync(command.SelectedPlanId)
                    ?? throw new Exception($"Plan with ID {command.SelectedPlanId} not found.");
-        
+
         var subscription = new Subscription(command.AccountId, command.SelectedPlanId);
 
-        string? preferenceId = null;
+        string preferenceId;
+        string initPoint;
 
         switch (plan.PlanType)
         {
             case EPlanType.Free:
                 subscription.ActivateFreePlan(plan);
-                break;
+                await subscriptionRepository.AddAsync(subscription);
+                return (null, null);
+
             case EPlanType.Premium:
-                preferenceId = mercadoPagoService.CreatePaymentPreference(
+                var premiumPreference = mercadoPagoService.CreatePaymentPreference(
                     title: plan.Description,
                     price: plan.PlanPrice.GetAmount(),
                     currency: plan.PlanPrice.GetCurrencyCode(),
                     quantity: 1
                 );
-                subscription.ActivatePremiumPlan(plan);
+                preferenceId = premiumPreference.PreferenceId;
+                initPoint = premiumPreference.InitPoint;
                 break;
+            
             case EPlanType.Enterprise:
-                preferenceId = mercadoPagoService.CreatePaymentPreference(
+                var preference = mercadoPagoService.CreatePaymentPreference(
                     title: plan.Description,
                     price: plan.PlanPrice.GetAmount(),
                     currency: plan.PlanPrice.GetCurrencyCode(),
                     quantity: 1
                 );
-                subscription.ActivateEnterprisePlan(plan);
+                preferenceId = preference.PreferenceId;
+                initPoint = preference.InitPoint;
                 break;
 
             default:
                 throw new InvalidOperationException("Unknown plan type.");
         }
-        
+
         await subscriptionRepository.AddAsync(subscription);
-        return (subscription, preferenceId);
+        return (preferenceId, initPoint);
     }
 
     public Task<Subscription?> Handle(UpgradeSubscriptionCommand command)

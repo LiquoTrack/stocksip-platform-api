@@ -3,4 +3,4 @@
 /// <summary>
 ///     Resource representing a subscription.
 /// </summary>
-public record SubscriptionResource(string SubscriptionId, string PreferenceId, string Status);
+public record SubscriptionResource(string PreferenceId, string InitPoint);

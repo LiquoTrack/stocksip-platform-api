@@ -11,20 +11,19 @@ public class SubscriptionResourceFromEntityAssembler
     /// <summary>
     ///     Method to convert Subscription entity to SubscriptionResource.
     /// </summary>
-    /// <param name="subscription">
-    ///     The Subscription entity to convert.
-    /// </param>
     /// <param name="preferenceId">}
     ///     The preference id of the subscription in MercadoPago.
+    /// </param>
+    /// <param name="initPoint">
+    ///     The url to redirect to after the subscription is created.
     /// </param>
     /// <returns>
     ///     A SubscriptionResource object.
     /// </returns>
-    public static SubscriptionResource ToResourceFromEntity(Subscription subscription, string preferenceId)
+    public static SubscriptionResource ToResourceFromEntity(string preferenceId, string initPoint)
     {
         return new SubscriptionResource(
-            subscription.Id.ToString(),
             preferenceId,
-            subscription.Status.ToString());
+            initPoint);
     }
 }

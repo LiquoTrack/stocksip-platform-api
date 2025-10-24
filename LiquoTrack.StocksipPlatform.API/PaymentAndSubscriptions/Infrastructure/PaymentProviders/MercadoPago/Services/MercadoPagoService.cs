@@ -47,7 +47,7 @@ public class MercadoPagoService : IMercadoPagoService
     /// <returns>
     ///     A string representing the ID of the payment preference.
     /// </returns>
-    public string CreatePaymentPreference(string title, decimal price, string currency, int quantity)
+    public (string PreferenceId, string InitPoint) CreatePaymentPreference(string title, decimal price, string currency, int quantity)
     {
         var request = new PreferenceRequest
         {
@@ -61,10 +61,17 @@ public class MercadoPagoService : IMercadoPagoService
                     UnitPrice = price
                 }
             },
+            BackUrls = new PreferenceBackUrlsRequest
+            {
+                Success = "stocksip://congrats",
+                Failure = "stocksip://failure",
+                Pending = "stocksip://pending"
+            },
+            AutoReturn = "approved"
         };
         
         var client = new PreferenceClient();
         var preference = client.CreateAsync(request).Result;
-        return preference.Id;
+        return (preference.Id, preference.InitPoint);
     }
 }

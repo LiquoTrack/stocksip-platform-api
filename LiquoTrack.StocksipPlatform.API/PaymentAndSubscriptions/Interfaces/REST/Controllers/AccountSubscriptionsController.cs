@@ -42,14 +42,19 @@ public class AccountSubscriptionsController(ISubscriptionsCommandService subscri
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Subscription could not be created.")]
     public async Task<IActionResult> CreateSubscription([FromRoute] string accountId, [FromBody] InitialSubscriptionResource resource)
     {
-        var initialSubscriptionCommand =
-            InitialSubscriptionCommandFromResourceAssembler.FromCommandToEntity(resource, accountId);
-        var (subscription, preferenceId) = await subscriptionsCommandService.Handle(initialSubscriptionCommand);
+        var command = InitialSubscriptionCommandFromResourceAssembler.FromCommandToEntity(resource, accountId);
+        var (preferenceId, initPoint) = await subscriptionsCommandService.Handle(command);
         
-        if (subscription is null) return BadRequest("Subscription could not be created.");
-
+        if (preferenceId is null && initPoint is null)
+        {
+            return CreatedAtAction(nameof(CreateSubscription), new
+            {
+                Message = "Free plan activated successfully."
+            });
+        }
+        
         var subscriptionResource =
-            SubscriptionResourceFromEntityAssembler.ToResourceFromEntity(subscription, preferenceId);
+            SubscriptionResourceFromEntityAssembler.ToResourceFromEntity(preferenceId!, initPoint!);
 
         return CreatedAtAction(nameof(CreateSubscription), subscriptionResource);
     }

@@ -17,7 +17,7 @@ public interface ISubscriptionsCommandService
     /// <returns>
     ///     A task that represents the asynchronous operation. The task result contains the activated subscription.
     /// </returns>
-    Task<(Subscription?, string?)> Handle(InitialSubscriptionCommand command);
+    Task<(string?, string?)> Handle(InitialSubscriptionCommand command);
     
     /// <summary>
     ///     Method to handle the upgrade of a subscription.

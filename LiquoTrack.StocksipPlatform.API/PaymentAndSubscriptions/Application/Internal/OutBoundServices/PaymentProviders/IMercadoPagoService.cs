@@ -23,5 +23,5 @@ public interface IMercadoPagoService
     /// <returns>
     ///     A string representing the ID of the payment preference.
     /// </returns>
-    string CreatePaymentPreference(string title, decimal price, string currency, int quantity);
+    (string PreferenceId, string InitPoint) CreatePaymentPreference(string title, decimal price, string currency, int quantity);
 }
