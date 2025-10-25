@@ -42,4 +42,11 @@
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="ProcurementOrdering\Infrastructure\Converters\JSON\" />
+      <Folder Include="ProcurementOrdering\Infrastructure\Persistence\MongoDB\Configuration\ContextMapping\" />
+      <Folder Include="ProcurementOrdering\Infrastructure\Persistence\MongoDB\Configuration\Serializers\" />
+      <Folder Include="ProcurementOrdering\Interfaces\" />
+    </ItemGroup>
+
 </Project>
