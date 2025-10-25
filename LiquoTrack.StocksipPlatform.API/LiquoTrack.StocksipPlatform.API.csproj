@@ -43,10 +43,9 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="ProcurementOrdering\Infrastructure\Converters\JSON\" />
-      <Folder Include="ProcurementOrdering\Infrastructure\Persistence\MongoDB\Configuration\ContextMapping\" />
-      <Folder Include="ProcurementOrdering\Infrastructure\Persistence\MongoDB\Configuration\Serializers\" />
-      <Folder Include="ProcurementOrdering\Interfaces\" />
+      <Folder Include="ProcurementOrdering\Interfaces\REST\Assemblers\" />
+      <Folder Include="ProcurementOrdering\Interfaces\REST\Controllers\" />
+      <Folder Include="ProcurementOrdering\Interfaces\REST\Resources\" />
     </ItemGroup>
 
 </Project>
