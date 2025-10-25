@@ -15,7 +15,7 @@ namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.RES
 ///     The service for handling account-related queries.
 /// </param>
 [ApiController]
-[Route("api/vi/[controller]")]
+[Route("api/v1/[controller]")]
 [Produces(MediaTypeNames.Application.Json)]
 [SwaggerTag("Available endpoints for accounts.")]
 public class AccountsController(IAccountQueryService accountQueryService) : ControllerBase
@@ -58,7 +58,7 @@ public class AccountsController(IAccountQueryService accountQueryService) : Cont
         Summary = "Get Account Status By ID",
         Description = "Retrieves the status of an account by its ID.",
         OperationId = "GetAccountStatusById")]
-    [SwaggerResponse(StatusCodes.Status200OK, "Account status returned successfully.", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status200OK, "Account status returned successfully.", typeof(AccountStatusResource))]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Account not found."
         )]
     public async Task<IActionResult> GetAccountStatusById([FromRoute] string accountId)
