@@ -105,7 +105,8 @@ public class PurchaseOrder(
         if (Status != EOrderStatus.Processing)
             throw new InvalidOperationException("Cannot add items to a non-processing order");
 
-        var item = new PurchaseOrderItem(command.productId, command.unitPrice, command.amountToPurchase);
+        var productId = new ProductId(command.productId);
+        var item = new PurchaseOrderItem(productId, command.unitPrice, command.amountToPurchase);
         Items.Add(item);
     }
 
@@ -123,7 +124,8 @@ public class PurchaseOrder(
         if (Status != EOrderStatus.Processing)
             throw new InvalidOperationException("Cannot remove items from a non-processing order");
 
-        var item = Items.FirstOrDefault(i => i.ProductId == command.productId);
+        var productId = new ProductId(command.productId);
+        var item = Items.FirstOrDefault(i => i.ProductId.GetId == productId.GetId);
         if (item != null)
             Items.Remove(item);
     }
@@ -141,7 +143,7 @@ public class PurchaseOrder(
     }
 
     /// <summary>
-    /// Sets the order status to Process.
+    /// Sets the order status to Processing.
     /// </summary>
     public void ProcessOrder()
     {
