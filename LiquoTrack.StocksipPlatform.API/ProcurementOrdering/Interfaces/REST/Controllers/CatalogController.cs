@@ -6,6 +6,7 @@ using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Interfaces.REST.Assemb
 using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Interfaces.REST.Resources;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Interfaces.REST.Controllers;
 
@@ -15,18 +16,18 @@ namespace LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Interfaces.REST.Co
 [ApiController]
 [Route("api/v1/catalogs")]
 [Produces(MediaTypeNames.Application.Json)]
+[SwaggerTag("Available endpoints for managing catalogs.")]
 public class CatalogController(
     ICatalogCommandService catalogCommandService,
     ICatalogQueryService catalogQueryService) : ControllerBase
 {
-    /// <summary>
-    /// Creates a new catalog.
-    /// </summary>
-    /// <param name="resource">The resource containing catalog details.</param>
-    /// <returns>The created catalog resource.</returns>
     [HttpPost]
-    [ProducesResponseType(typeof(CatalogResource), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [SwaggerOperation(
+        Summary = "Create a new catalog.",
+        Description = "Creates a new catalog with the specified details.",
+        OperationId = "CreateCatalog")]
+    [SwaggerResponse(StatusCodes.Status201Created, "Catalog created successfully.", typeof(CatalogResource))]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request or failed creation.")]
     public async Task<IActionResult> CreateCatalog([FromBody] CreateCatalogResource resource)
     {
         try
@@ -49,14 +50,14 @@ public class CatalogController(
         }
     }
 
-    /// <summary>
-    /// Retrieves a catalog by its identifier.
-    /// </summary>
-    /// <param name="id">The catalog identifier.</param>
-    /// <returns>The catalog resource.</returns>
-    [HttpGet("{id}")]
-    [ProducesResponseType(typeof(CatalogResource), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [HttpGet("{catalogId}")]
+    [SwaggerOperation(
+        Summary = "Get catalog by ID.",
+        Description = "Retrieves a catalog by its unique identifier.",
+        OperationId = "GetCatalogById")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Catalog returned successfully.", typeof(CatalogResource))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Catalog not found.")]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request.")]
     public async Task<IActionResult> GetCatalogById(string id)
     {
         try
@@ -76,12 +77,12 @@ public class CatalogController(
         }
     }
 
-    /// <summary>
-    /// Retrieves all catalogs.
-    /// </summary>
-    /// <returns>A collection of catalog resources.</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<CatalogResource>), StatusCodes.Status200OK)]
+    [SwaggerOperation(
+        Summary = "Get all catalogs.",
+        Description = "Retrieves all catalogs in the system.",
+        OperationId = "GetAllCatalogs")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Catalogs retrieved successfully.", typeof(IEnumerable<CatalogResource>))]
     public async Task<IActionResult> GetAllCatalogs()
     {
         var query = new GetAllCatalogsQuery();
@@ -90,12 +91,12 @@ public class CatalogController(
         return Ok(resources);
     }
 
-    /// <summary>
-    /// Retrieves all published catalogs.
-    /// </summary>
-    /// <returns>A collection of published catalog resources.</returns>
     [HttpGet("published")]
-    [ProducesResponseType(typeof(IEnumerable<CatalogResource>), StatusCodes.Status200OK)]
+    [SwaggerOperation(
+        Summary = "Get all published catalogs.",
+        Description = "Retrieves all catalogs that are published and visible.",
+        OperationId = "GetPublishedCatalogs")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Published catalogs retrieved successfully.", typeof(IEnumerable<CatalogResource>))]
     public async Task<IActionResult> GetPublishedCatalogs()
     {
         var query = new GetPublishedCatalogsQuery();
@@ -104,16 +105,14 @@ public class CatalogController(
         return Ok(resources);
     }
 
-    /// <summary>
-    /// Updates a catalog by its identifier.
-    /// </summary>
-    /// <param name="id">The catalog identifier.</param>
-    /// <param name="resource">The resource containing updated catalog data.</param>
-    /// <returns>No content if successful.</returns>
-    [HttpPut("{id}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [HttpPut("{catalogId}")]
+    [SwaggerOperation(
+        Summary = "Update a catalog.",
+        Description = "Updates the details of an existing catalog by ID.",
+        OperationId = "UpdateCatalog")]
+    [SwaggerResponse(StatusCodes.Status204NoContent, "Catalog updated successfully.")]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request.")]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Catalog not found.")]
     public async Task<IActionResult> UpdateCatalog(string id, [FromBody] UpdateCatalogResource resource)
     {
         try
@@ -132,15 +131,14 @@ public class CatalogController(
         }
     }
 
-    /// <summary>
-    /// Publishes a catalog.
-    /// </summary>
-    /// <param name="id">The catalog identifier.</param>
-    /// <returns>No content if successful.</returns>
-    [HttpPut("{id}/publications")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [HttpPut("{catalogId}/publications")]
+    [SwaggerOperation(
+        Summary = "Publish a catalog.",
+        Description = "Marks a catalog as published and visible.",
+        OperationId = "PublishCatalog")]
+    [SwaggerResponse(StatusCodes.Status204NoContent, "Catalog published successfully.")]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request.")]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Catalog not found.")]
     public async Task<IActionResult> PublishCatalog(string id)
     {
         try
@@ -159,15 +157,14 @@ public class CatalogController(
         }
     }
 
-    /// <summary>
-    /// Unpublishes a catalog.
-    /// </summary>
-    /// <param name="id">The catalog identifier.</param>
-    /// <returns>No content if successful.</returns>
-    [HttpDelete("{id}/publications")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [HttpDelete("{catalogId}/publications")]
+    [SwaggerOperation(
+        Summary = "Unpublish a catalog.",
+        Description = "Marks a catalog as unpublished and hidden.",
+        OperationId = "UnpublishCatalog")]
+    [SwaggerResponse(StatusCodes.Status204NoContent, "Catalog unpublished successfully.")]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request.")]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Catalog not found.")]
     public async Task<IActionResult> UnpublishCatalog(string id)
     {
         try
@@ -186,25 +183,21 @@ public class CatalogController(
         }
     }
 
-    /// <summary>
-    /// Adds an item to a catalog and returns the updated catalog as JSON.
-    /// </summary>
-    /// <param name="id">The catalog identifier.</param>
-    /// <param name="resource">The resource containing item details (productId, amount, currency).</param>
-    /// <returns>The updated catalog resource.</returns>
-    [HttpPost("{id}/items")]
-    [ProducesResponseType(typeof(CatalogResource), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [HttpPost("{catalogId}/items")]
+    [SwaggerOperation(
+        Summary = "Add item to catalog.",
+        Description = "Adds a product item to an existing catalog and returns the updated catalog.",
+        OperationId = "AddItemToCatalog")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Item added and catalog updated successfully.", typeof(CatalogResource))]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request.")]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Catalog not found.")]
     public async Task<IActionResult> AddItemToCatalog(string id, [FromBody] AddItemToCatalogResource resource)
     {
         try
         {
-            // Execute the add item command
             var command = new AddItemToCatalogCommand(id, resource.productId);
             await catalogCommandService.Handle(command);
 
-            // Retrieve the updated catalog
             var query = new GetCatalogByIdQuery(id);
             var updatedCatalog = await catalogQueryService.Handle(query);
 
@@ -224,16 +217,14 @@ public class CatalogController(
         }
     }
 
-    /// <summary>
-    /// Removes an item from a catalog.
-    /// </summary>
-    /// <param name="id">The catalog identifier.</param>
-    /// <param name="productId">The product identifier to remove.</param>
-    /// <returns>No content if successful.</returns>
-    [HttpDelete("{id}/items/{productId}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [HttpDelete("{catalogId}/items/{productId}")]
+    [SwaggerOperation(
+        Summary = "Remove item from catalog.",
+        Description = "Removes a product item from a catalog.",
+        OperationId = "RemoveItemFromCatalog")]
+    [SwaggerResponse(StatusCodes.Status204NoContent, "Item removed successfully.")]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request.")]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Catalog or item not found.")]
     public async Task<IActionResult> RemoveItemFromCatalog(string id, ProductId productId)
     {
         try

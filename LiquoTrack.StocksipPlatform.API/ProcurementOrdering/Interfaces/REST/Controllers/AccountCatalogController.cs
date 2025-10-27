@@ -4,6 +4,7 @@ using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Interfaces.REST.Assemblers;
 using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Interfaces.REST.Resources;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Interfaces.REST.Controllers;
 
@@ -16,13 +17,12 @@ namespace LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Interfaces.REST.Co
 [Tags("Accounts")]
 public class AccountCatalogController(ICatalogQueryService catalogQueryService) : ControllerBase
 {
-    /// <summary>
-    /// Gets all catalogs owned by a specific account.
-    /// </summary>
-    /// <param name="accountId">The account identifier.</param>
-    /// <returns>A collection of catalog resources.</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<CatalogResource>), StatusCodes.Status200OK)]
+    [SwaggerOperation(
+        Summary = "Get all catalogs by account.",
+        Description = "Retrieves all catalogs owned by the specified account.",
+        OperationId = "GetCatalogsByAccount")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Catalogs retrieved successfully.", typeof(IEnumerable<CatalogResource>))]
     public async Task<IActionResult> GetCatalogsByAccount(string accountId)
     {
         var query = new GetCatalogsByOwnerQuery(accountId);

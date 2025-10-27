@@ -4,6 +4,7 @@ using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Interfaces.REST.Assemblers;
 using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Interfaces.REST.Resources;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Interfaces.REST.Controllers;
 
@@ -16,13 +17,12 @@ namespace LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Interfaces.REST.Co
 [Tags("Accounts")]
 public class AccountPurchaseOrderController(IPurchaseOrderQueryService purchaseOrderQueryService) : ControllerBase
 {
-    /// <summary>
-    /// Gets all purchase orders for a specific account (buyer).
-    /// </summary>
-    /// <param name="accountId">The account identifier.</param>
-    /// <returns>A collection of purchase order resources.</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<PurchaseOrderResource>), StatusCodes.Status200OK)]
+    [SwaggerOperation(
+        Summary = "Get all purchase orders by account.",
+        Description = "Retrieves all purchase orders for the specified account (buyer).",
+        OperationId = "GetPurchaseOrdersByAccount")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Purchase orders retrieved successfully.", typeof(IEnumerable<PurchaseOrderResource>))]
     public async Task<IActionResult> GetPurchaseOrdersByAccount(string accountId)
     {
         var query = new GetOrdersByBuyerQuery(accountId);
