@@ -1,3 +1,5 @@
+using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
+
 namespace LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Model.Commands;
 
 /// <summary>
@@ -5,4 +7,4 @@ namespace LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Model.Comma
 /// </summary>
 /// <param name="catalogId">The identifier of the catalog.</param>
 /// <param name="productId">The identifier of the product to remove.</param>
-public record RemoveItemFromCatalogCommand(string catalogId, string productId);
+public record RemoveItemFromCatalogCommand(string catalogId, ProductId productId);
