@@ -17,13 +17,18 @@ public class SubscriptionResourceFromEntityAssembler
     /// <param name="initPoint">
     ///     The url to redirect to after the subscription is created.
     /// </param>
+    /// <param name="message">
+    ///     The message to display to the user.
+    /// </param>
     /// <returns>
     ///     A SubscriptionResource object.
     /// </returns>
-    public static SubscriptionResource ToResourceFromEntity(string preferenceId, string initPoint)
+    public static SubscriptionResource ToResourceFromEntity(string preferenceId, string initPoint, string message)
     {
         return new SubscriptionResource(
             preferenceId,
-            initPoint);
+            initPoint,
+            message
+            );
     }
 }

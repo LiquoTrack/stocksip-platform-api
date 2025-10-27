@@ -44,17 +44,16 @@ public class AccountSubscriptionsController(ISubscriptionsCommandService subscri
     {
         var command = InitialSubscriptionCommandFromResourceAssembler.FromCommandToEntity(resource, accountId);
         var (preferenceId, initPoint) = await subscriptionsCommandService.Handle(command);
-        
+
         if (preferenceId is null && initPoint is null)
         {
-            return CreatedAtAction(nameof(CreateSubscription), new
-            {
-                Message = "Free plan activated successfully."
-            });
+            var freeSubscription = new SubscriptionResource(null, null, "Free plan activated successfully.");
+
+            return CreatedAtAction(nameof(CreateSubscription), freeSubscription);
         }
-        
+
         var subscriptionResource =
-            SubscriptionResourceFromEntityAssembler.ToResourceFromEntity(preferenceId!, initPoint!);
+            SubscriptionResourceFromEntityAssembler.ToResourceFromEntity(preferenceId!, initPoint!, message: "Processing subscription request..");
 
         return CreatedAtAction(nameof(CreateSubscription), subscriptionResource);
     }

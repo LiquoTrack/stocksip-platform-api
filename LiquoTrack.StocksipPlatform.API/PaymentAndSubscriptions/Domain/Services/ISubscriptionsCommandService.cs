@@ -18,6 +18,17 @@ public interface ISubscriptionsCommandService
     ///     A task that represents the asynchronous operation. The task result contains the activated subscription.
     /// </returns>
     Task<(string?, string?)> Handle(InitialSubscriptionCommand command);
+
+    /// <summary>
+    ///     Method to handle the confirmation of a payment.
+    /// </summary>
+    /// <param name="command">
+    ///     The command containing the details for confirming a payment.
+    /// </param>
+    /// <returns>
+    ///     A task that represents the asynchronous operation. The task result contains the confirmed subscription.
+    /// </returns>
+    Task<Subscription?> Handle(ConfirmPaymentCommand command);
     
     /// <summary>
     ///     Method to handle the upgrade of a subscription.

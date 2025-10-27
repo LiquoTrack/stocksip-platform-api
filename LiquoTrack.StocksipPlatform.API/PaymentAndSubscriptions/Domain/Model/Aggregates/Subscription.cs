@@ -34,6 +34,27 @@ public class Subscription(
     ///     The expiration date of the subscription.
     /// </summary>
     public DateTime ExpirationDate { get; set; }
+    
+    public string? PreferenceId { get; set; }
+
+    public void MarkAsPending(Plan plan, string preferenceId)
+    {
+        PlanId = plan.Id.ToString();
+        PreferenceId = preferenceId;
+        Status = ESubscriptionStatus.PendingPayment;
+        ExpirationDate = DateTime.UtcNow;
+    }
+
+    public void MarkAsActivateAfterPayment(Plan plan)
+    {
+        PlanId = plan.Id.ToString();
+        Status = ESubscriptionStatus.Active;
+        ExpirationDate = CalculateExpirationDate(plan);
+    }
+    
+    public bool IsPendingPayment() => Status == ESubscriptionStatus.PendingPayment;
+    
+    public void MarkAsCancelled() => Status = ESubscriptionStatus.Canceled;
 
     /// <summary>
     ///     Method to activate a trial subscription for a given premium plan.
@@ -99,10 +120,8 @@ public class Subscription(
     /// <summary>
     ///     Method to mark the subscription as expired.
     /// </summary>
-    public void MarkAsExpired()
-    {
-        Status = ESubscriptionStatus.Expired;
-    }
+    public void MarkAsExpired() => Status = ESubscriptionStatus.Expired;
+    
 
     /// <summary>
     ///     Method to upgrade the subscription to a new plan.

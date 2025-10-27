@@ -63,9 +63,9 @@ public class MercadoPagoService : IMercadoPagoService
             },
             BackUrls = new PreferenceBackUrlsRequest
             {
-                Success = "stocksip://congrats",
-                Failure = "stocksip://failure",
-                Pending = "stocksip://pending"
+                Success = "stocksip://payment/congrats",
+                Failure = "stocksip://payment/failure",
+                Pending = "stocksip://payment/pending"
             },
             AutoReturn = "approved"
         };
