@@ -42,10 +42,4 @@
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="ProcurementOrdering\Interfaces\REST\Assemblers\" />
-      <Folder Include="ProcurementOrdering\Interfaces\REST\Controllers\" />
-      <Folder Include="ProcurementOrdering\Interfaces\REST\Resources\" />
-    </ItemGroup>
-
 </Project>
