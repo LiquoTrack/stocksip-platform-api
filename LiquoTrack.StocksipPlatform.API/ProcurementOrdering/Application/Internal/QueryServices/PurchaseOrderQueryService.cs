@@ -9,7 +9,7 @@ namespace LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Application.Intern
 /// <summary>
 /// Service implementation for handling purchase order queries.
 /// </summary>
-public class PurchaseOrderQueryService(IPurchaseOrderRepository purchaseOrderRepository) : IPurchaseOrderQueryService
+public class PurchaseOrderQueryService(IPurchaseOrderRepository orderRepository) : IPurchaseOrderQueryService
 {
     /// <summary>
     /// Handles the GetPurchaseOrderByIdQuery to retrieve a purchase order by its identifier.
@@ -19,7 +19,7 @@ public class PurchaseOrderQueryService(IPurchaseOrderRepository purchaseOrderRep
     public async Task<PurchaseOrder?> Handle(GetPurchaseOrderByIdQuery query)
     {
         var orderId = new PurchaseOrderId(query.orderId);
-        return await purchaseOrderRepository.GetByIdAsync(orderId);
+        return await orderRepository.GetByIdAsync(orderId);
     }
 
     /// <summary>
@@ -29,7 +29,7 @@ public class PurchaseOrderQueryService(IPurchaseOrderRepository purchaseOrderRep
     /// <returns>A collection of purchase orders.</returns>
     public async Task<IEnumerable<PurchaseOrder>> Handle(GetAllPurchaseOrdersQuery query)
     {
-        return await purchaseOrderRepository.GetAllAsync();
+        return await orderRepository.GetAllAsync();
     }
 
     /// <summary>
@@ -40,9 +40,9 @@ public class PurchaseOrderQueryService(IPurchaseOrderRepository purchaseOrderRep
     public async Task<IEnumerable<PurchaseOrder>> Handle(GetOrdersByBuyerQuery query)
     {
         var buyerId = new AccountId(query.buyer);
-        return await purchaseOrderRepository.GetByBuyerAsync(buyerId);
+        return await orderRepository.FindByBuyerAsync(buyerId);
     }
-    
+
     /// <summary>
     /// Handles the GetOrdersByCatalogQuery to retrieve purchase orders from a specific catalog.
     /// </summary>
@@ -51,6 +51,6 @@ public class PurchaseOrderQueryService(IPurchaseOrderRepository purchaseOrderRep
     public async Task<IEnumerable<PurchaseOrder>> Handle(GetOrdersByCatalogQuery query)
     {
         var catalogId = new CatalogId(query.catalogId);
-        return await purchaseOrderRepository.GetByCatalogAsync(catalogId);
+        return await orderRepository.FindByCatalogAsync(catalogId);
     }
 }
