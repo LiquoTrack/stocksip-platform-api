@@ -2,7 +2,6 @@ using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Model.Commands;
 using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
-using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Model.Aggregates;
@@ -10,99 +9,41 @@ namespace LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Model.Aggre
 /// <summary>
 /// Aggregate entity representing a catalog.
 /// </summary>
-public class Catalog(
-    string name,
-    string description,
-    AccountId ownerAccount,
-    Email contactEmail
-) : Entity
+public class Catalog : Entity
 {
-    /// <summary>
-    /// The unique identifier of the catalog.
-    /// </summary>
-    [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
-    public CatalogId Id { get; private set; } = new(ObjectId.GenerateNewId().ToString());
-
-    /// <summary>
-    /// The name of the catalog.
-    /// </summary>
-    public string Name { get; private set; } = ValidateName(name);
-
-    /// <summary>
-    /// The description of the catalog.
-    /// </summary>
-    public string Description { get; private set; } = description;
-
-    /// <summary>
-    /// The list of items in the catalog.
-    /// </summary>
+    [BsonIgnore]
+    public CatalogId CatalogId => new(Id.ToString());
+    public string Name { get; private set; }
+    public string Description { get; private set; }
     public List<CatalogItem> CatalogItems { get; private set; } = new();
-
-    /// <summary>
-    /// The account identifier of the owner.
-    /// </summary>
-    public AccountId OwnerAccount { get; private set; } = ownerAccount;
-
-    /// <summary>
-    /// The contact email for the catalog.
-    /// </summary>
-    public Email ContactEmail { get; private set; } = contactEmail;
-
-    /// <summary>
-    /// Indicates whether the catalog is published.
-    /// </summary>
+    public AccountId OwnerAccount { get; private set; }
+    public Email ContactEmail { get; private set; }
     public bool IsPublished { get; private set; } = false;
 
-    /// <summary>
-    /// Command constructor to create a new Catalog instance from a CreateCatalogCommand.
-    /// </summary>
-    /// <param name="command">
-    /// The command containing the details to create a new catalog.
-    /// </param>
+    public Catalog(string name, string description, AccountId ownerAccount, Email contactEmail)
+    {
+        Name = ValidateName(name);
+        Description = description;
+        OwnerAccount = ownerAccount;
+        ContactEmail = contactEmail;
+    }
+
     public Catalog(CreateCatalogCommand command)
         : this(command.name, command.description, new AccountId(command.ownerAccount), new Email(command.contactEmail))
     {
     }
 
-    // Constructor for MongoDB deserialization
-    public Catalog() : this(string.Empty, string.Empty, new AccountId(ObjectId.GenerateNewId().ToString()), new Email("default@example.com"))
-    {
-    }
+    [BsonConstructor]
+    protected Catalog() { }
 
-    /// <summary>
-    /// Validates the catalog name.
-    /// </summary>
-    /// <exception cref="ArgumentException">
-    /// The name cannot be null or empty.
-    /// </exception>
     private static string ValidateName(string name)
         => string.IsNullOrWhiteSpace(name)
             ? throw new ArgumentException("The catalog name cannot be null or empty.", nameof(name))
             : name;
 
-    /// <summary>
-    /// Publishes the catalog, making it visible to buyers.
-    /// </summary>
-    public void PublishCatalog()
-    {
-        IsPublished = true;
-    }
+    public void PublishCatalog() => IsPublished = true;
+    public void UnpublishCatalog() => IsPublished = false;
 
-    /// <summary>
-    /// Unpublishes the catalog, making it invisible to buyers.
-    /// </summary>
-    public void UnpublishCatalog()
-    {
-        IsPublished = false;
-    }
-
-    /// <summary>
-    /// Updates the catalog information using a command.
-    /// </summary>
-    /// <param name="command">
-    /// The command containing the updated catalog information.
-    /// </param>
     public void UpdateCatalog(UpdateCatalogCommand command)
     {
         Name = ValidateName(command.name);
@@ -111,24 +52,15 @@ public class Catalog(
     }
 
     /// <summary>
-    /// Adds an item to the catalog using a command.
+    /// Adds an item to the catalog using product data from another context.
     /// </summary>
-    /// <param name="command">
-    /// The command containing the item details.
-    /// </param>
-    public void AddItem(AddItemToCatalogCommand command)
+    public void AddItem(string productId, string productName, decimal unitPrice, string currency, string imageUrl)
     {
-        var money = new Money(command.amount, new Currency(command.currency));
-        var item = new CatalogItem(command.productId, money, DateTime.UtcNow);
+        var money = new Money(unitPrice, new Currency(currency));
+        var item = new CatalogItem(new ProductId(productId), productName, money, imageUrl, DateTime.UtcNow);
         CatalogItems.Add(item);
     }
 
-    /// <summary>
-    /// Removes an item from the catalog using a command.
-    /// </summary>
-    /// <param name="command">
-    /// The command containing the product identifier to remove.
-    /// </param>
     public void RemoveItem(RemoveItemFromCatalogCommand command)
     {
         var item = CatalogItems.FirstOrDefault(i => i.ProductId == command.productId);
@@ -136,11 +68,5 @@ public class Catalog(
             CatalogItems.Remove(item);
     }
 
-    /// <summary>
-    /// Gets the owner account identifier.
-    /// </summary>
-    /// <returns>
-    /// The account identifier of the owner.
-    /// </returns>
     public AccountId GetOwnerAccount() => OwnerAccount;
 }
