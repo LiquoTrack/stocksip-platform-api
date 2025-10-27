@@ -8,201 +8,119 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Model.Aggregates;
 
-/// <summary>
-/// Aggregate entity representing a purchase order.
-/// </summary>
-public class PurchaseOrder(
-    string orderCode,
-    CatalogId catalogIdBuyFrom,
-    AccountId buyer
-) : Entity, IConfirmable
+public class PurchaseOrder : Entity, IConfirmable
 {
-    /// <summary>
-    /// The unique identifier of the purchase order.
-    /// </summary>
-    [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
-    public PurchaseOrderId Id { get; private set; } = new(ObjectId.GenerateNewId().ToString());
+    [BsonIgnore]
+    public PurchaseOrderId PurchaseOrderId => new(Id.ToString());
 
-    /// <summary>
-    /// The unique code of the purchase order.
-    /// </summary>
-    public string OrderCode { get; private set; } = ValidateOrderCode(orderCode);
-
-    /// <summary>
-    /// The list of items in the purchase order.
-    /// </summary>
+    public string OrderCode { get; private set; }
     public List<PurchaseOrderItem> Items { get; private set; } = new();
-
-    /// <summary>
-    /// The current status of the purchase order.
-    /// </summary>
     public EOrderStatus Status { get; private set; } = EOrderStatus.Processing;
-
-    /// <summary>
-    /// The identifier of the catalog to buy from.
-    /// </summary>
-    public CatalogId CatalogIdBuyFrom { get; private set; } = catalogIdBuyFrom;
-
-    /// <summary>
-    /// The date when the order was generated.
-    /// </summary>
+    public CatalogId CatalogIdBuyFrom { get; private set; }
     public DateTime GenerationDate { get; private set; } = DateTime.UtcNow;
-
-    /// <summary>
-    /// The date when the order was confirmed.
-    /// </summary>
     public DateTime? ConfirmationDate { get; private set; }
-
-    /// <summary>
-    /// The account identifier of the buyer.
-    /// </summary>
-    public AccountId Buyer { get; private set; } = buyer;
-
-    /// <summary>
-    /// Indicates whether the order has been sent.
-    /// </summary>
+    public AccountId Buyer { get; private set; }
     public bool IsOrderSent { get; private set; } = false;
 
-    /// <summary>
-    /// Command constructor to create a new PurchaseOrder instance from a CreatePurchaseOrderCommand.
-    /// </summary>
-    /// <param name="command">
-    /// The command containing the details to create a new purchase order.
-    /// </param>
+    public PurchaseOrder(string orderCode, CatalogId catalogIdBuyFrom, AccountId buyer)
+    {
+        OrderCode = ValidateOrderCode(orderCode);
+        CatalogIdBuyFrom = catalogIdBuyFrom;
+        Buyer = buyer;
+    }
+
     public PurchaseOrder(CreatePurchaseOrderCommand command)
         : this(command.orderCode, new CatalogId(command.catalogIdBuyFrom), new AccountId(command.buyer))
-    {
-    }
+    { }
 
-    // Constructor for MongoDB deserialization
-    public PurchaseOrder() : this(string.Empty, new CatalogId(ObjectId.GenerateNewId().ToString()), new AccountId(ObjectId.GenerateNewId().ToString()))
-    {
-    }
+    [BsonConstructor]
+    protected PurchaseOrder() { }
 
-    /// <summary>
-    /// Validates the order code.
-    /// </summary>
-    /// <exception cref="ArgumentException">
-    /// The order code cannot be null or empty.
-    /// </exception>
     private static string ValidateOrderCode(string orderCode)
         => string.IsNullOrWhiteSpace(orderCode)
             ? throw new ArgumentException("The order code cannot be null or empty.", nameof(orderCode))
             : orderCode;
 
     /// <summary>
-    /// Adds an item to the purchase order using a command.
+    /// Adds a single catalog item to the order with quantity.
     /// </summary>
-    /// <param name="command">
-    /// The command containing the item details.
-    /// </param>
-    /// <exception cref="InvalidOperationException">
-    /// Cannot add items to a non-processing order.
-    /// </exception>
-    public void AddItem(AddItemToOrderCommand command)
+    public void AddItem(CatalogItem catalogItem, int quantity)
     {
         if (Status != EOrderStatus.Processing)
-            throw new InvalidOperationException("Cannot add items to a non-processing order");
+            throw new InvalidOperationException("Cannot add items to a non-processing order.");
 
-        var productId = new ProductId(command.productId);
-        var item = new PurchaseOrderItem(productId, command.unitPrice, command.amountToPurchase);
+        if (catalogItem == null)
+            throw new ArgumentNullException(nameof(catalogItem));
+
+        var item = new PurchaseOrderItem(catalogItem, quantity);
         Items.Add(item);
     }
 
     /// <summary>
-    /// Removes an item from the purchase order using a command.
+    /// Adds multiple items from a catalog with default quantity.
     /// </summary>
-    /// <param name="command">
-    /// The command containing the product identifier to remove.
-    /// </param>
-    /// <exception cref="InvalidOperationException">
-    /// Cannot remove items from a non-processing order.
-    /// </exception>
+    public void AddItemsFromCatalog(IEnumerable<CatalogItem> catalogItems, int defaultQuantity = 1)
+    {
+        if (Status != EOrderStatus.Processing)
+            throw new InvalidOperationException("Cannot add items from catalog to a non-processing order.");
+
+        if (catalogItems == null || !catalogItems.Any())
+            throw new ArgumentException("The catalog has no items to add.", nameof(catalogItems));
+
+        foreach (var catalogItem in catalogItems)
+        {
+            AddItem(catalogItem, defaultQuantity);
+        }
+    }
+
     public void RemoveItem(RemoveItemFromOrderCommand command)
     {
         if (Status != EOrderStatus.Processing)
-            throw new InvalidOperationException("Cannot remove items from a non-processing order");
+            throw new InvalidOperationException("Cannot remove items from a non-processing order.");
 
         var productId = new ProductId(command.productId);
-        var item = Items.FirstOrDefault(i => i.ProductId.GetId == productId.GetId);
+        var item = Items.FirstOrDefault(i => i.ProductId.GetId.Equals(productId.GetId, StringComparison.OrdinalIgnoreCase));
         if (item != null)
             Items.Remove(item);
     }
 
-    /// <summary>
-    /// Calculates the total amount of the purchase order.
-    /// </summary>
-    /// <returns>
-    /// The total amount of money to be paid.
-    /// </returns>
     public Money CalculateTotal()
     {
         var total = Items.Sum(item => item.CalculateSubTotal());
         return new Money(total, new Currency("USD"));
     }
 
-    /// <summary>
-    /// Sets the order status to Processing.
-    /// </summary>
-    public void ProcessOrder()
-    {
-        Status = EOrderStatus.Processing;
-    }
+    public void ProcessOrder() => Status = EOrderStatus.Processing;
 
-    /// <summary>
-    /// Confirms the purchase order.
-    /// </summary>
-    /// <exception cref="InvalidOperationException">
-    /// Can only confirm processing orders.
-    /// </exception>
     public void ConfirmOrder()
     {
         if (Status != EOrderStatus.Processing)
-            throw new InvalidOperationException("Can only confirm processing orders");
+            throw new InvalidOperationException("Can only confirm processing orders.");
 
         Status = EOrderStatus.Confirmed;
         ConfirmationDate = DateTime.UtcNow;
     }
 
-    /// <summary>
-    /// Marks the order as shipped.
-    /// </summary>
-    /// <exception cref="InvalidOperationException">
-    /// Can only ship confirmed orders.
-    /// </exception>
     public void ShipOrder()
     {
         if (Status != EOrderStatus.Confirmed)
-            throw new InvalidOperationException("Can only ship confirmed orders");
+            throw new InvalidOperationException("Can only ship confirmed orders.");
 
         Status = EOrderStatus.Shipped;
     }
 
-    /// <summary>
-    /// Marks the order as received.
-    /// </summary>
-    /// <exception cref="InvalidOperationException">
-    /// Can only receive shipped orders.
-    /// </exception>
     public void ReceiveOrder()
     {
         if (Status != EOrderStatus.Shipped)
-            throw new InvalidOperationException("Can only receive shipped orders");
+            throw new InvalidOperationException("Can only receive shipped orders.");
 
         Status = EOrderStatus.Received;
     }
 
-    /// <summary>
-    /// Cancels the purchase order.
-    /// </summary>
-    /// <exception cref="InvalidOperationException">
-    /// Cannot cancel received orders.
-    /// </exception>
     public void CancelOrder()
     {
         if (Status == EOrderStatus.Received)
-            throw new InvalidOperationException("Cannot cancel received orders");
+            throw new InvalidOperationException("Cannot cancel received orders.");
 
         Status = EOrderStatus.Canceled;
     }
