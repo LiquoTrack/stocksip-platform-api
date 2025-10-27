@@ -39,7 +39,7 @@ public class CatalogQueryService(ICatalogRepository catalogRepository) : ICatalo
     /// <returns>A collection of published catalogs.</returns>
     public async Task<IEnumerable<Catalog>> Handle(GetPublishedCatalogsQuery query)
     {
-        return await catalogRepository.GetPublishedAsync();
+        return await catalogRepository.FindPublishedAsync();
     }
 
     /// <summary>
@@ -50,6 +50,6 @@ public class CatalogQueryService(ICatalogRepository catalogRepository) : ICatalo
     public async Task<IEnumerable<Catalog>> Handle(GetCatalogsByOwnerQuery query)
     {
         var ownerId = new AccountId(query.ownerAccount);
-        return await catalogRepository.GetByOwnerAsync(ownerId);
+        return await catalogRepository.FindByOwnerAsync(ownerId);
     }
 }
