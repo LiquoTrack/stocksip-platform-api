@@ -79,6 +79,7 @@ using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.E
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.OutboundServices.FileStorage;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Events;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.FileStorage.Cloudinary.Services;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.ACL;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.ACL;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.CommandServices;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.OutBoundServices.FileStorage;
@@ -97,6 +98,12 @@ using LiquoTrack.StocksipPlatform.API.OrderManagement.Infrastructure.Persistence
 using LiquoTrack.StocksipPlatform.API.OrderManagement.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.OrderManagement.Application.Internal.CommandServices;
 using LiquoTrack.StocksipPlatform.API.OrderManagement.Application.Internal.QueryServices;
+using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Application.Internal.CommandServices;
+using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Application.Internal.QueryServices;
+using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Repositories;
+using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Services;
+using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Infrastructure.Converters.JSON;
+using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Infrastructure.Persistence.MongoDB.Repositories;
 
 // Register MongoDB mappings
 GlobalMongoMappingHelper.RegisterAllBoundedContextMappings();
@@ -313,6 +320,27 @@ builder.Services.Configure<JsonOptions>(options =>
 
 //
 // Bounded Context Procurement Ordering
+//
+
+builder.Services.AddScoped<IPurchaseOrderRepository, PurchaseOrderRepository>();
+builder.Services.AddScoped<IPurchaseOrderCommandService, PurchaseOrderCommandService>();
+builder.Services.AddScoped<IPurchaseOrderQueryService, PurchaseOrderQueryService>();
+
+builder.Services.AddScoped<ICatalogRepository, CatalogRepository>();
+builder.Services.AddScoped<ICatalogCommandService, CatalogCommandService>();
+builder.Services.AddScoped<ICatalogQueryService, CatalogQueryService>();
+
+builder.Services.AddScoped<IProductContextFacade, ProductContextFacade>();
+
+// Purchase Order converters
+builder.Services.Configure<JsonOptions>(options =>
+{
+    options.JsonSerializerOptions.Converters.Add(new EOrderStatusJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new PurchaseOrderItemJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new CatalogItemJsonConverter());
+});
+
+
 //
 // Bounded Context Order Management
 //

@@ -4,13 +4,12 @@ using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 
-
 namespace LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Application.Internal.CommandServices;
 
 /// <summary>
 /// Service implementation for handling purchase order commands.
 /// </summary>
-public class PurchaseOrderCommandService(IPurchaseOrderRepository purchaseOrderRepository) : IPurchaseOrderCommandService
+public class PurchaseOrderCommandService(IPurchaseOrderRepository orderRepository) : IPurchaseOrderCommandService
 {
     /// <summary>
     /// Handles the CreatePurchaseOrderCommand to create a new purchase order.
@@ -20,10 +19,10 @@ public class PurchaseOrderCommandService(IPurchaseOrderRepository purchaseOrderR
     public async Task<PurchaseOrderId> Handle(CreatePurchaseOrderCommand command)
     {
         var order = new PurchaseOrder(command);
-        await purchaseOrderRepository.CreateAsync(order);
+        await orderRepository.AddAsync(order);
         return order.Id;
     }
-    
+
     /// <summary>
     /// Handles the AddItemToOrderCommand to add an item to an existing purchase order.
     /// </summary>
@@ -32,13 +31,13 @@ public class PurchaseOrderCommandService(IPurchaseOrderRepository purchaseOrderR
     public async Task Handle(AddItemToOrderCommand command)
     {
         var orderId = new PurchaseOrderId(command.orderId);
-        var order = await purchaseOrderRepository.GetByIdAsync(orderId);
+        var order = await orderRepository.GetByIdAsync(orderId);
 
         if (order == null)
             throw new InvalidOperationException($"Order with ID {command.orderId} not found");
 
         order.AddItem(command);
-        await purchaseOrderRepository.UpdateAsync(order);
+        await orderRepository.UpdateAsync(order);
     }
 
     /// <summary>
@@ -49,13 +48,13 @@ public class PurchaseOrderCommandService(IPurchaseOrderRepository purchaseOrderR
     public async Task Handle(RemoveItemFromOrderCommand command)
     {
         var orderId = new PurchaseOrderId(command.orderId);
-        var order = await purchaseOrderRepository.GetByIdAsync(orderId);
+        var order = await orderRepository.GetByIdAsync(orderId);
 
         if (order == null)
             throw new InvalidOperationException($"Order with ID {command.orderId} not found");
 
         order.RemoveItem(command);
-        await purchaseOrderRepository.UpdateAsync(order);
+        await orderRepository.UpdateAsync(order);
     }
 
     /// <summary>
@@ -66,13 +65,13 @@ public class PurchaseOrderCommandService(IPurchaseOrderRepository purchaseOrderR
     public async Task Handle(ConfirmOrderCommand command)
     {
         var orderId = new PurchaseOrderId(command.orderId);
-        var order = await purchaseOrderRepository.GetByIdAsync(orderId);
+        var order = await orderRepository.GetByIdAsync(orderId);
 
         if (order == null)
             throw new InvalidOperationException($"Order with ID {command.orderId} not found");
 
         order.ConfirmOrder();
-        await purchaseOrderRepository.UpdateAsync(order);
+        await orderRepository.UpdateAsync(order);
     }
 
     /// <summary>
@@ -83,13 +82,13 @@ public class PurchaseOrderCommandService(IPurchaseOrderRepository purchaseOrderR
     public async Task Handle(ShipOrderCommand command)
     {
         var orderId = new PurchaseOrderId(command.orderId);
-        var order = await purchaseOrderRepository.GetByIdAsync(orderId);
+        var order = await orderRepository.GetByIdAsync(orderId);
 
         if (order == null)
             throw new InvalidOperationException($"Order with ID {command.orderId} not found");
 
         order.ShipOrder();
-        await purchaseOrderRepository.UpdateAsync(order);
+        await orderRepository.UpdateAsync(order);
     }
 
     /// <summary>
@@ -100,13 +99,13 @@ public class PurchaseOrderCommandService(IPurchaseOrderRepository purchaseOrderR
     public async Task Handle(ReceiveOrderCommand command)
     {
         var orderId = new PurchaseOrderId(command.orderId);
-        var order = await purchaseOrderRepository.GetByIdAsync(orderId);
+        var order = await orderRepository.GetByIdAsync(orderId);
 
         if (order == null)
             throw new InvalidOperationException($"Order with ID {command.orderId} not found");
 
         order.ReceiveOrder();
-        await purchaseOrderRepository.UpdateAsync(order);
+        await orderRepository.UpdateAsync(order);
     }
 
     /// <summary>
@@ -117,12 +116,12 @@ public class PurchaseOrderCommandService(IPurchaseOrderRepository purchaseOrderR
     public async Task Handle(CancelOrderCommand command)
     {
         var orderId = new PurchaseOrderId(command.orderId);
-        var order = await purchaseOrderRepository.GetByIdAsync(orderId);
+        var order = await orderRepository.GetByIdAsync(orderId);
 
         if (order == null)
             throw new InvalidOperationException($"Order with ID {command.orderId} not found");
 
         order.CancelOrder();
-        await purchaseOrderRepository.UpdateAsync(order);
+        await orderRepository.UpdateAsync(order);
     }
 }
