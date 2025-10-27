@@ -29,6 +29,8 @@ public interface ISubscriptionsCommandService
     ///     A task that represents the asynchronous operation. The task result contains the confirmed subscription.
     /// </returns>
     Task<Subscription?> Handle(ConfirmPaymentCommand command);
+
+    Task<Subscription?> Handle(WebhookPaymentCommand command);
     
     /// <summary>
     ///     Method to handle the upgrade of a subscription.

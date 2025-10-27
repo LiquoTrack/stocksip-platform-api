@@ -128,8 +128,8 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
         /// Registers a new user
         /// </summary>
         /// <param name="signUpResource">User registration details</param>
-        [HttpPost("sign-up")]
         [AllowAnonymous]
+        [HttpPost("sign-up")]
         [SwaggerOperation(
             Summary = "Sign up",
             Description = "Register a new user"

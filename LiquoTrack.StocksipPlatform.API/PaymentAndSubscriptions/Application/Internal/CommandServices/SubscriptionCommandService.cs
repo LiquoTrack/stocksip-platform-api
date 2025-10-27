@@ -152,6 +152,20 @@ public class SubscriptionCommandService(
         return subscription;
     }
 
+    public async Task<Subscription?> Handle(WebhookPaymentCommand command)
+    {
+        var payment = await mercadoPagoService.GetPaymentById(command.paymentId);
+        if (payment == null)
+            throw new Exception($"Payment with ID {command.paymentId} not found");
+        
+        if (payment.Status.ToLower() != "approved")
+            throw new InvalidOperationException($"Payment status is '{payment.Status}', cannot confirm subscription");
+        
+        var confirmPaymentCommand = new ConfirmPaymentCommand(payment.PreferenceId, payment.Status);
+        
+        return await Handle(confirmPaymentCommand);
+    }
+
     public Task<Subscription?> Handle(UpgradeSubscriptionCommand command)
     {
         throw new NotImplementedException();

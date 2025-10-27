@@ -1,7 +1,10 @@
 ﻿using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.OutBoundServices.PaymentProviders;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.OutBoundServices.PaymentProviders.models;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.PaymentProviders.MercadoPago.Configuration;
+using MercadoPago.Client.Payment;
 using MercadoPago.Client.Preference;
 using MercadoPago.Config;
+using MercadoPago.Resource.Payment;
 using Microsoft.Extensions.Options;
 
 namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.PaymentProviders.MercadoPago.Services;
@@ -73,5 +76,25 @@ public class MercadoPagoService : IMercadoPagoService
         var client = new PreferenceClient();
         var preference = client.CreateAsync(request).Result;
         return (preference.Id, preference.InitPoint);
+    }
+    
+    public async Task<MercadoPagoPayment?> GetPaymentById(string paymentId)
+    {
+        if (!long.TryParse(paymentId, out long id))
+            throw new ArgumentException("Invalid payment ID", nameof(paymentId));
+
+        var client = new PaymentClient();
+        Payment payment = await client.GetAsync(id);
+
+        string preferenceId = payment.Order?.Id.ToString() 
+                              ?? payment.AdditionalInfo?.Items?.FirstOrDefault()?.Id.ToString() 
+                              ?? "";
+
+        return new MercadoPagoPayment
+        (
+            payment.Id.ToString(),
+            payment.Status,
+            preferenceId
+        );
     }
 }
