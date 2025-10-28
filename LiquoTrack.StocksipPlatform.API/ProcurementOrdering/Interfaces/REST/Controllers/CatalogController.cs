@@ -42,7 +42,7 @@ public class CatalogController(
                 return BadRequest("Failed to create catalog.");
 
             var catalogResource = CatalogResourceFromEntityAssembler.ToResourceFromEntity(catalog);
-            return CreatedAtAction(nameof(GetCatalogById), new { id = catalogId.GetId() }, catalogResource);
+            return CreatedAtAction(nameof(GetCatalogById), new { catalogId = catalogId.GetId() }, catalogResource);
         }
         catch (Exception ex)
         {
@@ -58,15 +58,15 @@ public class CatalogController(
     [SwaggerResponse(StatusCodes.Status200OK, "Catalog returned successfully.", typeof(CatalogResource))]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Catalog not found.")]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request.")]
-    public async Task<IActionResult> GetCatalogById(string id)
+    public async Task<IActionResult> GetCatalogById(string catalogId)
     {
         try
         {
-            var query = new GetCatalogByIdQuery(id);
+            var query = new GetCatalogByIdQuery(catalogId);
             var catalog = await catalogQueryService.Handle(query);
 
             if (catalog == null)
-                return NotFound(new { message = $"Catalog with ID {id} not found." });
+                return NotFound(new { message = $"Catalog with ID {catalogId} not found." });
 
             var resource = CatalogResourceFromEntityAssembler.ToResourceFromEntity(catalog);
             return Ok(resource);
@@ -113,11 +113,11 @@ public class CatalogController(
     [SwaggerResponse(StatusCodes.Status204NoContent, "Catalog updated successfully.")]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request.")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Catalog not found.")]
-    public async Task<IActionResult> UpdateCatalog(string id, [FromBody] UpdateCatalogResource resource)
+    public async Task<IActionResult> UpdateCatalog(string catalogId, [FromBody] UpdateCatalogResource resource)
     {
         try
         {
-            var command = new UpdateCatalogCommand(id, resource.name, resource.description, resource.contactEmail);
+            var command = new UpdateCatalogCommand(catalogId, resource.name, resource.description, resource.contactEmail);
             await catalogCommandService.Handle(command);
             return NoContent();
         }
@@ -139,11 +139,11 @@ public class CatalogController(
     [SwaggerResponse(StatusCodes.Status204NoContent, "Catalog published successfully.")]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request.")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Catalog not found.")]
-    public async Task<IActionResult> PublishCatalog(string id)
+    public async Task<IActionResult> PublishCatalog(string catalogId)
     {
         try
         {
-            var command = new PublishCatalogCommand(id);
+            var command = new PublishCatalogCommand(catalogId);
             await catalogCommandService.Handle(command);
             return NoContent();
         }
@@ -165,11 +165,11 @@ public class CatalogController(
     [SwaggerResponse(StatusCodes.Status204NoContent, "Catalog unpublished successfully.")]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request.")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Catalog not found.")]
-    public async Task<IActionResult> UnpublishCatalog(string id)
+    public async Task<IActionResult> UnpublishCatalog(string catalogId)
     {
         try
         {
-            var command = new UnpublishCatalogCommand(id);
+            var command = new UnpublishCatalogCommand(catalogId);
             await catalogCommandService.Handle(command);
             return NoContent();
         }
@@ -191,18 +191,18 @@ public class CatalogController(
     [SwaggerResponse(StatusCodes.Status200OK, "Item added and catalog updated successfully.", typeof(CatalogResource))]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request.")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Catalog not found.")]
-    public async Task<IActionResult> AddItemToCatalog(string id, [FromBody] AddItemToCatalogResource resource)
+    public async Task<IActionResult> AddItemToCatalog(string catalogId, [FromBody] AddItemToCatalogResource resource)
     {
         try
         {
-            var command = new AddItemToCatalogCommand(id, resource.productId);
+            var command = new AddItemToCatalogCommand(catalogId, resource.productId);
             await catalogCommandService.Handle(command);
 
-            var query = new GetCatalogByIdQuery(id);
+            var query = new GetCatalogByIdQuery(catalogId);
             var updatedCatalog = await catalogQueryService.Handle(query);
 
             if (updatedCatalog == null)
-                return NotFound(new { message = $"Catalog with ID {id} not found." });
+                return NotFound(new { message = $"Catalog with ID {catalogId} not found." });
 
             var catalogResource = CatalogResourceFromEntityAssembler.ToResourceFromEntity(updatedCatalog);
             return Ok(catalogResource);
@@ -225,11 +225,11 @@ public class CatalogController(
     [SwaggerResponse(StatusCodes.Status204NoContent, "Item removed successfully.")]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request.")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Catalog or item not found.")]
-    public async Task<IActionResult> RemoveItemFromCatalog(string id, ProductId productId)
+    public async Task<IActionResult> RemoveItemFromCatalog(string catalogId, ProductId productId)
     {
         try
         {
-            var command = new RemoveItemFromCatalogCommand(id, productId);
+            var command = new RemoveItemFromCatalogCommand(catalogId, productId);
             await catalogCommandService.Handle(command);
             return NoContent();
         }

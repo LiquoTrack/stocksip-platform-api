@@ -41,7 +41,7 @@ public class PurchaseOrderController(
                 return BadRequest("Failed to create purchase order");
 
             var orderResource = PurchaseOrderResourceFromEntityAssembler.ToResourceFromEntity(order);
-            return CreatedAtAction(nameof(GetPurchaseOrderById), new { id = orderId.GetId }, orderResource);
+            return CreatedAtAction(nameof(GetPurchaseOrderById), new { purchaseOrderId = orderId.GetId }, orderResource);
         }
         catch (Exception ex)
         {
@@ -57,15 +57,15 @@ public class PurchaseOrderController(
     [SwaggerResponse(StatusCodes.Status200OK, "Purchase order returned successfully.", typeof(PurchaseOrderResource))]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Purchase order not found.")]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request.")]
-    public async Task<IActionResult> GetPurchaseOrderById(string id)
+    public async Task<IActionResult> GetPurchaseOrderById(string purchaseOrderId)
     {
         try
         {
-            var query = new GetPurchaseOrderByIdQuery(id);
+            var query = new GetPurchaseOrderByIdQuery(purchaseOrderId);
             var order = await purchaseOrderQueryService.Handle(query);
 
             if (order == null)
-                return NotFound(new { message = $"Purchase order with ID {id} not found" });
+                return NotFound(new { message = $"Purchase order with ID {purchaseOrderId} not found" });
 
             var resource = PurchaseOrderResourceFromEntityAssembler.ToResourceFromEntity(order);
             return Ok(resource);
@@ -98,12 +98,12 @@ public class PurchaseOrderController(
     [SwaggerResponse(StatusCodes.Status204NoContent, "Item added successfully.")]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request.")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Purchase order not found.")]
-    public async Task<IActionResult> AddItemToOrder(string id, [FromBody] AddItemToOrderResource resource)
+    public async Task<IActionResult> AddItemToOrder(string purchaseOrderId, [FromBody] AddItemToOrderResource resource)
     {
         try
         {
             var quantity = resource.quantity ?? 1;
-            var command = new AddItemToOrderCommand(id, resource.productId, quantity);
+            var command = new AddItemToOrderCommand(purchaseOrderId, resource.productId, quantity);
             await purchaseOrderCommandService.Handle(command);
             return NoContent();
         }
@@ -125,11 +125,11 @@ public class PurchaseOrderController(
     [SwaggerResponse(StatusCodes.Status204NoContent, "Item removed successfully.")]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request.")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Purchase order or item not found.")]
-    public async Task<IActionResult> RemoveItemFromOrder(string id, string productId)
+    public async Task<IActionResult> RemoveItemFromOrder(string purchaseOrderId, string productId)
     {
         try
         {
-            var command = new RemoveItemFromOrderCommand(id, productId);
+            var command = new RemoveItemFromOrderCommand(purchaseOrderId, productId);
             await purchaseOrderCommandService.Handle(command);
             return NoContent();
         }
@@ -151,11 +151,11 @@ public class PurchaseOrderController(
     [SwaggerResponse(StatusCodes.Status204NoContent, "Order confirmed successfully.")]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request.")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Purchase order not found or cannot be confirmed.")]
-    public async Task<IActionResult> ConfirmOrder(string id)
+    public async Task<IActionResult> ConfirmOrder(string purchaseOrderId)
     {
         try
         {
-            var command = new ConfirmOrderCommand(id);
+            var command = new ConfirmOrderCommand(purchaseOrderId);
             await purchaseOrderCommandService.Handle(command);
             return NoContent();
         }
@@ -177,11 +177,11 @@ public class PurchaseOrderController(
     [SwaggerResponse(StatusCodes.Status204NoContent, "Order shipped successfully.")]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request.")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Purchase order not found or cannot be shipped.")]
-    public async Task<IActionResult> ShipOrder(string id)
+    public async Task<IActionResult> ShipOrder(string purchaseOrderId)
     {
         try
         {
-            var command = new ShipOrderCommand(id);
+            var command = new ShipOrderCommand(purchaseOrderId);
             await purchaseOrderCommandService.Handle(command);
             return NoContent();
         }
@@ -203,11 +203,11 @@ public class PurchaseOrderController(
     [SwaggerResponse(StatusCodes.Status204NoContent, "Order received successfully.")]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request.")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Purchase order not found or cannot be received.")]
-    public async Task<IActionResult> ReceiveOrder(string id)
+    public async Task<IActionResult> ReceiveOrder(string purchaseOrderId)
     {
         try
         {
-            var command = new ReceiveOrderCommand(id);
+            var command = new ReceiveOrderCommand(purchaseOrderId);
             await purchaseOrderCommandService.Handle(command);
             return NoContent();
         }
@@ -229,11 +229,11 @@ public class PurchaseOrderController(
     [SwaggerResponse(StatusCodes.Status204NoContent, "Order canceled successfully.")]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request.")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Purchase order not found or cannot be canceled.")]
-    public async Task<IActionResult> CancelOrder(string id)
+    public async Task<IActionResult> CancelOrder(string purchaseOrderId)
     {
         try
         {
-            var command = new CancelOrderCommand(id);
+            var command = new CancelOrderCommand(purchaseOrderId);
             await purchaseOrderCommandService.Handle(command);
             return NoContent();
         }
