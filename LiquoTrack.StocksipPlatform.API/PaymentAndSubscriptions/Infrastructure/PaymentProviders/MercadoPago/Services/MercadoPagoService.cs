@@ -1,10 +1,10 @@
-﻿using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.OutBoundServices.PaymentProviders;
+﻿using System.Text.Json;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.OutBoundServices.PaymentProviders.models;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.OutBoundServices.PaymentProviders.services;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.PaymentProviders.MercadoPago.Configuration;
 using MercadoPago.Client.Payment;
 using MercadoPago.Client.Preference;
 using MercadoPago.Config;
-using MercadoPago.Resource.Payment;
 using Microsoft.Extensions.Options;
 
 namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.PaymentProviders.MercadoPago.Services;
@@ -47,10 +47,13 @@ public class MercadoPagoService : IMercadoPagoService
     /// <param name="quantity">
     ///     The quantity of the payment preference.
     /// </param>
+    /// <param name="accountId">
+    ///     The ID of the account.
+    /// </param>
     /// <returns>
     ///     A string representing the ID of the payment preference.
     /// </returns>
-    public (string PreferenceId, string InitPoint) CreatePaymentPreference(string title, decimal price, string currency, int quantity)
+    public (string PreferenceId, string InitPoint) CreatePaymentPreference(string title, decimal price, string currency, int quantity, string accountId)
     {
         var request = new PreferenceRequest
         {
@@ -70,7 +73,12 @@ public class MercadoPagoService : IMercadoPagoService
                 Failure = "stocksip://payment/failure",
                 Pending = "stocksip://payment/pending"
             },
-            AutoReturn = "approved"
+            NotificationUrl = "https://stocksip-backend.azurewebsites.net/api/v1/subscriptions",
+            AutoReturn = "approved",
+            Metadata = new Dictionary<string, object>
+            {
+                {"account_id", accountId}
+            }
         };
         
         var client = new PreferenceClient();
@@ -78,23 +86,57 @@ public class MercadoPagoService : IMercadoPagoService
         return (preference.Id, preference.InitPoint);
     }
     
+    /// <summary>
+    ///     Method to get a payment by ID.  
+    /// </summary>
+    /// <param name="paymentId">
+    ///     The ID of the payment.
+    /// </param>
+    /// <returns>
+    ///     A MercadoPagoPayment object representing the payment.
+    /// </returns>
+    /// <exception cref="ArgumentException">
+    ///     A thrown exception when the payment ID is invalid.
+    /// </exception>
     public async Task<MercadoPagoPayment?> GetPaymentById(string paymentId)
     {
         if (!long.TryParse(paymentId, out long id))
             throw new ArgumentException("Invalid payment ID", nameof(paymentId));
 
         var client = new PaymentClient();
-        Payment payment = await client.GetAsync(id);
+        var payment = await client.GetAsync(id);
 
-        string preferenceId = payment.Order?.Id.ToString() 
-                              ?? payment.AdditionalInfo?.Items?.FirstOrDefault()?.Id.ToString() 
-                              ?? "";
+        string accountId = "";
+        
+        if (payment.Metadata is IDictionary<string, object> dict)
+        {
+            
+            if (dict.TryGetValue("account_id", out var value))
+                accountId = value?.ToString() ?? "";
+        }
+        else if (payment.Metadata != null)
+        {
+            
+            try
+            {
+                var json = payment.Metadata.ToString();
+                using var doc = JsonDocument.Parse(json);
+                if (doc.RootElement.TryGetProperty("account_id", out var accElem))
+                    accountId = accElem.GetString() ?? "";
+            }
+            catch
+            {
+                throw new Exception("Invalid payment metadata");
+            }
+        }
 
-        return new MercadoPagoPayment
-        (
+        return new MercadoPagoPayment(
             payment.Id.ToString(),
             payment.Status,
-            preferenceId
+            accountId
         );
     }
+
+
+    
 }
