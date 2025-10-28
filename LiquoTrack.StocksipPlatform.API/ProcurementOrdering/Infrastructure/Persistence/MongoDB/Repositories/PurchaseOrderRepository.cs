@@ -51,9 +51,8 @@ public class PurchaseOrderRepository : BaseRepository<PurchaseOrder>, IPurchaseO
         if (string.IsNullOrWhiteSpace(buyer.GetId))
             throw new ArgumentException("Buyer AccountId cannot be null or empty.", nameof(buyer));
 
-        return await _orderCollection
-            .Find(order => order.Buyer.GetId == buyer.GetId)
-            .ToListAsync();
+        var filter = Builders<PurchaseOrder>.Filter.Eq("buyer", buyer.GetId);
+        return await _orderCollection.Find(filter).ToListAsync();
     }
 
     public async Task<IEnumerable<PurchaseOrder>> FindByCatalogAsync(CatalogId catalogId)
