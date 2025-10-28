@@ -35,14 +35,14 @@ public class PlanRepository(AppDbContext context, IMediator mediator) : BaseRepo
                 EPlanType.Premium,
                 "Premium plan with more features",
                 EPaymentFrequency.Monthly,
-                new Money(29.99m, new Currency("USD")),
+                new Money(5.99m, new Currency("USD")),
                 PlanLimits.For(EPlanType.Premium)
             ),
             new Plan(
                 EPlanType.Enterprise,
                 "Enterprise plan with unlimited features",
                 EPaymentFrequency.Yearly,
-                new Money(199.99m, new Currency("USD")),
+                new Money(42.99m, new Currency("USD")),
                 PlanLimits.For(EPlanType.Enterprise)
             )
         };

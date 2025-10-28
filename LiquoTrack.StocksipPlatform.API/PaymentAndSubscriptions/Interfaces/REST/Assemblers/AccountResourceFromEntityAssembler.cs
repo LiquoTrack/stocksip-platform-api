@@ -24,10 +24,7 @@ public class AccountResourceFromEntityAssembler
             entity.BusinessId,
             entity.Status.ToString(),
             entity.Role.ToString(),
-            entity.GetCreationDate(),
-            entity.Subscription.PlanId,
-            entity.Subscription.Status.ToString(),
-            entity.Subscription.ExpirationDate.ToString()
+            entity.GetCreationDate()
         );
     }
 }
