@@ -3,4 +3,4 @@
 /// <summary>
 ///     Command to confirm a payment.
 /// </summary>
-public record ConfirmPaymentCommand(string PreferenceId, string Status);
+public record ConfirmPaymentCommand(string AccountId, string Status);

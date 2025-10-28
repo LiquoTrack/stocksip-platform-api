@@ -1,6 +1,6 @@
 ﻿using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.OutBoundServices.PaymentProviders.models;
 
-namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.OutBoundServices.PaymentProviders;
+namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.OutBoundServices.PaymentProviders.services;
 
 /// <summary>
 ///     Interface for MercadoPago service.
@@ -25,7 +25,16 @@ public interface IMercadoPagoService
     /// <returns>
     ///     A string representing the ID of the payment preference.
     /// </returns>
-    (string PreferenceId, string InitPoint) CreatePaymentPreference(string title, decimal price, string currency, int quantity);
+    (string PreferenceId, string InitPoint) CreatePaymentPreference(string title, decimal price, string currency, int quantity, string accountId);
     
+    /// <summary>
+    ///     Method to get a payment by its ID.
+    /// </summary>
+    /// <param name="paymentId">
+    ///     The ID of the payment.
+    /// </param>
+    /// <returns>
+    ///     A MercadoPagoPayment object representing the payment.
+    /// </returns>
     Task<MercadoPagoPayment?> GetPaymentById(string paymentId);
 }

@@ -1,4 +1,4 @@
-﻿using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.OutBoundServices.PaymentProviders;
+﻿using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.OutBoundServices.PaymentProviders.services;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Commands;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.ValueObjects;
@@ -68,7 +68,8 @@ public class SubscriptionCommandService(
                     title: plan.Description,
                     price: plan.PlanPrice.GetAmount(),
                     currency: plan.PlanPrice.GetCurrencyCode(),
-                    quantity: 1
+                    quantity: 1,
+                    command.AccountId
                 );
                 preferenceId = premiumPreference.PreferenceId;
                 initPoint = premiumPreference.InitPoint;
@@ -80,7 +81,8 @@ public class SubscriptionCommandService(
                     title: plan.Description,
                     price: plan.PlanPrice.GetAmount(),
                     currency: plan.PlanPrice.GetCurrencyCode(),
-                    quantity: 1
+                    quantity: 1,
+                    command.AccountId
                 );
                 preferenceId = preference.PreferenceId;
                 initPoint = preference.InitPoint;
@@ -112,8 +114,8 @@ public class SubscriptionCommandService(
     /// </exception>
     public async Task<Subscription?> Handle(ConfirmPaymentCommand command)
     {
-        var subscription = await subscriptionRepository.FindByPreferenceIdAsync(command.PreferenceId)
-                           ?? throw new Exception($"Subscription with Preference ID {command.PreferenceId} not found.");
+        var subscription = await subscriptionRepository.FindByAccountIdAsync(command.AccountId)
+                           ?? throw new Exception($"Subscription with Preference ID {command.AccountId} not found.");
         
         var plan = await planRepository.FindByIdAsync(subscription.PlanId)
                    ?? throw new Exception($"Plan with ID {subscription.PlanId} not found.");
@@ -152,36 +154,38 @@ public class SubscriptionCommandService(
         return subscription;
     }
 
+    /// <summary>
+    ///     Method to handle the webhook payment.
+    /// </summary>
+    /// <param name="command">
+    ///     The command containing the details for handling the webhook payment. 
+    /// </param>
+    /// <returns>
+    ///     A task representing the asynchronous operation. The task result contains the updated subscription.
+    /// </returns>
+    /// <exception cref="Exception">
+    ///     An exception is thrown if the payment could not be found or if the payment does not contain a valid Account ID.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    ///     A thrown when the payment status is not approved.
+    /// </exception>
     public async Task<Subscription?> Handle(WebhookPaymentCommand command)
     {
-        var payment = await mercadoPagoService.GetPaymentById(command.paymentId);
-        if (payment == null)
-            throw new Exception($"Payment with ID {command.paymentId} not found");
-        
+        var payment = await mercadoPagoService.GetPaymentById(command.paymentId)
+                      ?? throw new Exception($"Payment with ID {command.paymentId} not found");
+
         if (payment.Status.ToLower() != "approved")
             throw new InvalidOperationException($"Payment status is '{payment.Status}', cannot confirm subscription");
-        
-        var confirmPaymentCommand = new ConfirmPaymentCommand(payment.PreferenceId, payment.Status);
-        
+
+        if (string.IsNullOrEmpty(payment.AccountId))
+            throw new Exception("Payment does not contain a valid Account ID");
+
+        var confirmPaymentCommand = new ConfirmPaymentCommand(payment.AccountId, payment.Status);
         return await Handle(confirmPaymentCommand);
     }
 
+
     public Task<Subscription?> Handle(UpgradeSubscriptionCommand command)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<Subscription?> Handle(ActivateTrialCommand command)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<Subscription?> Handle(CancelSubscriptionCommand command)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<Subscription?> Handle(ExpireSubscriptionCommand command)
     {
         throw new NotImplementedException();
     }
