@@ -33,13 +33,13 @@ public interface ISubscriptionRepository : IBaseRepository<Subscription>
     /// <summary>
     ///     Method to find a subscription by its preference ID.
     /// </summary>
-    /// <param name="preferenceId">
-    ///     The ID of the preference.
+    /// <param name="accountId">
+    ///     The ID of the account.
     /// </param>
     /// <returns>
     ///     A subscription if found; otherwise, null.
     /// </returns>
-    Task<Subscription?> FindByPreferenceIdAsync(string preferenceId);
+    Task<Subscription?> FindByAccountIdAsync(string accountId);
     
     /// <summary>
     ///     Method to find a subscription status by preference ID.

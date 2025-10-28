@@ -57,16 +57,16 @@ public class SubscriptionRepository(AppDbContext context, IMediator mediator) : 
     /// <summary>
     ///      Method to find a subscription by its preference ID.
     /// </summary>
-    /// <param name="preferenceId">
-    ///     The preference ID of the subscription.
+    /// <param name="accountId">
+    ///     The ID of the account.
     /// </param>
     /// <returns>
     ///     A subscription if found; otherwise, null. 
     /// </returns>
-    public async Task<Subscription?> FindByPreferenceIdAsync(string preferenceId)
+    public async Task<Subscription?> FindByAccountIdAsync(string accountId)
     {
         var subscription = await _subscriptionCollection
-            .Find(s => s.PreferenceId == preferenceId)
+            .Find(s => s.AccountId == accountId)
             .FirstOrDefaultAsync();
         
         return subscription;
