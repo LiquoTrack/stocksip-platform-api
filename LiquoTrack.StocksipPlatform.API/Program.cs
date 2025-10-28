@@ -76,6 +76,40 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MongoDB.Driver;
 using AppGoogleAuthService = LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Services.GoogleAuthService;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.External.ACL;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
+using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Persistence.Repositories;
+using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Tokens.JWT.Configuration;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.ACL;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.EventHandlers;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.OutboundServices.FileStorage;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Events;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.FileStorage.Cloudinary.Services;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.ACL;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.ACL;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.CommandServices;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.OutBoundServices.FileStorage;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.QueryServices;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Repositories;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Services;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Converters.JSON;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.FileStorage.Cloudinary.Services;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Persistence.MongoDB.Repositories;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Interfaces.ACL;
+using LiquoTrack.StocksipPlatform.API.Shared.Application.Internal.EventHandlers;
+using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.FileStorage.Cloudinary.Configuration;
+using Microsoft.AspNetCore.Authentication.Google;
+using LiquoTrack.StocksipPlatform.API.OrderManagement.Domain.Repositories;
+using LiquoTrack.StocksipPlatform.API.OrderManagement.Infrastructure.Persistence.MongoDB.Repositories;
+using LiquoTrack.StocksipPlatform.API.OrderManagement.Domain.Services;
+using LiquoTrack.StocksipPlatform.API.OrderManagement.Application.Internal.CommandServices;
+using LiquoTrack.StocksipPlatform.API.OrderManagement.Application.Internal.QueryServices;
+using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Application.Internal.CommandServices;
+using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Application.Internal.QueryServices;
+using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Repositories;
+using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Services;
+using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Infrastructure.Converters.JSON;
+using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Infrastructure.Persistence.MongoDB.Repositories;
 
 // Register MongoDB mappings
 GlobalMongoMappingHelper.RegisterAllBoundedContextMappings();
@@ -300,9 +334,32 @@ builder.Services.Configure<JsonOptions>(options =>
 // Bounded Context Procurement Ordering
 //
 
+builder.Services.AddScoped<IPurchaseOrderRepository, PurchaseOrderRepository>();
+builder.Services.AddScoped<IPurchaseOrderCommandService, PurchaseOrderCommandService>();
+builder.Services.AddScoped<IPurchaseOrderQueryService, PurchaseOrderQueryService>();
+
+builder.Services.AddScoped<ICatalogRepository, CatalogRepository>();
+builder.Services.AddScoped<ICatalogCommandService, CatalogCommandService>();
+builder.Services.AddScoped<ICatalogQueryService, CatalogQueryService>();
+
+builder.Services.AddScoped<IProductContextFacade, ProductContextFacade>();
+
+// Purchase Order converters
+builder.Services.Configure<JsonOptions>(options =>
+{
+    options.JsonSerializerOptions.Converters.Add(new EOrderStatusJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new PurchaseOrderItemJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new CatalogItemJsonConverter());
+});
+
+
 //
 // Bounded Context Order Management
 //
+
+builder.Services.AddScoped<ISalesOrderRepository, SalesOrderRepository>();
+builder.Services.AddScoped<ISalesOrderCommandService, SalesOrderCommandService>();
+builder.Services.AddScoped<ISalesOrderQueryService, SalesOrderQueryService>();
 
 //
 // Bounded Context Profile Management
