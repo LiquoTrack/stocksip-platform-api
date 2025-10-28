@@ -41,10 +41,10 @@ public class SubscriptionCommandService(
                    ?? throw new Exception($"Plan with ID {command.SelectedPlanId} not found.");
         
         var pendingSubscription = await subscriptionRepository.FindPendingSubscriptionByAccountIdIdAsync(command.AccountId);
-        if (pendingSubscription is not null)
-        {
-            await subscriptionRepository.DeleteAsync(pendingSubscription.Id.ToString());
-        }
+        var currentSubscription = await subscriptionRepository.FindActiveSubscriptionByAccountIdAsync(command.AccountId);
+        
+        if (pendingSubscription is not null) await subscriptionRepository.DeleteAsync(pendingSubscription.Id.ToString());
+        if (currentSubscription is not null) throw new Exception("An active subscription already exists for this account.");
         
         var subscription = new Subscription(command.AccountId, command.SelectedPlanId);
 
