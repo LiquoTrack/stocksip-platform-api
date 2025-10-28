@@ -38,22 +38,10 @@ public class WarehouseQueryService(
     /// <returns>
     ///     A collection of warehouses associated with the account ID. Or an empty collection if none are found.
     /// </returns>
-    public async Task<ICollection<Warehouse>> Handle(GetAllWarehousesByAccountId query)
+    public async Task<(ICollection<Warehouse>, int total)> Handle(GetAllWarehousesAndCountByAccountId query)
     {
-        return await warehouseRepository.FindByAccountIdAsync(query.AccountId);
-    }
-
-    /// <summary>
-    ///     Method to get the count of warehouses associated with a specific account ID.
-    /// </summary>
-    /// <param name="query">
-    ///     The query object containing the account ID.
-    /// </param>
-    /// <returns>
-    ///     The count of warehouses associated with the account ID. Or null if none are found.
-    /// </returns>
-    public async Task<int> Handle(GetWarehousesCountByAccountIdQuery query)
-    {
-        return await warehouseRepository.CountByAccountIdAsync(query.AccountId);
+        var warehouses = await warehouseRepository.FindByAccountIdAsync(query.AccountId);
+        var total = await warehouseRepository.CountByAccountIdAsync(query.AccountId);
+        return (warehouses, total);
     }
 }
