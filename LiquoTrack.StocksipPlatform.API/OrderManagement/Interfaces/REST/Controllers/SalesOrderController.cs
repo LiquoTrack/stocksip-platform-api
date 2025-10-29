@@ -13,6 +13,8 @@ using LiquoTrack.StocksipPlatform.API.OrderManagement.Domain.Model.Queries;
 using LiquoTrack.StocksipPlatform.API.OrderManagement.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 using Microsoft.AspNetCore.Authorization;
+using LiquoTrack.StocksipPlatform.API.OrderManagement.Interfaces.REST.Assemblers;
+using LiquoTrack.StocksipPlatform.API.OrderManagement.Interfaces.REST.Resources;
 
 namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Interfaces.REST.Controllers
 {
@@ -49,6 +51,33 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Interfaces.REST.Contro
                 var order = await salesOrderCommandService.GeneratePurchaseOrder(request, accountId);
                 var resource = SalesOrderResourceFromEntityAssembler.ToResourceFromEntity(order);
                 
+                return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, resource);
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost("from-procurement/completed")]
+        [AllowAnonymous]
+        [SwaggerOperation(Summary = "Create a Sales Order from a completed Procurement order payload")]
+        [SwaggerResponse(StatusCodes.Status201Created, "Sales order created successfully", typeof(SalesOrderResource))]
+        [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request data")]
+        public async Task<IActionResult> CreateFromProcurement([FromBody] ProcurementOrderCompletedResource payload)
+        {
+            try
+            {
+                if (payload == null || payload.Items == null || payload.Items.Count == 0)
+                    return BadRequest("Payload or items cannot be null/empty");
+
+                var command = ProcurementCompletedToGenerateSalesOrderCommandAssembler.ToCommand(payload);
+                var order = await salesOrderCommandService.Handle(command);
+                var resource = SalesOrderResourceFromEntityAssembler.ToResourceFromEntity(order);
                 return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, resource);
             }
             catch (ValidationException ex)
