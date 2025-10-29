@@ -7,7 +7,6 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Interfaces.REST.Resour
         string Status,
         string CatalogToBuyFrom,
         DateTime ReceiptDate,
-        DateTime CompletitionDate,
-       string Buyer
+        DateTime CompletitionDate
     );
 }

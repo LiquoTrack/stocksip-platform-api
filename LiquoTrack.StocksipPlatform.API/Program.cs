@@ -1,8 +1,63 @@
 using System.Diagnostics;
-using System.Net.Http.Headers;
-using System.Reflection;
 using System.Security.Claims;
 using System.Text;
+using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.CommandServices;
+using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Hashing;
+using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Token;
+using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.QueryServices;
+using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Repositories;
+using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Services;
+using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google;
+using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Hashing.BCrypt.Services;
+using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Persistence.Repositories;
+using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Tokens.JWT.Configuration;
+using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Tokens.JWT.Services;
+using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Pipeline.Middleware.Extensions;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.CommandServices;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.OutboundServices.FileStorage;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.QueryServices;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Repositories;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Services;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Converters.JSON;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.FileStorage.Cloudinary.Services;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Persistence.MongoDB.Repositories;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.CommandServices;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.QueryServices;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Repositories;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Services;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.Converters.JSON;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.Persistence.MongoDB.Repositories;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.ACL;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.CommandServices;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.OutBoundServices.FileStorage;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.QueryServices;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Repositories;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Services;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Converters.JSON;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.FileStorage.Cloudinary.Services;
+using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Persistence.MongoDB.Repositories;
+using LiquoTrack.StocksipPlatform.API.Shared.Domain.Repositories;
+using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Converters.JSON;
+using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Interfaces.ASP.Configuration.Namings;
+using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration;
+using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration.Namings;
+using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Repositories;
+using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Seeding;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using MongoDB.Driver;
+using System.Reflection;
 using System.Text.Json;
 using Cortex.Mediator.Behaviors;
 using Cortex.Mediator.DependencyInjection;
@@ -13,68 +68,7 @@ using LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Domain.Repositories
 using LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Infrastructure.Persistence.EFC.Repositories;
 using LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Interfaces.ACL;
-using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.CommandServices;
 using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Authentication;
-using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Hashing;
-using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Token;
-using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.QueryServices;
-using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Repositories;
-using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Services;
-using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google;
-using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Hashing.BCrypt.Services;
-using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Persistence.Repositories;
-using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Pipeline.Middleware.Extensions;
-using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Tokens.JWT.Configuration;
-using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Tokens.JWT.Services;
-using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.ACL;
-using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.CommandServices;
-using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.EventHandlers;
-using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.OutboundServices.FileStorage;
-using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.QueryServices;
-using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Events;
-using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Repositories;
-using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Services;
-using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Converters.JSON;
-using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.FileStorage.Cloudinary.Services;
-using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Persistence.MongoDB.Repositories;
-using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.External.ACL;
-using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.CommandServices;
-using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.OutBoundServices.PaymentProviders.services;
-using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.QueryServices;
-using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Repositories;
-using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Services;
-using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.Converters.JSON;
-using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.PaymentProviders.MercadoPago.Configuration;
-using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.PaymentProviders.MercadoPago.Services;
-using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.Persistence.MongoDB.Repositories;
-using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
-using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.ACL;
-using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.CommandServices;
-using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.OutBoundServices.FileStorage;
-using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.QueryServices;
-using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Repositories;
-using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Services;
-using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Converters.JSON;
-using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.FileStorage.Cloudinary.Services;
-using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Persistence.MongoDB.Repositories;
-using LiquoTrack.StocksipPlatform.API.ProfileManagement.Interfaces.ACL;
-using LiquoTrack.StocksipPlatform.API.Shared.Application.Internal.EventHandlers;
-using LiquoTrack.StocksipPlatform.API.Shared.Domain.Repositories;
-using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Converters.JSON;
-using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.FileStorage.Cloudinary.Configuration;
-using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Interfaces.ASP.Configuration.Namings;
-using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration;
-using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration.Namings;
-using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Repositories;
-using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Seeding;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Google;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
-using MongoDB.Driver;
 using AppGoogleAuthService = LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Services.GoogleAuthService;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.External.ACL;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
@@ -86,6 +80,7 @@ using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.O
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Events;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.FileStorage.Cloudinary.Services;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.ACL;
+using LiquoTrack.StocksipPlatform.API.OrderManagement.Application.ACL;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.ACL;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.CommandServices;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.OutBoundServices.FileStorage;
@@ -104,6 +99,8 @@ using LiquoTrack.StocksipPlatform.API.OrderManagement.Infrastructure.Persistence
 using LiquoTrack.StocksipPlatform.API.OrderManagement.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.OrderManagement.Application.Internal.CommandServices;
 using LiquoTrack.StocksipPlatform.API.OrderManagement.Application.Internal.QueryServices;
+using LiquoTrack.StocksipPlatform.API.OrderManagement.Application.Internal.Services;
+using LiquoTrack.StocksipPlatform.API.OrderManagement.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Application.Internal.CommandServices;
 using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Application.Internal.QueryServices;
 using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Repositories;
@@ -171,7 +168,7 @@ builder.Services.AddScoped<GoogleSignInCommandHandler>();
 
 // Register External Auth Service (Google) with a fully qualified name
 builder.Services.AddScoped<IExternalAuthService, 
-    GoogleAuthService>();
+    LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google.GoogleAuthService>();
 
 // Register the custom token validator first
 builder.Services.AddSingleton<ISecurityTokenValidator, CustomGoogleTokenValidator>();
@@ -204,15 +201,6 @@ builder.Services.AddScoped<IMongoDatabase>(sp =>
 
 // Add service for MongoDB client
 builder.Services.AddSingleton<AppDbContext>();
-
-// Cloudinary Settings Configuration
-builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
-
-// Register Mercado Pago Service
-builder.Services.AddScoped<IMercadoPagoService, MercadoPagoService>();
-
-// Mercado Pago Configuration
-builder.Services.Configure<MercadoPagoSettings>(builder.Configuration.GetSection("MercadoPagoSettings"));
 
 //
 // Bounded Context Shared
@@ -270,10 +258,10 @@ builder.Services.AddScoped<IGoogleTokenValidator, CustomGoogleTokenValidatorAdap
 
 // Using a fully qualified name to resolve ambiguity
 builder.Services.AddScoped<IExternalAuthService, 
-    GoogleAuthService>();
+    LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google.GoogleAuthService>();
 
 // JWT Configuration
-builder.Services.Configure<TokenSettings>(
+builder.Services.Configure<LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Tokens.JWT.Configuration.TokenSettings>(
     builder.Configuration.GetSection("Jwt"));
 
 // Register Token Service
@@ -282,7 +270,10 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 // Google Auth Service 
 builder.Services.AddScoped<IGoogleAuthService, AppGoogleAuthService>();
 builder.Services.AddScoped<GoogleSignInCommandHandler>();
-builder.Services.AddScoped<IExternalAuthService, GoogleAuthService>();
+builder.Services.AddScoped<IExternalAuthService, LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google.GoogleAuthService>();
+
+// Cloudinary Settings Configuration
+builder.Services.Configure<CloudinarySettings>(configuration.GetSection("CloudinarySettings"));
 
 //
 // Bounded context Inventory
@@ -360,6 +351,8 @@ builder.Services.Configure<JsonOptions>(options =>
 builder.Services.AddScoped<ISalesOrderRepository, SalesOrderRepository>();
 builder.Services.AddScoped<ISalesOrderCommandService, SalesOrderCommandService>();
 builder.Services.AddScoped<ISalesOrderQueryService, SalesOrderQueryService>();
+builder.Services.AddScoped<IOrderManagementContextFacade, OrderManagementContextFacade>();
+builder.Services.AddScoped<ILowStockService, LowStockService>();
 
 //
 // Bounded Context Profile Management
@@ -394,11 +387,8 @@ builder.Services.AddScoped<IBusinessQueryService, BusinessQueryService>();
 builder.Services.AddScoped<IBusinessRepository, BusinessRepository>();
 
 builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
-builder.Services.AddScoped<ISubscriptionsCommandService, SubscriptionCommandService>();
-builder.Services.AddScoped<ISubscriptionQueryService, SubscriptionQueryService>();
 
 builder.Services.AddScoped<IPaymentAndSubscriptionsFacade, PaymentAndSubscriptionsFacade>();
-builder.Services.AddScoped<IAccountContextFacade, AccountContextFacade>();
 
 // Payment converters
 builder.Services.Configure<JsonOptions>(options =>
@@ -670,7 +660,7 @@ if (!string.IsNullOrWhiteSpace(googleClientId))
             try
             {
                 var request = new HttpRequestMessage(HttpMethod.Get, context.Options.UserInformationEndpoint);
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", context.AccessToken);
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", context.AccessToken);
                 
                 var response = await context.Backchannel.SendAsync(request, context.HttpContext.RequestAborted);
                 response.EnsureSuccessStatusCode();
