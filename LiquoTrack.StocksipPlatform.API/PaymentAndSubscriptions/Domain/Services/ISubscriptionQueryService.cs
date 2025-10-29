@@ -1,0 +1,21 @@
+﻿using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Aggregates;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Queries;
+
+namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Services;
+
+/// <summary>
+///     Query service interface for retrieving subscription information.
+/// </summary>
+public interface ISubscriptionQueryService
+{
+    /// <summary>
+    ///     Method to handle the retrieval of a subscription by its preference ID.
+    /// </summary>
+    /// <param name="query">
+    ///     The query object containing the preference ID.
+    /// </param>
+    /// <returns>
+    ///     A task that represents the asynchronous operation.
+    /// </returns>
+    Task<string?> Handle(GetSubscriptionStatusByPreferenceIdQuery query);
+}

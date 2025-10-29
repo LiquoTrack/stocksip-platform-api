@@ -2,5 +2,7 @@
 
 public enum ESeverityTypes
 {
-    
+    Info,
+    Warning,
+    Critical
 }

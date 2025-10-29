@@ -1,3 +1,7 @@
 ﻿namespace LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Model.Queries;
 
-public record GetProfileByUserIdQuery();
+/// <summary>
+/// Query to get a profile by user ID.
+/// </summary>
+/// <param name="UserId">The user ID associated with the profile.</param>
+public record GetProfileByUserIdQuery(string UserId);
