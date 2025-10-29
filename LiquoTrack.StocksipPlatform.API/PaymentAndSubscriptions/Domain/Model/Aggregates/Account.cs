@@ -1,7 +1,8 @@
-using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Commands;
+﻿using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Commands;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Entities;
+using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
@@ -67,23 +68,7 @@ public class Account(
             Enum.Parse<EAccountRole>(command.AccountRole)
         )
     { }
-
-    /// <summary>
-    ///     Method to initialize the subscription of the account with a free plan.
-    /// </summary>
-    /// <param name="freePlan">
-    ///     The free <see cref="Plan"/> to be assigned to the account's subscription.
-    /// </param>
-    public void InitializeSubscription(Plan freePlan)
-    {
-        Subscription = new Subscription(
-            accountId: this.Id.ToString(),
-            planId: freePlan.Id.ToString(),
-            status: ESubscriptionStatus.Active,
-            expirationDate: DateTime.MaxValue
-        );
-    }
-
+    
     /// <summary>
     ///     Method to activate the account.
     /// </summary>
