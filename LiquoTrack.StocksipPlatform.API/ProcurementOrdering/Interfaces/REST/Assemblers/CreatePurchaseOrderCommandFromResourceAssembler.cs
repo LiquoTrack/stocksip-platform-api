@@ -16,9 +16,9 @@ public static class CreatePurchaseOrderCommandFromResourceAssembler
     public static CreatePurchaseOrderCommand ToCommandFromResource(CreatePurchaseOrderResource resource)
     {
         return new CreatePurchaseOrderCommand(
-            resource.orderCode,
-            resource.catalogIdBuyFrom,
-            resource.buyer
+            resource.OrderCode,
+            resource.CatalogIdBuyFrom,
+            resource.Buyer
         );
     }
 }

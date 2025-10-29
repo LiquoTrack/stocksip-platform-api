@@ -398,6 +398,7 @@ builder.Services.AddScoped<ISubscriptionsCommandService, SubscriptionCommandServ
 builder.Services.AddScoped<ISubscriptionQueryService, SubscriptionQueryService>();
 
 builder.Services.AddScoped<IPaymentAndSubscriptionsFacade, PaymentAndSubscriptionsFacade>();
+builder.Services.AddScoped<IAccountContextFacade, AccountContextFacade>();
 
 // Payment converters
 builder.Services.Configure<JsonOptions>(options =>
