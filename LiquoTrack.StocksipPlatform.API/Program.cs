@@ -384,6 +384,7 @@ builder.Services.AddScoped<IBusinessRepository, BusinessRepository>();
 builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
 
 builder.Services.AddScoped<IPaymentAndSubscriptionsFacade, PaymentAndSubscriptionsFacade>();
+builder.Services.AddScoped<IAccountContextFacade, AccountContextFacade>();
 
 // Payment converters
 builder.Services.Configure<JsonOptions>(options =>

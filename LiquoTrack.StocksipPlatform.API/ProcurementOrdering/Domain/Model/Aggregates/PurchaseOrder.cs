@@ -3,7 +3,6 @@ using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
-using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Model.Aggregates;
@@ -21,6 +20,11 @@ public class PurchaseOrder : Entity, IConfirmable
     public DateTime? ConfirmationDate { get; private set; }
     public AccountId Buyer { get; private set; }
     public bool IsOrderSent { get; private set; } = false;
+    
+    /// <summary>
+    ///     The delivery address for this purchase order.
+    /// </summary>
+    public DeliveryAddress? DeliveryAddress { get; private set; }
 
     public PurchaseOrder(string orderCode, CatalogId catalogIdBuyFrom, AccountId buyer)
     {
@@ -40,6 +44,14 @@ public class PurchaseOrder : Entity, IConfirmable
         => string.IsNullOrWhiteSpace(orderCode)
             ? throw new ArgumentException("The order code cannot be null or empty.", nameof(orderCode))
             : orderCode;
+
+    /// <summary>
+    ///     Sets the delivery address for the purchase order.
+    /// </summary>
+    public void SetDeliveryAddress(DeliveryAddress address)
+    {
+        DeliveryAddress = address ?? throw new ArgumentNullException(nameof(address));
+    }
 
     /// <summary>
     /// Adds a single catalog item to the order with quantity.
