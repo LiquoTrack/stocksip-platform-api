@@ -20,35 +20,6 @@ public class PurchaseOrderController(
     IPurchaseOrderCommandService purchaseOrderCommandService,
     IPurchaseOrderQueryService purchaseOrderQueryService) : ControllerBase
 {
-    [HttpPost]
-    [SwaggerOperation(
-        Summary = "Create a new purchase order.",
-        Description = "Creates a new purchase order with the specified details.",
-        OperationId = "CreatePurchaseOrder")]
-    [SwaggerResponse(StatusCodes.Status201Created, "Purchase order created successfully.", typeof(PurchaseOrderResource))]
-    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request or failed creation.")]
-    public async Task<IActionResult> CreatePurchaseOrder([FromBody] CreatePurchaseOrderResource resource)
-    {
-        try
-        {
-            var command = CreatePurchaseOrderCommandFromResourceAssembler.ToCommandFromResource(resource);
-            var orderId = await purchaseOrderCommandService.Handle(command);
-
-            var query = new GetPurchaseOrderByIdQuery(orderId.GetId);
-            var order = await purchaseOrderQueryService.Handle(query);
-
-            if (order == null)
-                return BadRequest("Failed to create purchase order");
-
-            var orderResource = PurchaseOrderResourceFromEntityAssembler.ToResourceFromEntity(order);
-            return CreatedAtAction(nameof(GetPurchaseOrderById), new { purchaseOrderId = orderId.GetId }, orderResource);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
-
     [HttpGet("{purchaseOrderId}")]
     [SwaggerOperation(
         Summary = "Get purchase order by ID.",

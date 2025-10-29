@@ -21,35 +21,6 @@ public class CatalogController(
     ICatalogCommandService catalogCommandService,
     ICatalogQueryService catalogQueryService) : ControllerBase
 {
-    [HttpPost]
-    [SwaggerOperation(
-        Summary = "Create a new catalog.",
-        Description = "Creates a new catalog with the specified details.",
-        OperationId = "CreateCatalog")]
-    [SwaggerResponse(StatusCodes.Status201Created, "Catalog created successfully.", typeof(CatalogResource))]
-    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request or failed creation.")]
-    public async Task<IActionResult> CreateCatalog([FromBody] CreateCatalogResource resource)
-    {
-        try
-        {
-            var command = CreateCatalogCommandFromResourceAssembler.ToCommandFromResource(resource);
-            var catalogId = await catalogCommandService.Handle(command);
-
-            var query = new GetCatalogByIdQuery(catalogId.GetId());
-            var catalog = await catalogQueryService.Handle(query);
-
-            if (catalog == null)
-                return BadRequest("Failed to create catalog.");
-
-            var catalogResource = CatalogResourceFromEntityAssembler.ToResourceFromEntity(catalog);
-            return CreatedAtAction(nameof(GetCatalogById), new { catalogId = catalogId.GetId() }, catalogResource);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
-
     [HttpGet("{catalogId}")]
     [SwaggerOperation(
         Summary = "Get catalog by ID.",
