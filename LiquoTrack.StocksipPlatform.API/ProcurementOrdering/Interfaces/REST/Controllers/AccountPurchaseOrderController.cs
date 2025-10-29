@@ -20,18 +20,30 @@ public class AccountPurchaseOrderController(
     IPurchaseOrderCommandService purchaseOrderCommandService,
     IPurchaseOrderQueryService purchaseOrderQueryService) : ControllerBase
 {
+    /// <summary>
+    /// Creates a new purchase order for the specified account.
+    /// </summary>
+    /// <param name="accountId">The account identifier (buyer).</param>
+    /// <param name="resource">The resource containing order details and optional delivery address index.</param>
+    /// <returns>The created purchase order resource.</returns>
     [HttpPost]
     [SwaggerOperation(
         Summary = "Create a new purchase order for an account.",
-        Description = "Creates a new purchase order for the specified account.",
+        Description = "Creates a new purchase order for the specified account. Optionally, you can specify an addressIndex to set a delivery address from the account's saved addresses.",
         OperationId = "CreatePurchaseOrderForAccount")]
     [SwaggerResponse(StatusCodes.Status201Created, "Purchase order created successfully.", typeof(PurchaseOrderResource))]
-    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request or failed creation.")]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request, failed creation, or address not found.")]
     public async Task<IActionResult> CreatePurchaseOrder(string accountId, [FromBody] CreatePurchaseOrderForAccountResource resource)
     {
         try
         {
-            var command = new CreatePurchaseOrderCommand(resource.orderCode, resource.catalogIdBuyFrom, accountId);
+            var command = new CreatePurchaseOrderCommand(
+                resource.OrderCode, 
+                resource.CatalogIdBuyFrom, 
+                accountId,
+                resource.AddressIndex
+            );
+            
             var orderId = await purchaseOrderCommandService.Handle(command);
 
             var query = new GetPurchaseOrderByIdQuery(orderId.GetId);
@@ -43,12 +55,21 @@ public class AccountPurchaseOrderController(
             var orderResource = PurchaseOrderResourceFromEntityAssembler.ToResourceFromEntity(order);
             return StatusCode(StatusCodes.Status201Created, orderResource);
         }
-        catch (Exception ex)
+        catch (InvalidOperationException ex)
         {
             return BadRequest(new { message = ex.Message });
         }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = "An error occurred while creating the purchase order.", details = ex.Message });
+        }
     }
 
+    /// <summary>
+    /// Retrieves all purchase orders for the specified account.
+    /// </summary>
+    /// <param name="accountId">The account identifier (buyer).</param>
+    /// <returns>A collection of purchase order resources.</returns>
     [HttpGet]
     [SwaggerOperation(
         Summary = "Get all purchase orders by account.",
