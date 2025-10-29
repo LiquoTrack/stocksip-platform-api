@@ -1,8 +1,7 @@
-﻿using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Commands;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Commands;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Entities;
-using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
@@ -84,6 +83,16 @@ public class Account(
             expirationDate: DateTime.MaxValue
         );
     }
+
+    /// <summary>
+    ///     Method to activate the account.
+    /// </summary>
+    public void ActivateAccount() => this.Status = EAccountStatuses.Active;
+
+    /// <summary>
+    ///     Method to deactivate the account.
+    /// </summary>
+    public void DeactivateAccount() => this.Status = EAccountStatuses.Inactive;
 
     /// <summary>
     ///     Method to get the creation date of the account in "yyyy-MM-dd HH:mm:ss" format.
