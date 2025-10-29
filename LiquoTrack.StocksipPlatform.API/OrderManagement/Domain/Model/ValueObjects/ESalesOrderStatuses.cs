@@ -1,4 +1,4 @@
-﻿namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Domain.Model.ValueObjects
+namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Domain.Model.ValueObjects
 {
     public enum ESalesOrderStatuses
     {
