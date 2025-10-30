@@ -6,7 +6,10 @@
 /// <param name="Total">
 ///     The total count of warehouses.
 /// </param>
+/// <param name="MaxWarehousesAllowed">
+///     The maximum number of warehouses allowed under the plan.
+/// </param>
 /// <param name="Warehouses">
 ///     A collection of warehouses.
 /// </param>
-public record WarehousesWithCountResource(int Total, List<WarehouseResource> Warehouses);
+public record WarehousesSummaryResource(List<WarehouseResource> Warehouses, int Total, int? MaxWarehousesAllowed);

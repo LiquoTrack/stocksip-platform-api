@@ -28,6 +28,6 @@ public interface IWarehouseQueryService
     /// <returns>
     ///     A collection of warehouses associated with the account ID. Or an empty collection if none are found.
     /// </returns>
-    Task<(ICollection<Warehouse>, int total)> Handle(GetAllWarehousesAndCountByAccountId query);
+    Task<(ICollection<Warehouse>, int currentTotal, int? planLimit)> Handle(GetAllWarehousesByAccountId query);
     
 }
