@@ -76,4 +76,40 @@ public class PlanRepository(AppDbContext context, IMediator mediator) : BaseRepo
 
         return plan?.PlanLimits?.MaxWarehouses;
     }
+
+    /// <summary>
+    ///     Method to find the maximum products limit for a plan by its ID.   
+    /// </summary>
+    /// <param name="planId">
+    ///     The ID of the plan.
+    /// </param>
+    /// <returns>
+    ///     An integer representing the maximum products limit. 
+    /// </returns>
+    public async Task<int?> FindPlanProductsLimitByAccountIdAsync(string planId)
+    {
+        var plan = await _planCollection
+            .Find(p => p.Id.ToString() == planId)
+            .FirstOrDefaultAsync();
+
+        return plan?.PlanLimits?.MaxProducts;
+    }
+
+    /// <summary>
+    ///     Method to find the maximum users limit for a plan by its ID.  
+    /// </summary>
+    /// <param name="planId">
+    ///     The ID of the plan.
+    /// </param>
+    /// <returns>
+    ///     An integer representing the maximum users limit.
+    /// </returns>
+    public async Task<int?> FindPlanUsersLimitByAccountIdAsync(string planId)
+    {
+        var plan = await _planCollection
+            .Find(p => p.Id.ToString() == planId)
+            .FirstOrDefaultAsync();
+        
+        return plan?.PlanLimits?.MaxUsers;
+    }
 }

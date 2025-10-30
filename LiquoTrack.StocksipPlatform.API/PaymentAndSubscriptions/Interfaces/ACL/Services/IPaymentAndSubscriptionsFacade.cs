@@ -45,4 +45,26 @@ public interface IPaymentAndSubscriptionsFacade
     ///     The maximum number of warehouses allowed for the account.
     /// </returns>
     Task<int?> GetPlanWarehouseLimitByAccountId(string accountId);
+
+    /// <summary>
+    ///     Method to get the maximum number of products allowed for an account.
+    /// </summary>
+    /// <param name="accountId">
+    ///     The ID of the account.
+    /// </param>
+    /// <returns>
+    ///     The maximum number of products allowed for the account.
+    /// </returns>
+    Task<int?> GetPlanProductsLimitByAccountId(string accountId);
+    
+    /// <summary>
+    ///     Method to get the maximum number of users allowed for an account.
+    /// </summary>
+    /// <param name="accountId">
+    ///     The ID of the account.
+    /// </param>
+    /// <returns>
+    ///     The maximum number of users allowed for the account.
+    /// </returns>
+    Task<int?> GetPlanUserLimitByAccountId(string accountId);
 }

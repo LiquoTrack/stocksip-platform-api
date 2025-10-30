@@ -43,4 +43,40 @@ public class SubscriptionQueryService(
         
         return warehouseLimit;
     }
+
+    /// <summary>
+    ///     Method to handle the retrieval of a plan's products limit by account ID.'
+    /// </summary>
+    /// <param name="query">
+    ///     The query object containing the account ID.
+    /// </param>
+    /// <returns>
+    ///     A task that represents the asynchronous operation. The task result contains the product limit.
+    /// </returns>
+    public async Task<int?> Handle(GetPlanProductsLimitByAccountIdQuery query)
+    {
+        var subscription = await subscriptionRepository.FindActiveSubscriptionByAccountIdAsync(query.AccountId);
+        if (subscription is null) return null;
+        
+        var productsLimit = await planRepository.FindPlanProductsLimitByAccountIdAsync(subscription.PlanId);
+        return productsLimit;
+    }
+
+    /// <summary>
+    ///     Method to handle the retrieval of a plan's user limit by account ID.'
+    /// </summary>
+    /// <param name="query">
+    ///     The query object containing the account ID.
+    /// </param>
+    /// <returns>
+    ///     A task that represents the asynchronous operation. The task result contains the user limit.
+    /// </returns>
+    public async Task<int?> Handle(GetPlanUsersLimitByAccountIdQuery query)
+    {
+        var subscription = await subscriptionRepository.FindActiveSubscriptionByAccountIdAsync(query.accountId);
+        if (subscription is null) return null;
+        
+        var userLimits = await planRepository.FindPlanUsersLimitByAccountIdAsync(subscription.PlanId);
+        return userLimits;
+    }
 }
