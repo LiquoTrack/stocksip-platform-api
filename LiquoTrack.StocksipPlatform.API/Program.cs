@@ -45,15 +45,8 @@ using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Seeding;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MongoDB.Driver;
@@ -72,24 +65,11 @@ using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Outbou
 using AppGoogleAuthService = LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Services.GoogleAuthService;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.External.ACL;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
-using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Persistence.Repositories;
-using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Tokens.JWT.Configuration;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.ACL;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.EventHandlers;
-using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.OutboundServices.FileStorage;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Events;
-using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.FileStorage.Cloudinary.Services;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.ACL;
 using LiquoTrack.StocksipPlatform.API.OrderManagement.Application.ACL;
-using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.ACL;
-using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.CommandServices;
-using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.Internal.OutBoundServices.FileStorage;
-using LiquoTrack.StocksipPlatform.API.ProfileManagement.Application.QueryServices;
-using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Repositories;
-using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Services;
-using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Converters.JSON;
-using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.FileStorage.Cloudinary.Services;
-using LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Persistence.MongoDB.Repositories;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Interfaces.ACL;
 using LiquoTrack.StocksipPlatform.API.Shared.Application.Internal.EventHandlers;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.FileStorage.Cloudinary.Configuration;
@@ -101,6 +81,9 @@ using LiquoTrack.StocksipPlatform.API.OrderManagement.Application.Internal.Comma
 using LiquoTrack.StocksipPlatform.API.OrderManagement.Application.Internal.QueryServices;
 using LiquoTrack.StocksipPlatform.API.OrderManagement.Application.Internal.Services;
 using LiquoTrack.StocksipPlatform.API.OrderManagement.Domain.Model.ValueObjects;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.OutBoundServices.PaymentProviders.services;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.PaymentProviders.MercadoPago.Configuration;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.PaymentProviders.MercadoPago.Services;
 using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Application.Internal.CommandServices;
 using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Application.Internal.QueryServices;
 using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Repositories;
@@ -275,6 +258,9 @@ builder.Services.AddScoped<IExternalAuthService, LiquoTrack.StocksipPlatform.API
 // Cloudinary Settings Configuration
 builder.Services.Configure<CloudinarySettings>(configuration.GetSection("CloudinarySettings"));
 
+// MercadoPago Settings Configuration
+builder.Services.Configure<MercadoPagoSettings>(builder.Configuration.GetSection("MercadoPagoSettings"));
+
 //
 // Bounded context Inventory
 //
@@ -387,8 +373,12 @@ builder.Services.AddScoped<IBusinessQueryService, BusinessQueryService>();
 builder.Services.AddScoped<IBusinessRepository, BusinessRepository>();
 
 builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
+builder.Services.AddScoped<ISubscriptionQueryService, SubscriptionQueryService>();
+builder.Services.AddScoped<ISubscriptionsCommandService, SubscriptionCommandService>();
 
 builder.Services.AddScoped<IPaymentAndSubscriptionsFacade, PaymentAndSubscriptionsFacade>();
+
+builder.Services.AddScoped<IMercadoPagoService, MercadoPagoService>();
 
 // Payment converters
 builder.Services.Configure<JsonOptions>(options =>

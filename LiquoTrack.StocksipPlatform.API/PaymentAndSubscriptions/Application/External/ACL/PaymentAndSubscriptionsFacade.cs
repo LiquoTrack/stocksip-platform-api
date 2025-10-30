@@ -22,7 +22,8 @@ namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Ex
 /// </param>
 public class PaymentAndSubscriptionsFacade(IAccountCommandService accountCommandService,
                                             IBusinessCommandService businessCommandService,
-                                            ISubscriptionQueryService subscriptionQueryService) 
+                                            ISubscriptionQueryService subscriptionQueryService,
+                                            IAccountQueryService accountQueryService) 
                                             : IPaymentAndSubscriptionsFacade
 {
     /// <summary>
@@ -106,5 +107,48 @@ public class PaymentAndSubscriptionsFacade(IAccountCommandService accountCommand
         var query = new GetPlanUsersLimitByAccountIdQuery(accountId);
         var userLimits = await subscriptionQueryService.Handle(query);
         return userLimits;
+    }
+    
+    /// <summary>
+    ///     Gets all addresses associated with an account.
+    /// </summary>
+    /// <param name="accountId">
+    ///     The account identifier.
+    /// </param>
+    /// <returns>
+    ///     A collection of addresses.
+    /// </returns>
+    public async Task<IEnumerable<Address>> GetAccountAddressesAsync(string accountId)
+    {
+        var query = new GetAccountByIdQuery(accountId);
+        var account = await accountQueryService.Handle(query);
+        
+        if (account == null)
+            return Enumerable.Empty<Address>();
+        
+        return account.Addresses;
+    }
+    
+    /// <summary>
+    ///     Gets a specific address by account and address index.
+    /// </summary>
+    /// <param name="accountId">
+    ///     The account identifier.
+    /// </param>
+    /// <param name="addressIndex">
+    ///     The index of the address in the collection.
+    /// </param>
+    /// <returns>
+    ///     The address if found, null otherwise.
+    /// </returns>
+    public async Task<Address?> GetAccountAddressAsync(string accountId, int addressIndex)
+    {
+        var addresses = await GetAccountAddressesAsync(accountId);
+        var addressList = addresses.ToList();
+        
+        if (addressIndex < 0 || addressIndex >= addressList.Count)
+            return null;
+        
+        return addressList[addressIndex];
     }
 }
