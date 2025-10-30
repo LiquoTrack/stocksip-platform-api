@@ -36,7 +36,7 @@ public class WarehousesController(
     /// <returns>
     ///     The warehouse with the specified ID, or a 404 Not Found response if the warehouse does not exist.
     /// </returns>
-    [HttpGet("{id}")]
+    [HttpGet("{warehouseId}")]
     [SwaggerOperation(
         Summary = "Get warehouse by ID.",
         Description = "Retrieves a warehouse by its unique identifier.",
@@ -64,7 +64,7 @@ public class WarehousesController(
     /// <returns>
     ///     A 200 OK response with the updated warehouse details, or a 400 Bad Request response if the warehouse could not be updated.
     /// </returns>
-    [HttpPut("{id}")]
+    [HttpPut("{warehouseId}")]
     [SwaggerOperation(
         Summary = "Update warehouse information.",
         Description = "Updates the information of a warehouse with the provided details.",
@@ -91,7 +91,7 @@ public class WarehousesController(
     /// <returns>
     ///     A 204 No Content response if the warehouse was successfully deleted, or a 404 Not Found response if the warehouse to delete could not be found.   
     /// </returns>
-    [HttpDelete("{id}")]
+    [HttpDelete("{warehouseId}")]
     [SwaggerOperation(
         Summary = "Delete a warehouse.",
         Description = "Deletes a warehouse with the specified ID.",
