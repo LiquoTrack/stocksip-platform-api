@@ -1,6 +1,5 @@
 using LiquoTrack.StocksipPlatform.API.OrderManagement.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.OrderManagement.Interfaces.REST.Resources;
-using MongoDB.Bson;
 
 namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Interfaces.REST.Assemblers
 {
@@ -25,7 +24,16 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Interfaces.REST.Assemb
                 salesOrder.CatalogToBuyFrom.GetId(),
                 salesOrder.ReceiptDate,
                 salesOrder.CompletitionDate,
-                salesOrder.Buyer.GetId
+                salesOrder.AccountId.GetId,
+                salesOrder.DeliveryProposal == null
+                    ? null
+                    : new DeliveryProposalResource(
+                        salesOrder.DeliveryProposal.ProposedDate,
+                        salesOrder.DeliveryProposal.Notes,
+                        salesOrder.DeliveryProposal.Status.ToString(),
+                        salesOrder.DeliveryProposal.CreatedAt,
+                        salesOrder.DeliveryProposal.RespondedAt
+                    )
             );
         }
     }

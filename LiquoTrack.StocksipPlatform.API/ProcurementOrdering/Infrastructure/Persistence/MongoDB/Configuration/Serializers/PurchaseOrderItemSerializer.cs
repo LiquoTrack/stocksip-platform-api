@@ -8,15 +8,29 @@ namespace LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Infrastructure.Per
 
 public class PurchaseOrderItemSerializer : IBsonSerializer<PurchaseOrderItem>
 {
+    public Type ValueType => typeof(PurchaseOrderItem);
+
     public void Serialize(BsonSerializationContext context, BsonSerializationArgs args, PurchaseOrderItem value)
     {
+        if (value == null) throw new ArgumentNullException(nameof(value));
+
         context.Writer.WriteStartDocument();
+
         context.Writer.WriteName("productId");
         context.Writer.WriteString(value.ProductId.GetId);
+
+        context.Writer.WriteName("productName");
+        context.Writer.WriteString(value.ProductName);
+
+        context.Writer.WriteName("imageUrl");
+        context.Writer.WriteString(value.ImageUrl ?? string.Empty);
+
         context.Writer.WriteName("unitPrice");
-        context.Writer.WriteDecimal128((decimal)value.UnitPrice);
+        context.Writer.WriteDecimal128(new Decimal128(value.UnitPrice)); // <-- Convert decimal to Decimal128
+
         context.Writer.WriteName("quantity");
         context.Writer.WriteInt32(value.Quantity);
+
         context.Writer.WriteEndDocument();
     }
 
@@ -25,12 +39,23 @@ public class PurchaseOrderItemSerializer : IBsonSerializer<PurchaseOrderItem>
         context.Reader.ReadStartDocument();
 
         var productId = context.Reader.ReadString("productId");
-        var unitPrice = (decimal)context.Reader.ReadDecimal128("unitPrice");
+        var productName = context.Reader.ReadString("productName");
+        var imageUrl = context.Reader.ReadString("imageUrl");
+
+        var unitPriceDecimal128 = context.Reader.ReadDecimal128("unitPrice");
+        var unitPrice = (decimal)unitPriceDecimal128; // <-- cast a decimal
+
         var quantity = context.Reader.ReadInt32("quantity");
 
         context.Reader.ReadEndDocument();
 
-        return new PurchaseOrderItem(new ProductId(productId), unitPrice, quantity);
+        return new PurchaseOrderItem(
+            new ProductId(productId),
+            productName,
+            imageUrl,
+            unitPrice,
+            quantity
+        );
     }
 
     void IBsonSerializer.Serialize(BsonSerializationContext context, BsonSerializationArgs args, object value)
@@ -38,6 +63,4 @@ public class PurchaseOrderItemSerializer : IBsonSerializer<PurchaseOrderItem>
 
     object IBsonSerializer.Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
         => Deserialize(context, args);
-
-    public Type ValueType => typeof(PurchaseOrderItem);
 }

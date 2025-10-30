@@ -1,6 +1,6 @@
 ﻿using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Aggregates;
-using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Commands;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Entities;
+using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 
 namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
 
@@ -13,7 +13,7 @@ public interface IPaymentAndSubscriptionsFacade
     ///     Method to create a new account.
     /// </summary>
     /// <param name="role">
-    ///     The 
+    ///     The role of the account.
     /// </param>
     /// <param name="businessId">
     ///     The ID of the business associated with the account.

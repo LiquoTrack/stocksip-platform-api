@@ -4,6 +4,7 @@ using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Entit
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Queries;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
+using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 
 namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.External.ACL;
 
@@ -12,6 +13,9 @@ namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Ex
 /// </summary>
 /// <param name="accountCommandService">
 ///     The service for handling account-related commands.
+/// </param>
+/// <param name="accountQueryService">
+///     The service for handling account-related queries.
 /// </param>
 /// <param name="businessCommandService">
 ///     The service for handling business-related commands.
@@ -22,7 +26,7 @@ public class PaymentAndSubscriptionsFacade(IAccountCommandService accountCommand
                                             : IPaymentAndSubscriptionsFacade
 {
     /// <summary>
-    ///     The service for handling account-related commands.
+    ///     Creates a new account.
     /// </summary>
     /// <param name="role">
     ///     The role of the account.
@@ -41,7 +45,7 @@ public class PaymentAndSubscriptionsFacade(IAccountCommandService accountCommand
     }
 
     /// <summary>
-    ///     The service for handling business-related commands.
+    ///     Creates a new business.
     /// </summary>
     /// <param name="businessName">
     ///     The name of the business. 
