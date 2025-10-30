@@ -45,7 +45,6 @@ public class AccountWarehousesController(
         var targetAccountId = new AccountId(accountId);
         var getAllWarehousesAndCountByAccountIdQuery = new GetAllWarehousesByAccountId(targetAccountId);
         var (warehouses, currentTotal, warehouseLimit) = await warehouseQueryService.Handle(getAllWarehousesAndCountByAccountIdQuery);
-        if (warehouses.Count == 0) return NotFound($"No warehouses found for account ID {accountId}.");
         var resource = WarehousesSummaryResourceFromEntityAssembler.ToResourceFromEntity(warehouses, currentTotal, warehouseLimit);
         return Ok(resource);
     }
