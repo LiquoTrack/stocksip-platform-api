@@ -34,28 +34,15 @@ public interface IPaymentAndSubscriptionsFacade
     /// </returns>
     Task<Business?> CreateBusiness(string businessName);
     
-    /// <summary>
-    ///     Gets all addresses associated with an account.
-    /// </summary>
-    /// <param name="accountId">
-    ///     The account identifier.
-    /// </param>
-    /// <returns>
-    ///     A collection of addresses.
-    /// </returns>
-    Task<IEnumerable<Address>> GetAccountAddressesAsync(string accountId);
     
     /// <summary>
-    ///     Gets a specific address by account and address index.
+    ///     Method to get the maximum number of warehouses allowed for an account.
     /// </summary>
     /// <param name="accountId">
-    ///     The account identifier.
-    /// </param>
-    /// <param name="addressIndex">
-    ///     The index of the address in the collection.
+    ///     The ID of the account. 
     /// </param>
     /// <returns>
-    ///     The address if found, null otherwise.
+    ///     The maximum number of warehouses allowed for the account.
     /// </returns>
-    Task<Address?> GetAccountAddressAsync(string accountId, int addressIndex);
+    Task<int?> GetPlanWarehouseLimitByAccountId(string accountId);
 }

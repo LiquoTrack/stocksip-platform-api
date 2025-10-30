@@ -2,7 +2,6 @@
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Commands;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Queries;
-using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
@@ -21,11 +20,10 @@ namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Ex
 /// <param name="businessCommandService">
 ///     The service for handling business-related commands.
 /// </param>
-public class PaymentAndSubscriptionsFacade(
-    IAccountCommandService accountCommandService,
-    IAccountQueryService accountQueryService,
-    IBusinessCommandService businessCommandService) 
-    : IPaymentAndSubscriptionsFacade
+public class PaymentAndSubscriptionsFacade(IAccountCommandService accountCommandService,
+                                            IBusinessCommandService businessCommandService,
+                                            ISubscriptionQueryService subscriptionQueryService) 
+                                            : IPaymentAndSubscriptionsFacade
 {
     /// <summary>
     ///     Creates a new account.
@@ -61,47 +59,20 @@ public class PaymentAndSubscriptionsFacade(
         var business = await businessCommandService.Handle(command);
         return business;
     }
-    
+
     /// <summary>
-    ///     Gets all addresses associated with an account.
+    ///     Method to get the plan warehouse limit by account id.
     /// </summary>
     /// <param name="accountId">
-    ///     The account identifier.
+    ///     The ID of the account.
     /// </param>
     /// <returns>
-    ///     A collection of addresses.
+    ///     The warehouse limit for the plan associated with the account.
     /// </returns>
-    public async Task<IEnumerable<Address>> GetAccountAddressesAsync(string accountId)
+    public async Task<int?> GetPlanWarehouseLimitByAccountId(string accountId)
     {
-        var query = new GetAccountByIdQuery(accountId);
-        var account = await accountQueryService.Handle(query);
-        
-        if (account == null)
-            return Enumerable.Empty<Address>();
-        
-        return account.Addresses;
-    }
-    
-    /// <summary>
-    ///     Gets a specific address by account and address index.
-    /// </summary>
-    /// <param name="accountId">
-    ///     The account identifier.
-    /// </param>
-    /// <param name="addressIndex">
-    ///     The index of the address in the collection.
-    /// </param>
-    /// <returns>
-    ///     The address if found, null otherwise.
-    /// </returns>
-    public async Task<Address?> GetAccountAddressAsync(string accountId, int addressIndex)
-    {
-        var addresses = await GetAccountAddressesAsync(accountId);
-        var addressList = addresses.ToList();
-        
-        if (addressIndex < 0 || addressIndex >= addressList.Count)
-            return null;
-        
-        return addressList[addressIndex];
+        var query = new GetPlanWarehouseLimitByAccountId(accountId);
+        var warehouseLimits = await subscriptionQueryService.Handle(query);
+        return warehouseLimits;
     }
 }

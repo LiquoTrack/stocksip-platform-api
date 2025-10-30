@@ -15,4 +15,15 @@ public interface IPlanRepository : IBaseRepository<Plan>
     ///     A confirmation of the seeding operation.
     /// </returns>
     Task SeedPlansAsync();
+    
+    /// <summary>
+    ///     Method to find the warehouse limit for a plan by account ID.
+    /// </summary>
+    /// <param name="planId">
+    ///     The ID of the plan.
+    /// </param>
+    /// <returns>
+    ///     An integer representing the warehouse limit for the plan.
+    /// </returns>
+    Task<int?> FindPlanWarehouseLimitsByAccountIdAsync(string planId);
 }
