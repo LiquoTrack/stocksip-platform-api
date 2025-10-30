@@ -75,4 +75,36 @@ public class PaymentAndSubscriptionsFacade(IAccountCommandService accountCommand
         var warehouseLimits = await subscriptionQueryService.Handle(query);
         return warehouseLimits;
     }
+
+    /// <summary>
+    ///     Method to get the plan products limit by account id.
+    /// </summary>
+    /// <param name="acconntId">
+    ///     The ID of the account.         
+    /// </param>
+    /// <returns>
+    ///     The product limit of the plan associated with the account.
+    /// </returns>
+    public async Task<int?> GetPlanProductsLimitByAccountId(string acconntId)
+    {
+        var query = new GetPlanProductsLimitByAccountIdQuery(acconntId);
+        var productLimits = await subscriptionQueryService.Handle(query);
+        return productLimits;
+    }
+
+    /// <summary>
+    ///     Method to get the plan users limit by account id.
+    /// </summary>
+    /// <param name="accountId">
+    ///     The ID of the account.       
+    /// </param>
+    /// <returns>
+    ///     The user limit of the plan associated with the account.
+    /// </returns>
+    public async Task<int?> GetPlanUserLimitByAccountId(string accountId)
+    {
+        var query = new GetPlanUsersLimitByAccountIdQuery(accountId);
+        var userLimits = await subscriptionQueryService.Handle(query);
+        return userLimits;
+    }
 }
