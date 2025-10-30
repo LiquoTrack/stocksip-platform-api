@@ -2,7 +2,6 @@
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Commands;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Queries;
-using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
@@ -21,11 +20,11 @@ namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Ex
 /// <param name="businessCommandService">
 ///     The service for handling business-related commands.
 /// </param>
-public class PaymentAndSubscriptionsFacade(
-    IAccountCommandService accountCommandService,
-    IAccountQueryService accountQueryService,
-    IBusinessCommandService businessCommandService) 
-    : IPaymentAndSubscriptionsFacade
+public class PaymentAndSubscriptionsFacade(IAccountCommandService accountCommandService,
+                                            IBusinessCommandService businessCommandService,
+                                            ISubscriptionQueryService subscriptionQueryService,
+                                            IAccountQueryService accountQueryService) 
+                                            : IPaymentAndSubscriptionsFacade
 {
     /// <summary>
     ///     Creates a new account.
@@ -60,6 +59,54 @@ public class PaymentAndSubscriptionsFacade(
         var command = new CreateBusinessCommand(businessName);
         var business = await businessCommandService.Handle(command);
         return business;
+    }
+
+    /// <summary>
+    ///     Method to get the plan warehouse limit by account id.
+    /// </summary>
+    /// <param name="accountId">
+    ///     The ID of the account.
+    /// </param>
+    /// <returns>
+    ///     The warehouse limit for the plan associated with the account.
+    /// </returns>
+    public async Task<int?> GetPlanWarehouseLimitByAccountId(string accountId)
+    {
+        var query = new GetPlanWarehouseLimitByAccountId(accountId);
+        var warehouseLimits = await subscriptionQueryService.Handle(query);
+        return warehouseLimits;
+    }
+
+    /// <summary>
+    ///     Method to get the plan products limit by account id.
+    /// </summary>
+    /// <param name="acconntId">
+    ///     The ID of the account.         
+    /// </param>
+    /// <returns>
+    ///     The product limit of the plan associated with the account.
+    /// </returns>
+    public async Task<int?> GetPlanProductsLimitByAccountId(string acconntId)
+    {
+        var query = new GetPlanProductsLimitByAccountIdQuery(acconntId);
+        var productLimits = await subscriptionQueryService.Handle(query);
+        return productLimits;
+    }
+
+    /// <summary>
+    ///     Method to get the plan users limit by account id.
+    /// </summary>
+    /// <param name="accountId">
+    ///     The ID of the account.       
+    /// </param>
+    /// <returns>
+    ///     The user limit of the plan associated with the account.
+    /// </returns>
+    public async Task<int?> GetPlanUserLimitByAccountId(string accountId)
+    {
+        var query = new GetPlanUsersLimitByAccountIdQuery(accountId);
+        var userLimits = await subscriptionQueryService.Handle(query);
+        return userLimits;
     }
     
     /// <summary>

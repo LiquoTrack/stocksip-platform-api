@@ -38,15 +38,15 @@ public class AccountWarehousesController(
         Summary = "Get All Warehouses by Account ID",
         Description = "Retrieves a list of warehouses by a specific Account ID.",
         OperationId = "GetAllWarehousesByAccountId")]
-    [SwaggerResponse(StatusCodes.Status200OK, "Warehouses retrieved successfully.", typeof(WarehousesWithCountResource))]
+    [SwaggerResponse(StatusCodes.Status200OK, "Warehouses retrieved successfully.", typeof(WarehousesSummaryResource))]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Warehouses not found for the give Account ID...")]
     public async Task<IActionResult> GetAllWarehousesByAccountId([FromRoute] string accountId)
     {
         var targetAccountId = new AccountId(accountId);
-        var getAllWarehousesAndCountByAccountIdQuery = new GetAllWarehousesAndCountByAccountId(targetAccountId);
-        var (warehouses, total) = await warehouseQueryService.Handle(getAllWarehousesAndCountByAccountIdQuery);
+        var getAllWarehousesAndCountByAccountIdQuery = new GetAllWarehousesByAccountId(targetAccountId);
+        var (warehouses, currentTotal, warehouseLimit) = await warehouseQueryService.Handle(getAllWarehousesAndCountByAccountIdQuery);
         if (warehouses.Count == 0) return NotFound($"No warehouses found for account ID {accountId}.");
-        var resource = WarehousesWithCountResourceFromEntityAssembler.ToResourceFromEntity(warehouses, total);
+        var resource = WarehousesSummaryResourceFromEntityAssembler.ToResourceFromEntity(warehouses, currentTotal, warehouseLimit);
         return Ok(resource);
     }
     
