@@ -33,4 +33,16 @@ public interface IPaymentAndSubscriptionsFacade
     ///     A business object.
     /// </returns>
     Task<Business?> CreateBusiness(string businessName);
+    
+    
+    /// <summary>
+    ///     Method to get the maximum number of warehouses allowed for an account.
+    /// </summary>
+    /// <param name="accountId">
+    ///     The ID of the account. 
+    /// </param>
+    /// <returns>
+    ///     The maximum number of warehouses allowed for the account.
+    /// </returns>
+    Task<int?> GetPlanWarehouseLimitByAccountId(string accountId);
 }

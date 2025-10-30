@@ -18,4 +18,15 @@ public interface ISubscriptionQueryService
     ///     A task that represents the asynchronous operation.
     /// </returns>
     Task<string?> Handle(GetSubscriptionStatusByPreferenceIdQuery query);
+
+    /// <summary>
+    ///     Method to handle the retrieval of a plan's warehouse limit by account ID.   '
+    /// </summary>
+    /// <param name="query">
+    ///         The query object containing the account ID.
+    /// </param>
+    /// <returns>
+    ///     A task that represents the asynchronous operation.
+    /// </returns>
+    Task<int?> Handle(GetPlanWarehouseLimitByAccountId query);
 }
