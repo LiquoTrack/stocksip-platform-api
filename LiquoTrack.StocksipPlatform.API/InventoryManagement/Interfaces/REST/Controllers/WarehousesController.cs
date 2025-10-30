@@ -30,7 +30,7 @@ public class WarehousesController(
     /// <summary>
     ///     Endpoint to handle the retrieval of a warehouse by its ID.
     /// </summary>
-    /// <param name="id">
+    /// <param name="warehouseId">
     ///     The route parameter representing the unique identifier of the warehouse to be retrieved.
     /// </param>
     /// <returns>
@@ -43,11 +43,11 @@ public class WarehousesController(
         OperationId = "GetWarehouseById")]
     [SwaggerResponse(StatusCodes.Status200OK, "Warehouse returned successfully.", typeof(WarehouseResource))]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Warehouse with the specified ID was not found.")]
-    public async Task<IActionResult> GetWarehouseById([FromRoute] string id)
+    public async Task<IActionResult> GetWarehouseById([FromRoute] string warehouseId)
     {
-        var getWarehouseById = new GetWarehouseByIdQuery(id);
+        var getWarehouseById = new GetWarehouseByIdQuery(warehouseId);
         var warehouse = await warehouseQueryService.Handle(getWarehouseById);
-        if (warehouse is null) return NotFound($"Warehouse with ID {id} not found.");
+        if (warehouse is null) return NotFound($"Warehouse with ID {warehouseId} not found.");
         var warehouseResource = WarehouseResourceFromEntityAssembler.ToResourceFromEntity(warehouse);
         return Ok(warehouseResource);
     }
@@ -55,7 +55,7 @@ public class WarehousesController(
     /// <summary>
     ///     Endpoint to handle the update of a warehouse.
     /// </summary>
-    /// <param name="id">
+    /// <param name="warehouseId">
     ///     The route parameter representing the unique identifier of the warehouse to be updated.
     /// </param>
     /// <param name="resource">
@@ -72,12 +72,12 @@ public class WarehousesController(
     [SwaggerResponse(StatusCodes.Status200OK, "Warehouse updated successfully.", typeof(WarehouseResource))]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid input data.")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Warehouse with the specified ID was not found.")]
-    public async Task<IActionResult> UpdateWarehouse([FromRoute] string id,
+    public async Task<IActionResult> UpdateWarehouse([FromRoute] string warehouseId,
         [FromForm] UpdateWarehouseInformationResource resource)
     {
-        var updateWarehouseCommand = UpdateWarehouseInformationCommandFromResourceAssembler.ToCommandFromResource(id, resource);
+        var updateWarehouseCommand = UpdateWarehouseInformationCommandFromResourceAssembler.ToCommandFromResource(warehouseId, resource);
         var warehouse = await warehouseCommandService.Handle(updateWarehouseCommand);
-        if (warehouse is null) return NotFound($"Warehouse with ID {id} not found.");
+        if (warehouse is null) return NotFound($"Warehouse with ID {warehouseId} not found.");
         var warehouseResource = WarehouseResourceFromEntityAssembler.ToResourceFromEntity(warehouse);
         return Ok(warehouseResource);
     }
@@ -85,7 +85,7 @@ public class WarehousesController(
     /// <summary>
     ///     Endpoint to handle the deletion of a warehouse by its ID.
     /// </summary>
-    /// <param name="id">
+    /// <param name="warehouseId">
     ///     The route parameter representing the unique identifier of the warehouse to be deleted.
     /// </param>
     /// <returns>
@@ -98,9 +98,9 @@ public class WarehousesController(
         OperationId = "DeleteWarehouse")]
     [SwaggerResponse(StatusCodes.Status204NoContent, "Warehouse deleted successfully.")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Warehouse with the specified ID was not found.")]
-    public async Task<IActionResult> DeleteWarehouse([FromRoute] string id)
+    public async Task<IActionResult> DeleteWarehouse([FromRoute] string warehouseId)
     {
-        var deleteWarehouseCommand = new DeleteWarehouseCommand(id);
+        var deleteWarehouseCommand = new DeleteWarehouseCommand(warehouseId);
         await warehouseCommandService.Handle(deleteWarehouseCommand);
         return NoContent();
     }
