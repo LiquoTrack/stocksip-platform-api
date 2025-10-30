@@ -16,7 +16,7 @@ public static class PurchaseOrderResourceFromEntityAssembler
     public static PurchaseOrderResource ToResourceFromEntity(PurchaseOrder entity)
     {
         return new PurchaseOrderResource(
-            entity.Id.GetId,
+            entity.Id.ToString(),
             entity.OrderCode,
             entity.Items.Select(item => new PurchaseOrderItemResource(
                 item.ProductId.GetId,

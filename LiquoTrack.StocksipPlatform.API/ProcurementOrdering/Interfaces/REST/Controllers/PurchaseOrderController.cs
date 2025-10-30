@@ -5,6 +5,7 @@ using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Interfaces.REST.Assemblers;
 using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Interfaces.REST.Resources;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Interfaces.REST.Controllers;
 
@@ -14,58 +15,29 @@ namespace LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Interfaces.REST.Co
 [ApiController]
 [Route("api/v1/purchase-orders")]
 [Produces(MediaTypeNames.Application.Json)]
+[SwaggerTag("Available endpoints for managing purchase orders.")]
 public class PurchaseOrderController(
     IPurchaseOrderCommandService purchaseOrderCommandService,
     IPurchaseOrderQueryService purchaseOrderQueryService) : ControllerBase
 {
-    /// <summary>
-    /// Creates a new purchase order.
-    /// </summary>
-    /// <param name="resource">The resource containing purchase order details.</param>
-    /// <returns>The created purchase order resource.</returns>
-    [HttpPost]
-    [ProducesResponseType(typeof(PurchaseOrderResource), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> CreatePurchaseOrder([FromBody] CreatePurchaseOrderResource resource)
+    [HttpGet("{purchaseOrderId}")]
+    [SwaggerOperation(
+        Summary = "Get purchase order by ID.",
+        Description = "Retrieves a purchase order by its unique identifier.",
+        OperationId = "GetPurchaseOrderById")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Purchase order returned successfully.", typeof(PurchaseOrderResource))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Purchase order not found.")]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request.")]
+    public async Task<IActionResult> GetPurchaseOrderById(string purchaseOrderId)
     {
         try
         {
-            var command = CreatePurchaseOrderCommandFromResourceAssembler.ToCommandFromResource(resource);
-            var orderId = await purchaseOrderCommandService.Handle(command);
-            
-            var query = new GetPurchaseOrderByIdQuery(orderId.GetId);
+            var query = new GetPurchaseOrderByIdQuery(purchaseOrderId);
             var order = await purchaseOrderQueryService.Handle(query);
-            
-            if (order == null)
-                return BadRequest("Failed to create purchase order");
-            
-            var orderResource = PurchaseOrderResourceFromEntityAssembler.ToResourceFromEntity(order);
-            return CreatedAtAction(nameof(GetPurchaseOrderById), new { id = orderId.GetId }, orderResource);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
 
-    /// <summary>
-    /// Gets a purchase order by its ID.
-    /// </summary>
-    /// <param name="id">The purchase order identifier.</param>
-    /// <returns>The purchase order resource.</returns>
-    [HttpGet("{id}")]
-    [ProducesResponseType(typeof(PurchaseOrderResource), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetPurchaseOrderById(string id)
-    {
-        try
-        {
-            var query = new GetPurchaseOrderByIdQuery(id);
-            var order = await purchaseOrderQueryService.Handle(query);
-            
             if (order == null)
-                return NotFound(new { message = $"Purchase order with ID {id} not found" });
-            
+                return NotFound(new { message = $"Purchase order with ID {purchaseOrderId} not found" });
+
             var resource = PurchaseOrderResourceFromEntityAssembler.ToResourceFromEntity(order);
             return Ok(resource);
         }
@@ -75,12 +47,12 @@ public class PurchaseOrderController(
         }
     }
 
-    /// <summary>
-    /// Gets all purchase orders.
-    /// </summary>
-    /// <returns>A collection of purchase order resources.</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<PurchaseOrderResource>), StatusCodes.Status200OK)]
+    [SwaggerOperation(
+        Summary = "Get all purchase orders.",
+        Description = "Retrieves all purchase orders in the system.",
+        OperationId = "GetAllPurchaseOrders")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Purchase orders retrieved successfully.", typeof(IEnumerable<PurchaseOrderResource>))]
     public async Task<IActionResult> GetAllPurchaseOrders()
     {
         var query = new GetAllPurchaseOrdersQuery();
@@ -89,21 +61,20 @@ public class PurchaseOrderController(
         return Ok(resources);
     }
 
-    /// <summary>
-    /// Adds an item to a purchase order.
-    /// </summary>
-    /// <param name="id">The purchase order identifier.</param>
-    /// <param name="resource">The resource containing item details.</param>
-    /// <returns>No content on success.</returns>
-    [HttpPost("{id}/items")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> AddItemToOrder(string id, [FromBody] AddItemToOrderResource resource)
+    [HttpPost("{purchaseOrderId}/items")]
+    [SwaggerOperation(
+        Summary = "Add item to purchase order.",
+        Description = "Adds a product item to an existing purchase order.",
+        OperationId = "AddItemToPurchaseOrder")]
+    [SwaggerResponse(StatusCodes.Status204NoContent, "Item added successfully.")]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request.")]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Purchase order not found.")]
+    public async Task<IActionResult> AddItemToOrder(string purchaseOrderId, [FromBody] AddItemToOrderResource resource)
     {
         try
         {
-            var command = new AddItemToOrderCommand(id, resource.productId, resource.unitPrice, resource.amountToPurchase);
+            var quantity = resource.quantity ?? 1;
+            var command = new AddItemToOrderCommand(purchaseOrderId, resource.productId, quantity);
             await purchaseOrderCommandService.Handle(command);
             return NoContent();
         }
@@ -117,21 +88,19 @@ public class PurchaseOrderController(
         }
     }
 
-    /// <summary>
-    /// Removes an item from a purchase order.
-    /// </summary>
-    /// <param name="id">The purchase order identifier.</param>
-    /// <param name="productId">The product identifier to remove.</param>
-    /// <returns>No content on success.</returns>
-    [HttpDelete("{id}/items/{productId}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> RemoveItemFromOrder(string id, string productId)
+    [HttpDelete("{purchaseOrderId}/items/{productId}")]
+    [SwaggerOperation(
+        Summary = "Remove item from purchase order.",
+        Description = "Removes a product item from an existing purchase order.",
+        OperationId = "RemoveItemFromPurchaseOrder")]
+    [SwaggerResponse(StatusCodes.Status204NoContent, "Item removed successfully.")]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request.")]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Purchase order or item not found.")]
+    public async Task<IActionResult> RemoveItemFromOrder(string purchaseOrderId, string productId)
     {
         try
         {
-            var command = new RemoveItemFromOrderCommand(id, productId);
+            var command = new RemoveItemFromOrderCommand(purchaseOrderId, productId);
             await purchaseOrderCommandService.Handle(command);
             return NoContent();
         }
@@ -145,20 +114,19 @@ public class PurchaseOrderController(
         }
     }
 
-    /// <summary>
-    /// Confirms a purchase order.
-    /// </summary>
-    /// <param name="id">The purchase order identifier.</param>
-    /// <returns>No content on success.</returns>
-    [HttpPut("{id}/confirmations")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> ConfirmOrder(string id)
+    [HttpPut("{purchaseOrderId}/confirmations")]
+    [SwaggerOperation(
+        Summary = "Confirm purchase order.",
+        Description = "Confirms an existing purchase order.",
+        OperationId = "ConfirmPurchaseOrder")]
+    [SwaggerResponse(StatusCodes.Status204NoContent, "Order confirmed successfully.")]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request.")]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Purchase order not found or cannot be confirmed.")]
+    public async Task<IActionResult> ConfirmOrder(string purchaseOrderId)
     {
         try
         {
-            var command = new ConfirmOrderCommand(id);
+            var command = new ConfirmOrderCommand(purchaseOrderId);
             await purchaseOrderCommandService.Handle(command);
             return NoContent();
         }
@@ -172,20 +140,19 @@ public class PurchaseOrderController(
         }
     }
 
-    /// <summary>
-    /// Ships a purchase order.
-    /// </summary>
-    /// <param name="id">The purchase order identifier.</param>
-    /// <returns>No content on success.</returns>
-    [HttpPut("{id}/shipments")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> ShipOrder(string id)
+    [HttpPut("{purchaseOrderId}/shipments")]
+    [SwaggerOperation(
+        Summary = "Ship purchase order.",
+        Description = "Marks a purchase order as shipped.",
+        OperationId = "ShipPurchaseOrder")]
+    [SwaggerResponse(StatusCodes.Status204NoContent, "Order shipped successfully.")]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request.")]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Purchase order not found or cannot be shipped.")]
+    public async Task<IActionResult> ShipOrder(string purchaseOrderId)
     {
         try
         {
-            var command = new ShipOrderCommand(id);
+            var command = new ShipOrderCommand(purchaseOrderId);
             await purchaseOrderCommandService.Handle(command);
             return NoContent();
         }
@@ -199,20 +166,19 @@ public class PurchaseOrderController(
         }
     }
 
-    /// <summary>
-    /// Receives a purchase order.
-    /// </summary>
-    /// <param name="id">The purchase order identifier.</param>
-    /// <returns>No content on success.</returns>
-    [HttpPut("{id}/receptions")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> ReceiveOrder(string id)
+    [HttpPut("{purchaseOrderId}/receptions")]
+    [SwaggerOperation(
+        Summary = "Receive purchase order.",
+        Description = "Marks a purchase order as received.",
+        OperationId = "ReceivePurchaseOrder")]
+    [SwaggerResponse(StatusCodes.Status204NoContent, "Order received successfully.")]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request.")]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Purchase order not found or cannot be received.")]
+    public async Task<IActionResult> ReceiveOrder(string purchaseOrderId)
     {
         try
         {
-            var command = new ReceiveOrderCommand(id);
+            var command = new ReceiveOrderCommand(purchaseOrderId);
             await purchaseOrderCommandService.Handle(command);
             return NoContent();
         }
@@ -226,20 +192,19 @@ public class PurchaseOrderController(
         }
     }
 
-    /// <summary>
-    /// Cancels a purchase order.
-    /// </summary>
-    /// <param name="id">The purchase order identifier.</param>
-    /// <returns>No content on success.</returns>
-    [HttpPut("{id}/cancellations")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> CancelOrder(string id)
+    [HttpPut("{purchaseOrderId}/cancellations")]
+    [SwaggerOperation(
+        Summary = "Cancel purchase order.",
+        Description = "Cancels an existing purchase order.",
+        OperationId = "CancelPurchaseOrder")]
+    [SwaggerResponse(StatusCodes.Status204NoContent, "Order canceled successfully.")]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request.")]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Purchase order not found or cannot be canceled.")]
+    public async Task<IActionResult> CancelOrder(string purchaseOrderId)
     {
         try
         {
-            var command = new CancelOrderCommand(id);
+            var command = new CancelOrderCommand(purchaseOrderId);
             await purchaseOrderCommandService.Handle(command);
             return NoContent();
         }

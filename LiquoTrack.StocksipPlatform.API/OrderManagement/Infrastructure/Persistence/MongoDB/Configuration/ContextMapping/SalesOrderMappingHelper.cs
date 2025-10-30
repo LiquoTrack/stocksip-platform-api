@@ -11,7 +11,7 @@ public static class SalesOrderMappingHelper
     public static void RegisterSalesOrderManagementMappings()
     {
         SerializerRegistrationHelper.TryRegisterSerializer(new EnumSerializer<ESalesOrderStatuses>(BsonType.String));
-
+        SerializerRegistrationHelper.TryRegisterSerializer(new EnumSerializer<DeliveryProposalStatus>(BsonType.String));
         SalesOrderMapping.ConfigureBsonMapping();
     }
 }

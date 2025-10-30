@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using LiquoTrack.StocksipPlatform.API.OrderManagement.Domain.Model.Aggregates;
@@ -123,7 +122,7 @@ public class SalesOrderJsonConverter : JsonConverter<SalesOrder>
         writer.WriteString("catalogToBuyFrom", value.CatalogToBuyFrom.GetId());
         writer.WriteString("receiptDate", value.ReceiptDate);
         writer.WriteString("completitionDate", value.CompletitionDate);
-        writer.WriteString("buyer", value.Buyer.GetId);
+        writer.WriteString("buyer", value.AccountId.GetId);
 
         writer.WriteStartArray("items");
         if (value.Items != null)

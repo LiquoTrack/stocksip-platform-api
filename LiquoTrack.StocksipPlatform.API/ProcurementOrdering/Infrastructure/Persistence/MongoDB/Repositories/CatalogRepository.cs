@@ -55,9 +55,8 @@ public class CatalogRepository(AppDbContext context, IMediator mediator)
         if (string.IsNullOrWhiteSpace(ownerAccount.GetId))
             throw new ArgumentException("Owner AccountId cannot be null or empty.", nameof(ownerAccount));
 
-        return await _catalogCollection
-            .Find(c => c.OwnerAccount.GetId == ownerAccount.GetId)
-            .ToListAsync();
+        var filter = Builders<Catalog>.Filter.Eq("ownerAccount", ownerAccount.GetId);
+        return await _catalogCollection.Find(filter).ToListAsync();
     }
 
     /// <summary>

@@ -25,7 +25,8 @@ public class SalesOrderMapping : IEntityTypeConfiguration<SalesOrder>
             map.MapMember(x => x.CatalogToBuyFrom).SetElementName("catalogToBuyFrom");
             map.MapMember(x => x.ReceiptDate).SetElementName("receiptDate");
             map.MapMember(x => x.CompletitionDate).SetElementName("completitionDate");
-            map.MapMember(x => x.Buyer).SetElementName("buyer");
+            map.MapMember(x => x.AccountId).SetElementName("buyer");
+            map.MapMember(x => x.DeliveryProposal).SetElementName("deliveryProposal");
         });
     }
 }

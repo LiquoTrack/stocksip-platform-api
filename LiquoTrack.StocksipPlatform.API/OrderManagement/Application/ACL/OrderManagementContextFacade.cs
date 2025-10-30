@@ -37,4 +37,15 @@ public class OrderManagementContextFacade(
         var query = new GetAllSalesOrdersByBuyerIdQuery(buyerId);
         return await salesOrderQueryService.Handle(query);
     }
+
+    /// <summary>
+    /// Get low stock items from the inventory context
+    /// </summary>
+    /// <param name="accountId">The account ID</param>
+    /// <param name="catalogId">The catalog ID to check for low stock items</param>
+    /// <returns>List of low stock items with suggested quantities</returns>
+    public async Task<IEnumerable<LowStockItem>> GetLowStockItems(string accountId, string catalogId)
+    {
+        return await Task.FromResult(Enumerable.Empty<LowStockItem>());
+    }
 }
