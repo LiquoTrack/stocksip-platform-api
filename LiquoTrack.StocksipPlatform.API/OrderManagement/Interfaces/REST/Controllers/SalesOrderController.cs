@@ -198,14 +198,10 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Interfaces.REST.Contro
         [SwaggerResponse(StatusCodes.Status201Created, "Order created", typeof(CreateSalesOrderResource))]
         public async Task<IActionResult> CreateOrder([FromBody] CreateSalesOrderResource body)
         {
-            // Get the account ID from the JWT token claims
             var accountId = User.FindFirst("sid")?.Value
-                             ?? User.FindFirst(ClaimTypes.Sid)?.Value
-                             ?? User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/sid")?.Value
-                             ?? throw new UnauthorizedAccessException("Account ID not found in token");
-
-            // Log the account ID for debugging
-            Console.WriteLine($"Account ID from token: {accountId}");
+                            ?? User.FindFirst(ClaimTypes.Sid)?.Value
+                            ?? User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/sid")?.Value
+                            ?? throw new UnauthorizedAccessException("Account ID not found in token");
 
             var cmd = CreateSalesOrderCommandFromResourceAssembler.ToCommandFromResource(body, accountId);
             var created = await salesOrderCommandService.Handle(cmd);
@@ -216,6 +212,7 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Interfaces.REST.Contro
         }
         
         [HttpPut("{orderId}/status")]
+        [Authorize(Roles = "Supplier")]
         [SwaggerOperation(Summary = "Update order status")]
         [SwaggerResponse(StatusCodes.Status200OK, "Status updated successfully", typeof(SalesOrderResource))]
         [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid status or order not found")]
@@ -227,11 +224,24 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Interfaces.REST.Contro
         {
             try
             {
-                var command = new UpdateOrderStatusCommand(
-                    orderId,
-                    request.NewStatus,
-                    request.Reason
-                );
+                var status = request.NewStatus;
+                if (!string.IsNullOrWhiteSpace(request.NewStatusAlias))
+                {
+                    switch (request.NewStatusAlias.Trim().ToUpperInvariant())
+                    {
+                        case "PENDING":
+                            status = ESalesOrderStatuses.Processing;
+                            break;
+                        case "CONFIRM":
+                            status = ESalesOrderStatuses.Confirmed;
+                            break;
+                        case "CANCEL":
+                            status = ESalesOrderStatuses.Canceled;
+                            break;
+                    }
+                }
+
+                var command = new UpdateOrderStatusCommand(orderId, status, request.Reason);
             
                 var updatedOrder = await salesOrderCommandService.Handle(command);
                 var resource = SalesOrderResourceFromEntityAssembler.ToResourceFromEntity(updatedOrder);
@@ -284,13 +294,11 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Interfaces.REST.Contro
 
                 var statusMessage = order.Status switch
                 {
-                    ESalesOrderStatuses.Received => "Your order has been received and is under review.",
-                    ESalesOrderStatuses.Processing => "Your order is being processed.",
-                    ESalesOrderStatuses.Confirmed => "Your order has been confirmed and is being prepared.",
-                    ESalesOrderStatuses.Deliverying => "Your order is on its way.",
-                    ESalesOrderStatuses.Arrived => "Your order has arrived.",
-                    ESalesOrderStatuses.Canceled => "Your order has been canceled.",
-                    _ => "Status unknown."
+                    ESalesOrderStatuses.Processing => "PENDING",
+                    ESalesOrderStatuses.Confirmed => "CONFIRM",
+                    ESalesOrderStatuses.Canceled => "CANCEL",
+                    ESalesOrderStatuses.Received => "PENDING",
+                    _ => order.Status.ToString()
                 };
 
                 var lastStatusUpdate = order.StatusHistory

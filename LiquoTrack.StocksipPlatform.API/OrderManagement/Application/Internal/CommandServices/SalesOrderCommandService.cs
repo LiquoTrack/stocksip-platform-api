@@ -38,7 +38,7 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Application.Internal.C
             if (command.items == null || !command.items.Any())throw new ValidationException("Cannot create an order with no items");
 
             var order = await salesOrderRepository.GenerateSalesOrder(command);
-            order.UpdateStatus(ESalesOrderStatuses.Received, "Order received");
+            order.UpdateStatus(ESalesOrderStatuses.Processing, "Order pending");
             
             await salesOrderRepository.UpdateAsync(order);
             return order;
@@ -84,7 +84,7 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Application.Internal.C
                 orderCode: request.OrderCode,
                 purchaseOrderId: purchaseOrderId,
                 items: items,
-                status: ESalesOrderStatuses.Received,
+                status: ESalesOrderStatuses.Processing,
                 catalogToBuyFrom: new CatalogId(request.CatalogToBuyFrom),
                 receiptDate: request.ReceiptDate ?? DateTime.UtcNow.AddDays(7),
                 completitionDate: request.CompletitionDate ?? DateTime.UtcNow.AddDays(14),
@@ -137,6 +137,11 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Application.Internal.C
                     throw new ValidationException("Canceled orders cannot be modified");
                 }
 
+                if (order.DeliveryProposal == null || order.DeliveryProposal.Status != DeliveryProposalStatus.Accepted)
+                {
+                    throw new ValidationException("State changes require prior consent from the Liquor Store Owner (accepted delivery proposal).");
+                }
+
                 order.UpdateStatus(command.NewStatus, command.Reason);
                 await salesOrderRepository.UpdateAsync(order);
                 
@@ -157,15 +162,16 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Application.Internal.C
 
             var order = await salesOrderRepository.GetByIdAsync(command.OrderId)
                         ?? throw new KeyNotFoundException($"Order with ID {command.OrderId} not found");
-
             order.ProposeDelivery(command.ProposedDate, command.Notes);
             await salesOrderRepository.UpdateAsync(order);
             return order;
         }
 
         /// <summary>
-        /// Buyer responds to a delivery proposal (accept/reject)
+        /// Buyer responds to a delivery proposal
         /// </summary>
+        /// <param name="command"></param>
+        /// <returns> The updated sales order </returns>
         public async Task<SalesOrder> Handle(RespondDeliveryProposalCommand command)
         {
             if (command == null) throw new ArgumentNullException(nameof(command));
