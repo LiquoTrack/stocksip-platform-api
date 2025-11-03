@@ -8,7 +8,6 @@ using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Interfaces.ACL;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
-using LiquoTrack.StocksipPlatform.API.Shared.Domain.Repositories;
 
 namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.CommandServices
 {
@@ -48,7 +47,8 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
                 new Email(command.Email.Value),
                 command.Username,
                 hashedPassword,
-                "1234"
+                "1234",
+                command.UserRole
             );
 
             try
@@ -91,7 +91,8 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
                 new Email(email),
                 string.IsNullOrWhiteSpace(name) ? email.Split('@')[0] : name,
                 hashedPassword,
-                "1234"
+                "1234",
+                "SuperAdmin"
             );
 
             try
@@ -156,7 +157,8 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
                     new Email(command.Email),
                     command.Name,
                     hashedPassword,
-                    account.Id.ToString()
+                    account.Id.ToString(),
+                    "SuperAdmin"
                 );
                 
                 await profileContextFacade.CreateProfileAsync(
@@ -165,7 +167,7 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
                     lastName: "",
                     phoneNumber: "+10000000000",
                     profilePicture: null,
-                    assignedRole: "Admin"
+                    assignedRole: "SuperAdmin"
                 );
                 
                 await userRepository.AddAsync(user);
@@ -174,6 +176,61 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
             catch (Exception ex)
             {
                 throw new Exception($"SignUp failed: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        ///     Method to register a sub user.
+        /// </summary>
+        /// <param name="command">
+        ///     The command containing the details for registering a sub user.
+        /// </param>
+        /// <returns>
+        ///     A user object representing the newly registered sub user.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        ///     A null command is provided.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">
+        ///     A user with the same email address already exists.
+        /// </exception>
+        /// <exception cref="Exception">
+        ///     An error occurred while registering the sub user.
+        /// </exception>
+        public async Task<User?> Handle(RegisterSubUserCommand command)
+        {
+            if (command is null) throw new ArgumentNullException(nameof(command));
+
+            var existingUser = await userRepository.FindByEmailAsync(command.Email);
+            if (existingUser != null) throw new InvalidOperationException($"Email {command.Email} is already registered");
+
+            var hashedPassword = hashingService.HashPassword(command.Password);
+            
+            var user = new User(
+                new Email(command.Email),
+                command.Name,
+                hashedPassword,
+                command.AccountId,
+                command.Role
+            );
+
+            try
+            {
+                await profileContextFacade.CreateProfileAsync(
+                    userId: user.Id.ToString(),
+                    firstName: user.Username,
+                    lastName: "",
+                    phoneNumber: command.PhoneNumber,
+                    profilePicture: null,
+                    assignedRole: command.ProfileRole
+                );
+                
+                await userRepository.AddAsync(user);
+                return user;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"An error occurred while registering sub user: {ex.Message}", ex);
             }
         }
     }
