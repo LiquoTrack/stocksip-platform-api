@@ -52,6 +52,7 @@ using Microsoft.OpenApi.Models;
 using MongoDB.Driver;
 using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Cortex.Mediator.Behaviors;
 using Cortex.Mediator.DependencyInjection;
 using LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Application.ACL;
@@ -407,6 +408,12 @@ builder.Services.Configure<TokenSettings>(configuration.GetSection("Jwt"));
 builder.Services.AddSingleton<CustomGoogleTokenValidator>();
 builder.Services.AddSingleton<ISecurityTokenValidator>(sp => sp.GetRequiredService<CustomGoogleTokenValidator>());
 builder.Services.AddScoped<IGoogleTokenValidator, CustomGoogleTokenValidatorAdapter>();
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 
 builder.Services.AddSwaggerGen(c =>
 {

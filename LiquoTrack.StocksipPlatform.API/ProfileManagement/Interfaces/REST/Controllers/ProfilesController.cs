@@ -268,7 +268,9 @@ public class ProfilesController : ControllerBase
         {
             _logger.LogInformation("Deleting profile with ID: {ProfileId}", id);
 
-            var result = await _profileCommandService.DeleteProfileAsync(id);
+            var command = DeleteProfileCommandFromResourceAssembler.ToCommandFromResource(id);
+
+            var result = await _profileCommandService.Handle(command);
 
             if (!result)
             {
