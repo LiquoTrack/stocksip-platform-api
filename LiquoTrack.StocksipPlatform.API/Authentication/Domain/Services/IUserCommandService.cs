@@ -68,4 +68,6 @@ public interface IUserCommandService
     ///     A user object representing the newly registered sub user.
     /// </returns>
     Task<User?> Handle(RegisterSubUserCommand command);
+
+    Task<bool?> Handle(DeleteUserWithProfielByIdCommand command);
 }

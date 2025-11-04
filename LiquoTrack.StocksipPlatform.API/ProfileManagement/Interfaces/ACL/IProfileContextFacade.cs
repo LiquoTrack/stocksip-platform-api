@@ -35,4 +35,15 @@ public interface IProfileContextFacade
     ///     A profile if found; otherwise, null.
     /// </returns>
     Task<IEnumerable<Profile?>> GetProfilesByUserId(string userId);
+    
+    /// <summary>
+    ///     Method to delete a profile by ID.  
+    /// </summary>
+    /// <param name="id">
+    ///     The ID of the profile to delete. 
+    /// </param>
+    /// <returns>
+    ///     A profile if found; otherwise, null.
+    /// </returns>
+    Task<bool?> DeleteProfileById(string id);
 }

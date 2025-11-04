@@ -233,5 +233,37 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
                 throw new Exception($"An error occurred while registering sub user: {ex.Message}", ex);
             }
         }
+
+        /// <summary>
+        ///     Method to delete a sub user.
+        /// </summary>
+        /// <param name="command">
+        ///     The command containing the details for deleting a sub user.
+        /// </param>
+        /// <returns>
+        ///     A boolean indicating whether the sub user was deleted successfully.
+        /// </returns>
+        /// <exception cref="InvalidOperationException">
+        ///     An error occurred while deleting the sub user.
+        /// </exception>
+        public async Task<bool?> Handle(DeleteUserWithProfielByIdCommand command)
+        {
+            var user = await userRepository.FindByIdAsync(command.UserId);
+            if (user is null)
+                throw new InvalidOperationException($"User with ID {command.UserId} does not exist.");
+
+            try
+            {
+                await userRepository.DeleteAsync(command.UserId);
+                await profileContextFacade.DeleteProfileById(command.ProfileId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException(
+                    $"An error occurred while deleting sub user with ID: {command.UserId}. Details: {ex.Message}", ex);   
+            }
+
+        }
     }
 }
