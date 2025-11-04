@@ -7,5 +7,6 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Domain.Services
     {
         Task<IEnumerable<SalesOrder>> Handle(GetAllSalesOrdersByBuyerIdQuery query);
         Task<IEnumerable<SalesOrder>> Handle(GetAllSalesOrdersQuery query);
+        Task<IEnumerable<SalesOrder>> Handle(GetAllSalesOrdersBySupplierIdQuery query);
     }
 }
