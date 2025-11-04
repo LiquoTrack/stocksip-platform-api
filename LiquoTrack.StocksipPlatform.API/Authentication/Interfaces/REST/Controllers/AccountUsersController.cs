@@ -1,4 +1,6 @@
 ﻿using System.Net.Mime;
+using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Queries;
+using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Resources;
 using LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Transform;
@@ -15,7 +17,10 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
 [Route("api/v1/accounts/{accountId}")]
 [Produces(MediaTypeNames.Application.Json)]
 [Tags("Accounts")]
-public class AccountUsersController(IUserCommandService userCommandService) : ControllerBase
+public class AccountUsersController(
+    IUserCommandService userCommandService,
+    IUserQueryService userQueryService
+    ) : ControllerBase
 {
     /// <summary>
     ///     Method to register a sub user for an account.
@@ -49,5 +54,35 @@ public class AccountUsersController(IUserCommandService userCommandService) : Co
         {
             return BadRequest(new { message = e.Message });
         }
+    }
+    
+    /// <summary>
+    ///     Method to get sub users by role.
+    /// </summary>
+    /// <param name="accountId">
+    ///     The ID of the account to get sub users for. 
+    /// </param>
+    /// <param name="role">
+    ///     The role to filter sub users by.
+    /// </param>
+    /// <returns>
+    ///     A 200 OK response with a list of sub users, or a 400 Bad Request response if the role is invalid. 
+    /// </returns>
+    [HttpGet("users")]
+    [SwaggerOperation(
+        summary: "Get sub users by role.",
+        description: "Retrieve all sub users filtered by role (Admin or Employee)."
+    )]
+    [SwaggerResponse(StatusCodes.Status200OK, "List of users with their profiles.")]
+    public async Task<IActionResult> GetUsersByRole(
+        [FromRoute] string accountId,
+        [FromQuery, SwaggerParameter("Role filter (Admin or Employee)")] EUserRoles role
+    )
+    {
+        var query = new GetAccountSubUsersByRoleQuery(accountId, role.ToString());
+        var resource = await userQueryService.Handle(query);
+
+        var resources = UserWithProfileResourceFromEntityAssembler.ToResourceListFromResourceList(resource);
+        return Ok(resources);
     }
 }

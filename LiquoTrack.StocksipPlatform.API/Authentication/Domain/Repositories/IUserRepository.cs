@@ -45,4 +45,15 @@ public interface IUserRepository : IBaseRepository<User>
     /// <returns>True if the user exists; otherwise, false.</returns>
     bool ExistsByUsername(string username);
     
+    /// <summary>
+    ///     Method to get all users by account ID.
+    /// </summary>
+    /// <param name="accountId">
+    ///     The ID of the account to find users for.   
+    /// </param>
+    /// <returns>
+    ///     A list of users for the specified account.
+    /// </returns>
+    Task<IEnumerable<User?>> GetUsersByAccountIdAsync(string accountId);
+    
 }

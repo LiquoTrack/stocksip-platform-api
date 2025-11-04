@@ -79,5 +79,21 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Persiste
                 .Find(user => user.Username == username)
                 .Any();
         }
+
+        /// <summary>
+        ///     Method to get all users by account id.
+        /// </summary>
+        /// <param name="accountId">
+        ///     The ID of the account to find users for. 
+        /// </param>
+        /// <returns>
+        ///     A list of users for the specified account.
+        /// </returns>
+        public async Task<IEnumerable<User?>> GetUsersByAccountIdAsync(string accountId)
+        {
+            return await _collection
+                .Find(user => user.AccountId.ToString() == accountId)
+                .ToListAsync();
+        }
     }
 }
