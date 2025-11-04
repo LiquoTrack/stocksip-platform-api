@@ -1,9 +1,12 @@
+using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Dtos;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Queries;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Resources;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Interfaces.ACL;
+using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 
 namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.QueryServices
 {
@@ -19,16 +22,20 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Qu
         private readonly IUserRepository _userRepository;
         
         private readonly IProfileContextFacade _profileContextFacade;
+        
+        private readonly IPaymentAndSubscriptionsFacade _paymentAndSubscriptionsFacade;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UserQueryService"/> class.
         /// </summary>
         /// <param name="userRepository">The user repository.</param>
         /// <param name="profileContextFacade">The profile context facade.</param>
-        public UserQueryService(IUserRepository userRepository, IProfileContextFacade profileContextFacade)
+        /// <param name="paymentAndSubscriptionsFacade">The payment and subscriptions facade.</param>
+        public UserQueryService(IUserRepository userRepository, IProfileContextFacade profileContextFacade, IPaymentAndSubscriptionsFacade paymentAndSubscriptionsFacade)
         {
             _userRepository = userRepository;
             _profileContextFacade = profileContextFacade;
+            _paymentAndSubscriptionsFacade = paymentAndSubscriptionsFacade;       
         }
 
         /// <summary>
@@ -96,11 +103,14 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Qu
         /// <returns>
         ///     A task that represents the asynchronous operation. The task result contains a list of sub-users.
         /// </returns>
-        public async Task<IEnumerable<UserWithProfileResource?>> Handle(GetAccountSubUsersByRoleQuery query)
+        public async Task<UsersWithStatsDto> Handle(GetAccountSubUsersByRoleQuery query)
         {
             var users = await _userRepository.GetUsersByAccountIdAsync(query.AccountId);
 
-            var result = new List<UserWithProfileResource>();
+            var result = new List<UsersWithProfilesDto>();
+            
+            var currentUserCount = await _userRepository.CountByAccountIdAsync(new AccountId(query.AccountId));
+            var maxAllowedUsers = await _paymentAndSubscriptionsFacade.GetPlanUserLimitByAccountId(query.AccountId);
             
             var filteredUsers = query.Role.Equals("All", StringComparison.OrdinalIgnoreCase)
                 ? users
@@ -116,19 +126,23 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Qu
                 var profiles = await _profileContextFacade.GetProfilesByUserId(user.Id.ToString());
                 var profile = profiles.FirstOrDefault();
 
-                result.Add(new UserWithProfileResource(
+                result.Add(new UsersWithProfilesDto(
                     user.Id.ToString(),
                     user.Email.GetValue,
                     user.UserRole.ToString(),
                     profile?.Id.ToString(),
                     profile?.FullName,
                     profile?.ContactNumber,
-                    profile?.ProfilePictureUrl?.GetValue(),
+                    profile?.ProfilePictureUrl.GetValue(),
                     profile?.AssignedRole.ToString()
                 ));
             }
 
-            return result;
+            return new UsersWithStatsDto(
+                MaxUsersAllowed: maxAllowedUsers,
+                TotalUsers: currentUserCount,
+                Users: result
+            );
         }
     }
 }

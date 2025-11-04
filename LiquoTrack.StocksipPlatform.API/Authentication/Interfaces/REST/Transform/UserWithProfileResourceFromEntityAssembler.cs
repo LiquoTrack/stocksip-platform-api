@@ -1,46 +1,47 @@
-﻿using LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Resources;
+﻿using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Dtos;
+using LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Resources;
 
 namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Transform;
 
 /// <summary>
-///     Assembler class to convert UserWithProfile entity to UserWithProfileResource.
+///     Assembler to transform DTOs from the application layer into REST resources.
 /// </summary>
-public class UserWithProfileResourceFromEntityAssembler
+public static class UserWithProfileResourceFromEntityAssembler
 {
     /// <summary>
-    ///     Method to convert UserWithProfile entity to UserWithProfileResource.
+    ///     Converts a single user DTO into a REST resource.
     /// </summary>
-    /// <param name="resource">
-    ///     Resource to convert.
-    /// </param>
-    /// <returns>
-    ///     A new instance of UserWithProfileResource.
-    /// </returns>
-    public static UserWithProfileResource ToResourceFromEntity(UserWithProfileResource resource)
+    public static UsersWithProfilesResource ToResourceFromEntity(UsersWithProfilesDto dto)
     {
-        return new UserWithProfileResource(
-            resource.UserId,
-            resource.Email,
-            resource.Role,
-            resource.ProfileId,
-            resource.FullName,
-            resource.PhoneNumber,
-            resource.ProfilePictureUrl,
-            resource.profileRole
+        return new UsersWithProfilesResource(
+            dto.UserId,
+            dto.Email,
+            dto.Role,
+            dto.ProfileId,
+            dto.FullName,
+            dto.PhoneNumber,
+            dto.ProfilePictureUrl,
+            dto.profileRole
         );
     }
 
     /// <summary>
-    ///     Method to convert a list of UserWithProfile entities to a list of UserWithProfileResource.
+    ///     Converts a list of user DTOs into REST resources.
     /// </summary>
-    /// <param name="resources">
-    ///     The list of UserWithProfile entities to convert.
-    /// </param>
-    /// <returns>
-    ///     A list of UserWithProfileResource.
-    /// </returns>
-    public static IEnumerable<UserWithProfileResource> ToResourceListFromResourceList(IEnumerable<UserWithProfileResource> resources)
+    public static IEnumerable<UsersWithProfilesResource> ToResourceListFromEntityList(IEnumerable<UsersWithProfilesDto> dtos)
     {
-        return resources.Select(ToResourceFromEntity);
+        return dtos.Select(ToResourceFromEntity);
+    }
+
+    /// <summary>
+    ///     Converts a users-with-stats DTO into a REST resource.
+    /// </summary>
+    public static UsersWithStatsResource ToResourceFromEntity(UsersWithStatsDto dto)
+    {
+        return new UsersWithStatsResource(
+            dto.MaxUsersAllowed,
+            dto.TotalUsers,
+            ToResourceListFromEntityList(dto.Users)
+        );
     }
 }

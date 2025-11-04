@@ -1,6 +1,6 @@
+using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Dtos;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Queries;
-using LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Resources;
 
 namespace LiquoTrack.StocksipPlatform.API.Authentication.Domain.Services
 {
@@ -56,6 +56,6 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Domain.Services
         /// <returns>
         ///     A task that represents the asynchronous operation.
         /// </returns>
-        Task<IEnumerable<UserWithProfileResource?>> Handle(GetAccountSubUsersByRoleQuery query);
+        Task<UsersWithStatsDto> Handle(GetAccountSubUsersByRoleQuery query);
     }
 }

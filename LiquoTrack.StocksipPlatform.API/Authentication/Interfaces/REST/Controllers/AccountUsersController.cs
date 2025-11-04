@@ -4,7 +4,6 @@ using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Resources;
 using LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Transform;
-using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -73,16 +72,17 @@ public class AccountUsersController(
         summary: "Get sub users by role.",
         description: "Retrieve all sub users filtered by role (Admin or Employee)."
     )]
-    [SwaggerResponse(StatusCodes.Status200OK, "List of users with their profiles.")]
+    [SwaggerResponse(StatusCodes.Status200OK, "List of users with their profiles.", typeof(IEnumerable<UsersWithStatsResource>))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "No users found.")]
     public async Task<IActionResult> GetUsersByRole(
         [FromRoute] string accountId,
         [FromQuery, SwaggerParameter("Role filter (SuperAdmin, Admin, Employee)")] EUserRoles role
     )
     {
         var query = new GetAccountSubUsersByRoleQuery(accountId, role.ToString());
-        var resource = await userQueryService.Handle(query);
+        var dto = await userQueryService.Handle(query);
 
-        var resources = UserWithProfileResourceFromEntityAssembler.ToResourceListFromResourceList(resource);
-        return Ok(resources);
+        var resource = UserWithProfileResourceFromEntityAssembler.ToResourceFromEntity(dto);
+        return Ok(resource);
     }
 }

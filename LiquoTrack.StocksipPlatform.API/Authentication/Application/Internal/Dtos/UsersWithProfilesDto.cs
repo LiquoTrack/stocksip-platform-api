@@ -1,9 +1,9 @@
-﻿namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Resources;
+﻿namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Dtos;
 
 /// <summary>
-///     Resource representing a user along with their profile information.
+///     Dto for user with profile information.
 /// </summary>
-public record UserWithProfileResource(
+public record UsersWithProfilesDto(
     string UserId,
     string Email,
     string Role,
