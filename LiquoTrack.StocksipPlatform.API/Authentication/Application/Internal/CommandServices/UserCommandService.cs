@@ -204,6 +204,12 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
             var existingUser = await userRepository.FindByEmailAsync(command.Email);
             if (existingUser != null) throw new InvalidOperationException($"Email {command.Email} is already registered");
 
+            var currentUserCount = await userRepository.CountByAccountIdAsync(new AccountId(command.AccountId));
+            var maxAllowedUsers = await paymentAndSubscriptionsFacade.GetPlanUserLimitByAccountId(command.AccountId);
+            
+            if (maxAllowedUsers is not null && currentUserCount >= maxAllowedUsers)
+                throw new InvalidOperationException("The account has reached the maximum number of users for the current plan.");
+
             var hashedPassword = hashingService.HashPassword(command.Password);
             
             var user = new User(
