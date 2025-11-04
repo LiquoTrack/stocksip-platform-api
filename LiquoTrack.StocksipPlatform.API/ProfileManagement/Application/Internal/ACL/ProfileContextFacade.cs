@@ -120,4 +120,19 @@ public class ProfileContextFacade : IProfileContextFacade
         var getProfilesByUserIdQuery = new GetProfilesByUserIdQuery(userId);
         return await _profileQueryService.Handle(getProfilesByUserIdQuery);
     }
+
+    /// <summary>
+    ///     Method to delete a profile by ID. 
+    /// </summary>
+    /// <param name="id">
+    ///     The ID of the profile to delete.
+    /// </param>
+    /// <returns>
+    ///     A boolean indicating whether the profile was deleted successfully.
+    /// </returns>
+    public async Task<bool?> DeleteProfileById(string id)
+    {
+        var deleteProfileByIdCommand = new DeleteProfileByIdCommand(id);
+        return await _profileCommandService.Handle(deleteProfileByIdCommand);
+    }
 }
