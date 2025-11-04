@@ -15,6 +15,12 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Interfaces.REST.Resour
         public ESalesOrderStatuses NewStatus { get; set; }
         
         /// <summary>
+        /// Optional alias accepted from clients: PENDING, CONFIRM, CANCEL.
+        /// When provided, this value will be mapped to the internal enum.
+        /// </summary>
+        public string NewStatusAlias { get; set; }
+
+        /// <summary>
         /// Optional reason for the status change
         /// </summary>
         public string Reason { get; set; }

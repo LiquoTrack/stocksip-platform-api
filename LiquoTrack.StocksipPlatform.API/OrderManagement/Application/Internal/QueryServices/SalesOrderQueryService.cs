@@ -29,5 +29,10 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Application.Internal.Q
         {
             return await salesOrderRepository.GetAllSalesOrders();
         }
+
+        public async Task<IEnumerable<SalesOrder>> Handle(GetAllSalesOrdersBySupplierIdQuery query)
+        {
+            return await salesOrderRepository.GetAllSalesOrdersBySupplierId(query.supplierId);
+        }
     }
 }

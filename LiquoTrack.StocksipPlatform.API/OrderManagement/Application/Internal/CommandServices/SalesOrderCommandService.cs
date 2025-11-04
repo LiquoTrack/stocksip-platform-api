@@ -9,6 +9,7 @@ using LiquoTrack.StocksipPlatform.API.OrderManagement.Interfaces.REST.Resources;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 using CatalogId = LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects.CatalogId;
 using PurchaseOrderId = LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects.PurchaseOrderId;
+using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Services;
 
 namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Application.Internal.CommandServices
 {
@@ -19,14 +20,14 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Application.Internal.C
     {
         private readonly ISalesOrderRepository salesOrderRepository;
         private readonly ILowStockService lowStockService;
-        
+        private readonly ICatalogQueryService catalogQueryService;
 
-        public SalesOrderCommandService(ISalesOrderRepository salesOrderRepository, ILowStockService lowStockService)
+        public SalesOrderCommandService(ISalesOrderRepository salesOrderRepository, ILowStockService lowStockService, ICatalogQueryService catalogQueryService)
         {
             this.salesOrderRepository = salesOrderRepository ?? throw new ArgumentNullException(nameof(salesOrderRepository));
             this.lowStockService = lowStockService ?? throw new ArgumentNullException(nameof(lowStockService));
+            this.catalogQueryService = catalogQueryService ?? throw new ArgumentNullException(nameof(catalogQueryService));
         }
-        
 
         /// <summary>
         /// Handle the generate sales order command
@@ -38,9 +39,21 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Application.Internal.C
             if (command.items == null || !command.items.Any())throw new ValidationException("Cannot create an order with no items");
 
             var order = await salesOrderRepository.GenerateSalesOrder(command);
-            order.UpdateStatus(ESalesOrderStatuses.Received, "Order received");
-            
-            await salesOrderRepository.UpdateAsync(order);
+
+            try
+            {
+                var catalog = await catalogQueryService.Handle(new LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Model.Queries.GetCatalogByIdQuery(command.catalogToBuyFrom.GetId()));
+                var supplierOwner = catalog?.GetOwnerAccount();
+                if (supplierOwner != null)
+                {
+                    order.SetSupplier(supplierOwner);
+                }
+            }
+            catch {  }
+
+            order.UpdateStatus(ESalesOrderStatuses.Processing, "Order pending");
+
+            await salesOrderRepository.AddAsync(order);
             return order;
         }
 
@@ -84,14 +97,31 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Application.Internal.C
                 orderCode: request.OrderCode,
                 purchaseOrderId: purchaseOrderId,
                 items: items,
-                status: ESalesOrderStatuses.Received,
+                status: ESalesOrderStatuses.Processing,
                 catalogToBuyFrom: new CatalogId(request.CatalogToBuyFrom),
                 receiptDate: request.ReceiptDate ?? DateTime.UtcNow.AddDays(7),
                 completitionDate: request.CompletitionDate ?? DateTime.UtcNow.AddDays(14),
                 accountId: new AccountId(accountId)
             );
 
-            return await Handle(command);
+            var created = await Handle(command);
+
+            if (created.SupplierId is null)
+            {
+                try
+                {
+                    var catalog = await catalogQueryService.Handle(new LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Model.Queries.GetCatalogByIdQuery(request.CatalogToBuyFrom));
+                    var supplierOwner = catalog?.GetOwnerAccount();
+                    if (supplierOwner != null)
+                    {
+                        created.SetSupplier(supplierOwner);
+                        await salesOrderRepository.UpdateAsync(created);
+                    }
+                }
+                catch {}
+            }
+
+            return created;
         }
 
         private async Task<ICollection<SalesOrderItem>> GetLowStockItems(string accountId, string catalogId)
@@ -137,6 +167,11 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Application.Internal.C
                     throw new ValidationException("Canceled orders cannot be modified");
                 }
 
+                if (order.DeliveryProposal == null || order.DeliveryProposal.Status != DeliveryProposalStatus.Accepted)
+                {
+                    throw new ValidationException("State changes require prior consent from the Liquor Store Owner (accepted delivery proposal).");
+                }
+
                 order.UpdateStatus(command.NewStatus, command.Reason);
                 await salesOrderRepository.UpdateAsync(order);
                 
@@ -157,15 +192,16 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Application.Internal.C
 
             var order = await salesOrderRepository.GetByIdAsync(command.OrderId)
                         ?? throw new KeyNotFoundException($"Order with ID {command.OrderId} not found");
-
             order.ProposeDelivery(command.ProposedDate, command.Notes);
             await salesOrderRepository.UpdateAsync(order);
             return order;
         }
 
         /// <summary>
-        /// Buyer responds to a delivery proposal (accept/reject)
+        /// Buyer responds to a delivery proposal
         /// </summary>
+        /// <param name="command"></param>
+        /// <returns> The updated sales order </returns>
         public async Task<SalesOrder> Handle(RespondDeliveryProposalCommand command)
         {
             if (command == null) throw new ArgumentNullException(nameof(command));

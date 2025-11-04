@@ -1,4 +1,4 @@
-﻿namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.REST.Resources;
+namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.REST.Resources;
 
 /// <summary>
 ///     Resource class for representing an Account.
@@ -9,5 +9,7 @@ public record AccountResource(
         string BusinessId,
         string Status,
         string Role,
-        string CreationDate
+        string CreationDate,
+        string? Email,
+        string? Phone
     );
