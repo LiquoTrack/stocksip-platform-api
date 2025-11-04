@@ -100,20 +100,22 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Qu
         {
             var users = await _userRepository.GetUsersByAccountIdAsync(query.AccountId);
 
-            var filteredUsers = users
-                .Where(u => u != null &&
-                            u.UserRole.ToString().Equals(query.Role, StringComparison.OrdinalIgnoreCase))
-                .ToList();
-
             var result = new List<UserWithProfileResource>();
             
+            var filteredUsers = query.Role.Equals("All", StringComparison.OrdinalIgnoreCase)
+                ? users
+                : users.Where(u => u != null && 
+                                   u.UserRole.ToString()
+                                       .Equals(query.Role, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
             foreach (var user in filteredUsers)
             {
                 if (user == null) continue;
 
                 var profiles = await _profileContextFacade.GetProfilesByUserId(user.Id.ToString());
                 var profile = profiles.FirstOrDefault();
-                
+
                 result.Add(new UserWithProfileResource(
                     user.Id.ToString(),
                     user.Email.GetValue,
@@ -124,7 +126,6 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Qu
                     profile?.ProfilePictureUrl?.GetValue(),
                     profile?.AssignedRole.ToString()
                 ));
-
             }
 
             return result;

@@ -56,4 +56,15 @@ public interface IUserRepository : IBaseRepository<User>
     /// </returns>
     Task<IEnumerable<User?>> GetUsersByAccountIdAsync(string accountId);
     
+    /// <summary>
+    ///     Method to count the number of users associated with a specific account ID.
+    /// </summary>
+    /// <param name="accountId">
+    ///     The unique identifier of the account.
+    /// </param>
+    /// <returns>
+    ///     A task that represents the asynchronous operation, containing the count of users.   
+    /// </returns>
+    Task<int> CountByAccountIdAsync(AccountId accountId);
+    
 }

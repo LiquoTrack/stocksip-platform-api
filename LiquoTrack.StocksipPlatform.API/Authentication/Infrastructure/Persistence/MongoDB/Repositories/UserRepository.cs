@@ -1,6 +1,7 @@
 using Cortex.Mediator;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Repositories;
+using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Repositories;
 using MongoDB.Driver;
@@ -94,6 +95,21 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Persiste
             return await _collection
                 .Find(user => user.AccountId.ToString() == accountId)
                 .ToListAsync();
+        }
+
+        /// <summary>
+        ///     Method to count users by account id.
+        /// </summary>
+        /// <param name="accountId">
+        ///     The ID of the account to count users for.
+        /// </param>
+        /// <returns>
+        ///     A count of users for the specified account.
+        /// </returns>
+        public async Task<int> CountByAccountIdAsync(AccountId accountId)
+        {
+            var filter = Builders<User>.Filter.Eq(u => u.AccountId, accountId);
+            return (int)await _collection.CountDocumentsAsync(filter);
         }
     }
 }
