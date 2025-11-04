@@ -167,7 +167,7 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
                     lastName: "",
                     phoneNumber: "+10000000000",
                     profilePicture: null,
-                    assignedRole: "SuperAdmin"
+                    assignedRole: "Admin"
                 );
                 
                 await userRepository.AddAsync(user);

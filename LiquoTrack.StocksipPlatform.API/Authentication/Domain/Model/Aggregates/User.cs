@@ -69,6 +69,8 @@ public class User : Entity
         AccountId = new AccountId(accountId);
         if (!Enum.TryParse<EUserRoles>(userRole, out var role))
             throw new ArgumentException("Invalid user role.", nameof(userRole));
+
+        UserRole = role;
     }
     
     /**

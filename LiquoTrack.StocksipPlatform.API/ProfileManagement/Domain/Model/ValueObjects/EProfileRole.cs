@@ -7,5 +7,6 @@ public enum EProfileRole
 {
     Seller,
     Buyer,
-    WarehouseWorker
+    WarehouseWorker,
+    Admin
 }
