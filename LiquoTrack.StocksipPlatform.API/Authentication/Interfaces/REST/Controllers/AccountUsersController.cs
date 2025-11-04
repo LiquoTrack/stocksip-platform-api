@@ -76,7 +76,7 @@ public class AccountUsersController(
     [SwaggerResponse(StatusCodes.Status200OK, "List of users with their profiles.")]
     public async Task<IActionResult> GetUsersByRole(
         [FromRoute] string accountId,
-        [FromQuery, SwaggerParameter("Role filter (Admin or Employee)")] EUserRoles role
+        [FromQuery, SwaggerParameter("Role filter (SuperAdmin, Admin, Employee)")] EUserRoles role
     )
     {
         var query = new GetAccountSubUsersByRoleQuery(accountId, role.ToString());
