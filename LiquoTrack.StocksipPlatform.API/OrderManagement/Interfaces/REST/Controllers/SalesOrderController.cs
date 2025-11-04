@@ -340,7 +340,10 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Interfaces.REST.Contro
             {
                 if (string.IsNullOrWhiteSpace(supplierId))return BadRequest(new { message = "Supplier ID is required" });
 
-                var authenticatedUserId = User.FindFirst("sid")?.Value?? User.FindFirst(ClaimTypes.Sid)?.Value?? User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/sid")?.Value;
+                var authenticatedUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                                ?? User.FindFirst("sid")?.Value
+                                ?? User.FindFirst(ClaimTypes.Sid)?.Value
+                                ?? User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/sid")?.Value;
 
                 if (string.IsNullOrEmpty(authenticatedUserId))return StatusCode(StatusCodes.Status403Forbidden, new
                 {
@@ -393,7 +396,8 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Interfaces.REST.Contro
             {
                 if (string.IsNullOrWhiteSpace(liquorStoreOwnerId))return BadRequest(new { message = "Liquor Store Owner ID is required" });
 
-                var authenticatedUserId = User.FindFirst("sid")?.Value
+                var authenticatedUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                                ?? User.FindFirst("sid")?.Value
                                 ?? User.FindFirst(ClaimTypes.Sid)?.Value
                                 ?? User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/sid")?.Value;
 
@@ -412,7 +416,7 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Interfaces.REST.Contro
 
                 var orders = allOrders
                 .Where(o => o.AccountId != null && 
-                    string.Equals(o.AccountId.ToString(), liquorStoreOwnerId, StringComparison.OrdinalIgnoreCase))
+                    string.Equals(o.AccountId.GetId, liquorStoreOwnerId, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
                 var response = new LiquorStoreOwnerOrdersResponse
