@@ -33,7 +33,8 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Interfaces.REST.Assemb
                         salesOrder.DeliveryProposal.Status.ToString(),
                         salesOrder.DeliveryProposal.CreatedAt,
                         salesOrder.DeliveryProposal.RespondedAt
-                    )
+                    ),
+                salesOrder.SupplierId?.GetId
             );
         }
     }

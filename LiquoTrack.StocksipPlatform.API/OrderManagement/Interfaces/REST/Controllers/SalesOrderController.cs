@@ -6,6 +6,8 @@ using LiquoTrack.StocksipPlatform.API.OrderManagement.Interfaces.REST.Resources;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using LiquoTrack.StocksipPlatform.API.OrderManagement.Domain.Services;
+using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Services;
+using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Queries;
 using LiquoTrack.StocksipPlatform.API.OrderManagement.Interfaces.REST.Assemblers;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration;
 using LiquoTrack.StocksipPlatform.API.OrderManagement.Domain.Model.Commands;
@@ -13,8 +15,6 @@ using LiquoTrack.StocksipPlatform.API.OrderManagement.Domain.Model.Queries;
 using LiquoTrack.StocksipPlatform.API.OrderManagement.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 using Microsoft.AspNetCore.Authorization;
-using LiquoTrack.StocksipPlatform.API.OrderManagement.Interfaces.REST.Assemblers;
-using LiquoTrack.StocksipPlatform.API.OrderManagement.Interfaces.REST.Resources;
 
 namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Interfaces.REST.Controllers
 {
@@ -26,7 +26,8 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Interfaces.REST.Contro
         ISalesOrderCommandService salesOrderCommandService,
         ISalesOrderQueryService salesOrderQueryService,
         ISalesOrderRepository salesOrderRepository,
-        AppDbContext dbContext)
+        AppDbContext dbContext,
+        IUserQueryService userQueryService)
         : ControllerBase
     {
         [HttpPost("generate-purchase-order")]
@@ -345,30 +346,47 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Interfaces.REST.Contro
                                 ?? User.FindFirst(ClaimTypes.Sid)?.Value
                                 ?? User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/sid")?.Value;
 
-                if (string.IsNullOrEmpty(authenticatedUserId))return StatusCode(StatusCodes.Status403Forbidden, new
-                {
-                    message = "User ID not found in the token"
-                });
+                var authenticatedAccountId = User.FindFirst("accountId")?.Value
+                                ?? User.FindFirst("accid")?.Value
+                                ?? User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value; // fallback if provider sets account id here
 
-                if (!string.Equals(supplierId, authenticatedUserId, StringComparison.OrdinalIgnoreCase))return StatusCode(StatusCodes.Status403Forbidden, new
+                if (string.IsNullOrEmpty(authenticatedUserId) && string.IsNullOrEmpty(authenticatedAccountId))
+                    return StatusCode(StatusCodes.Status403Forbidden, new { message = "User identity not found in the token" });
+
+                var matchesAccount = !string.IsNullOrEmpty(authenticatedAccountId) && string.Equals(supplierId, authenticatedAccountId, StringComparison.OrdinalIgnoreCase);
+                var matchesUser = !string.IsNullOrEmpty(authenticatedUserId) && string.Equals(supplierId, authenticatedUserId, StringComparison.OrdinalIgnoreCase);
+
+                if (!matchesAccount && !matchesUser)
                 {
-                    message = "You can only view your own orders"
-                });
+                    if (!string.IsNullOrEmpty(authenticatedUserId))
+                    {
+                        var user = await userQueryService.Handle(new GetUserByIdQuery(authenticatedUserId));
+                        var userAccountId = user?.AccountId?.GetId;
+                        if (!string.IsNullOrEmpty(userAccountId) && string.Equals(supplierId, userAccountId, StringComparison.OrdinalIgnoreCase))
+                        {
+                            matchesAccount = true;
+                        }
+                    }
+
+                    if (!matchesAccount)
+                        return StatusCode(StatusCodes.Status403Forbidden, new { message = "You can only view your own orders (account)" });
+                }
 
                 var accountId = new AccountId(supplierId);
-                var query = new GetAllSalesOrdersByBuyerIdQuery(accountId);
+                var query = new GetAllSalesOrdersBySupplierIdQuery(accountId);
                 var orders = (await salesOrderQueryService.Handle(query)).ToList();
+
                 var response = new SupplierOrdersResponse
-                    {
-                        SupplierId = supplierId,
-                        Orders = orders
+                {
+                    SupplierId = supplierId,
+                    Orders = orders
                         .Select(SalesOrderResourceFromEntityAssembler.ToResourceFromEntity)
                         .ToList(),
-                        TotalOrders = orders.Count,
-                        Message = orders.Any() 
-                            ? "Orders retrieved successfully" 
-                            : "No orders found for the specified Supplier"
-                    };
+                    TotalOrders = orders.Count,
+                    Message = orders.Any() 
+                        ? "Orders retrieved successfully" 
+                        : "No orders found for the specified Supplier"
+                };
 
                 return Ok(response);
             }catch (Exception ex){

@@ -31,10 +31,6 @@ public class SalesOrderRepository : BaseRepository<SalesOrder>, ISalesOrderRepos
             command.receiptDate,
             command.completitionDate,
             command.accountId);
-
-        await AddAsync(salesOrder);
-        await PublishEventsAsync(salesOrder);
-
         return salesOrder;
     }
 
@@ -43,6 +39,14 @@ public class SalesOrderRepository : BaseRepository<SalesOrder>, ISalesOrderRepos
         ArgumentNullException.ThrowIfNull(accountId);
 
         var filter = Builders<SalesOrder>.Filter.Eq(x => x.AccountId, accountId);
+        return await _salesOrders.Find(filter).ToListAsync();
+    }
+
+    public async Task<IEnumerable<SalesOrder>> GetAllSalesOrdersBySupplierId(AccountId supplierId)
+    {
+        ArgumentNullException.ThrowIfNull(supplierId);
+
+        var filter = Builders<SalesOrder>.Filter.Eq(x => x.SupplierId, supplierId);
         return await _salesOrders.Find(filter).ToListAsync();
     }
 

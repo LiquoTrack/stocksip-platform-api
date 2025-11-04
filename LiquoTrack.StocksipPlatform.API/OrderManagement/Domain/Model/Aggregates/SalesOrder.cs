@@ -1,3 +1,4 @@
+using MongoDB.Bson.Serialization.Attributes;
 using LiquoTrack.StocksipPlatform.API.OrderManagement.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.OrderManagement.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Entities;
@@ -20,6 +21,8 @@ public class SalesOrder : Entity
     public DateTime ReceiptDate { get; private set; }
     public DateTime CompletitionDate { get; private set; }
     public AccountId AccountId { get; set; }
+    [BsonIgnoreIfNull]
+    public AccountId? SupplierId { get; private set; }
     public IReadOnlyCollection<StatusHistory> StatusHistory => (_statusHistory ??= new List<StatusHistory>()).AsReadOnly();
     public DeliveryProposal? DeliveryProposal { get; private set; }
 
@@ -46,6 +49,15 @@ public class SalesOrder : Entity
         AccountId = accountId ?? throw new ArgumentNullException(nameof(accountId), "Account ID is required");
         _statusHistory = new List<StatusHistory>();
         _statusHistory.Add(new StatusHistory(status, "System", "Order created"));
+    }
+
+    /// <summary>
+    /// Sets the SupplierId of this order.
+    /// </summary>
+    /// <param name="supplierId">The supplier account id (owner of the catalog).</param>
+    public void SetSupplier(AccountId supplierId)
+    {
+        SupplierId = supplierId ?? throw new ArgumentNullException(nameof(supplierId));
     }
 
     /// <summary>

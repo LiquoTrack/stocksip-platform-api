@@ -9,6 +9,7 @@ using LiquoTrack.StocksipPlatform.API.OrderManagement.Interfaces.REST.Resources;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 using CatalogId = LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects.CatalogId;
 using PurchaseOrderId = LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects.PurchaseOrderId;
+using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Services;
 
 namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Application.Internal.CommandServices
 {
@@ -19,14 +20,14 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Application.Internal.C
     {
         private readonly ISalesOrderRepository salesOrderRepository;
         private readonly ILowStockService lowStockService;
-        
+        private readonly ICatalogQueryService catalogQueryService;
 
-        public SalesOrderCommandService(ISalesOrderRepository salesOrderRepository, ILowStockService lowStockService)
+        public SalesOrderCommandService(ISalesOrderRepository salesOrderRepository, ILowStockService lowStockService, ICatalogQueryService catalogQueryService)
         {
             this.salesOrderRepository = salesOrderRepository ?? throw new ArgumentNullException(nameof(salesOrderRepository));
             this.lowStockService = lowStockService ?? throw new ArgumentNullException(nameof(lowStockService));
+            this.catalogQueryService = catalogQueryService ?? throw new ArgumentNullException(nameof(catalogQueryService));
         }
-        
 
         /// <summary>
         /// Handle the generate sales order command
@@ -38,9 +39,21 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Application.Internal.C
             if (command.items == null || !command.items.Any())throw new ValidationException("Cannot create an order with no items");
 
             var order = await salesOrderRepository.GenerateSalesOrder(command);
+
+            try
+            {
+                var catalog = await catalogQueryService.Handle(new LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Model.Queries.GetCatalogByIdQuery(command.catalogToBuyFrom.GetId()));
+                var supplierOwner = catalog?.GetOwnerAccount();
+                if (supplierOwner != null)
+                {
+                    order.SetSupplier(supplierOwner);
+                }
+            }
+            catch {  }
+
             order.UpdateStatus(ESalesOrderStatuses.Processing, "Order pending");
-            
-            await salesOrderRepository.UpdateAsync(order);
+
+            await salesOrderRepository.AddAsync(order);
             return order;
         }
 
@@ -91,7 +104,24 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Application.Internal.C
                 accountId: new AccountId(accountId)
             );
 
-            return await Handle(command);
+            var created = await Handle(command);
+
+            if (created.SupplierId is null)
+            {
+                try
+                {
+                    var catalog = await catalogQueryService.Handle(new LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Model.Queries.GetCatalogByIdQuery(request.CatalogToBuyFrom));
+                    var supplierOwner = catalog?.GetOwnerAccount();
+                    if (supplierOwner != null)
+                    {
+                        created.SetSupplier(supplierOwner);
+                        await salesOrderRepository.UpdateAsync(created);
+                    }
+                }
+                catch {}
+            }
+
+            return created;
         }
 
         private async Task<ICollection<SalesOrderItem>> GetLowStockItems(string accountId, string catalogId)
