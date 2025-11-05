@@ -1,7 +1,4 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-
-namespace LiquoTrack.StocksipPlatform.API.Shared.Domain.Repositories
+﻿namespace LiquoTrack.StocksipPlatform.API.Shared.Domain.Repositories
 {
     public interface IUnitOfWork
     {

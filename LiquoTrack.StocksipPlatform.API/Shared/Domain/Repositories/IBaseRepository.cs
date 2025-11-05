@@ -32,6 +32,13 @@ public interface IBaseRepository<TEntity> where TEntity : Entity
     Task UpdateAsync(string id, TEntity entity);
     
     /// <summary>
+    ///     Updates the entity by its Mongo _id contained in the entity itself.
+    ///     This avoids passing string ids and eliminates ObjectId parsing issues.
+    /// </summary>
+    /// <param name="entity">The entity object to replace the existing one</param>
+    Task UpdateAsync(TEntity entity);
+    
+    /// <summary>
     ///     Removes the entity
     /// </summary>
     /// <param name="id">The identifier of the entity to remove</param>
@@ -42,4 +49,15 @@ public interface IBaseRepository<TEntity> where TEntity : Entity
     /// </summary>
     /// <returns>An Enumerable containing all entity objects</returns>
     Task<IEnumerable<TEntity>> GetAllAsync();
+    
+    /// <summary>
+    ///     Method to save changes related to an event.
+    /// </summary>
+    /// <param name="aggregate">
+    ///     The aggregate to save.
+    /// </param>
+    /// <returns>
+    ///     A Task representing the asynchronous operation.
+    /// </returns>
+    Task PublishEventsAsync(TEntity aggregate);
 }

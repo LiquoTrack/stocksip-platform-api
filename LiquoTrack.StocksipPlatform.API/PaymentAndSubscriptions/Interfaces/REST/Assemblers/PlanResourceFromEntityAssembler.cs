@@ -1,4 +1,4 @@
-﻿using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Entities;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.REST.Resources;
 
 namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.REST.Assemblers;
@@ -20,6 +20,7 @@ public class PlanResourceFromEntityAssembler
     public static PlanResource ToResourceFromEntity(Plan entity)
     {
         return new PlanResource(
+            entity.Id.ToString(),
             entity.PlanType.ToString(),
             entity.Description,
             entity.PaymentFrequency.ToString(),

@@ -1,4 +1,5 @@
-﻿using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Aggregates;
+using Cortex.Mediator;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
@@ -12,7 +13,7 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Per
 /// <summary>
 ///     Repository implementation for the Product aggregate. 
 /// </summary>
-public class ProductRepository(AppDbContext context) : BaseRepository<Product>(context), IProductRepository
+public class ProductRepository(AppDbContext context, IMediator mediator) : BaseRepository<Product>(context, mediator), IProductRepository
 {
     /// <summary>
     ///     The MongoDB collection for the Product aggregate.   
@@ -109,5 +110,15 @@ public class ProductRepository(AppDbContext context) : BaseRepository<Product>(c
         return await _productCollection
             .Find(x => x.AccountId.GetId == accountId.GetId)
             .ToListAsync();
+    }
+
+    public async Task<string> FindImageUrlByProductIdAsync(ObjectId productId)
+    {
+        var imageUrlValueObject = await _productCollection
+            .Find(x => x.Id == productId)
+            .Project(p => p.ImageUrl)
+            .FirstOrDefaultAsync();
+        
+        return imageUrlValueObject?.GetValue() ?? string.Empty;
     }
 }

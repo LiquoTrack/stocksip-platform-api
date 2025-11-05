@@ -1,4 +1,5 @@
-﻿using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Entities;
+﻿using Cortex.Mediator;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
@@ -11,8 +12,7 @@ namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure
 /// <summary>
 ///     Repository implementation for Plans entity.
 /// </summary>
-/// <param name="context"></param>
-public class PlanRepository(AppDbContext context) : BaseRepository<Plan>(context), IPlanRepository
+public class PlanRepository(AppDbContext context, IMediator mediator) : BaseRepository<Plan>(context, mediator), IPlanRepository
 {
 
     /// <summary>
@@ -35,14 +35,14 @@ public class PlanRepository(AppDbContext context) : BaseRepository<Plan>(context
                 EPlanType.Premium,
                 "Premium plan with more features",
                 EPaymentFrequency.Monthly,
-                new Money(29.99m, new Currency("USD")),
+                new Money(5.99m, new Currency("USD")),
                 PlanLimits.For(EPlanType.Premium)
             ),
             new Plan(
                 EPlanType.Enterprise,
                 "Enterprise plan with unlimited features",
                 EPaymentFrequency.Yearly,
-                new Money(199.99m, new Currency("USD")),
+                new Money(42.99m, new Currency("USD")),
                 PlanLimits.For(EPlanType.Enterprise)
             )
         };
@@ -57,5 +57,59 @@ public class PlanRepository(AppDbContext context) : BaseRepository<Plan>(context
             .ToList();
         
         if (plansToAdd.Count != 0) await _planCollection.InsertManyAsync(plansToAdd);
+    }
+
+    /// <summary>
+    ///     Method to find the maximum warehouse limit for a plan by its ID.
+    /// </summary>
+    /// <param name="planId">
+    ///     The ID of the plan.
+    /// </param>
+    /// <returns>
+    ///     An integer representing the maximum warehouse limit.
+    /// </returns>
+    public async Task<int?> FindPlanWarehouseLimitsByAccountIdAsync(string planId)
+    {
+        var plan = await _planCollection
+            .Find(p => p.Id.ToString() == planId)
+            .FirstOrDefaultAsync();
+
+        return plan?.PlanLimits?.MaxWarehouses;
+    }
+
+    /// <summary>
+    ///     Method to find the maximum products limit for a plan by its ID.   
+    /// </summary>
+    /// <param name="planId">
+    ///     The ID of the plan.
+    /// </param>
+    /// <returns>
+    ///     An integer representing the maximum products limit. 
+    /// </returns>
+    public async Task<int?> FindPlanProductsLimitByAccountIdAsync(string planId)
+    {
+        var plan = await _planCollection
+            .Find(p => p.Id.ToString() == planId)
+            .FirstOrDefaultAsync();
+
+        return plan?.PlanLimits?.MaxProducts;
+    }
+
+    /// <summary>
+    ///     Method to find the maximum users limit for a plan by its ID.  
+    /// </summary>
+    /// <param name="planId">
+    ///     The ID of the plan.
+    /// </param>
+    /// <returns>
+    ///     An integer representing the maximum users limit.
+    /// </returns>
+    public async Task<int?> FindPlanUsersLimitByAccountIdAsync(string planId)
+    {
+        var plan = await _planCollection
+            .Find(p => p.Id.ToString() == planId)
+            .FirstOrDefaultAsync();
+        
+        return plan?.PlanLimits?.MaxUsers;
     }
 }

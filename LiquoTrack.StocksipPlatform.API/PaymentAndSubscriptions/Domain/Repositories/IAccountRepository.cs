@@ -9,4 +9,14 @@ namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Reposit
 /// </summary>
 public interface IAccountRepository : IBaseRepository<Account>
 {
+    /// <summary>
+    ///     Method to get the status of an account by its ID.
+    /// </summary>
+    /// <param name="accountId">
+    ///     The ID of the account whose status is to be retrieved.
+    /// </param>
+    /// <returns>
+    ///     The status of the account.
+    /// </returns>
+    Task<string?> GetAccountStatusByIdAsync(string accountId);
 }

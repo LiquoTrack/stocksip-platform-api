@@ -10,7 +10,8 @@ namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.In
 /// <summary>
 ///     Method to handle the creation of a new business. 
 /// </summary>
-public class BusinessCommandService(IBusinessRepository businessRepository) : IBusinessCommandService
+public class BusinessCommandService(IBusinessRepository businessRepository,
+                                    IAccountRepository accountRepository) : IBusinessCommandService
 {
     /// <summary>
     ///     Method to handle the creation of a new business.
@@ -25,6 +26,28 @@ public class BusinessCommandService(IBusinessRepository businessRepository) : IB
     {
         var business = new Business(new BusinessName(command.BusinessName));
         await businessRepository.AddAsync(business);
+        return business;
+    }
+
+    /// <summary>
+    ///     Method to handle the update of a business.
+    /// </summary>
+    /// <param name="command">
+    ///     The command containing the details for updating a business.
+    /// </param>
+    /// <returns>
+    ///     A task representing the asynchronous operation. The task result contains the updated business.
+    /// </returns>
+    public async Task<Business?> Handle(UpdateBusinessCommand command)
+    {
+        var account = await accountRepository.FindByIdAsync(command.AccountId);
+        if (account is null) throw new Exception($"Account with ID {command.AccountId} not found.");
+        
+        var business = await businessRepository.FindByIdAsync(account.BusinessId);
+        if (business is null) throw new Exception($"Business with Id {account.BusinessId} not found.");
+
+        business.UpdateBusiness(command);
+        await businessRepository.UpdateAsync(business);
         return business;
     }
 }

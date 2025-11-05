@@ -1,8 +1,9 @@
-﻿using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.ValueObjects;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Persistence.MongoDB.Configuration.Serializers;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration.Serializers;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Serializers;
+using AccountIdSerializer = LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration.Serializers.AccountIdSerializer;
 
 namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Infrastructure.Persistence.MongoDB.Configuration.ContextMapping;
 
@@ -23,29 +24,44 @@ public static class InventoryManagementMappingHelper
         // Use of EBrandNames Value Object serializer
         SerializerRegistrationHelper.TryRegisterSerializer(new EnumSerializer<EBrandNames>(BsonType.String));
         
-        // Use of EProductStates Value Object serializer
-        SerializerRegistrationHelper.TryRegisterSerializer(new EnumSerializer<EProductTypes>(BsonType.String));
-        
         // Use of EProductTypes Value Object serializer
         SerializerRegistrationHelper.TryRegisterSerializer(new EnumSerializer<EProductTypes>(BsonType.String));
         
         // Use of ProductContent Value Object serializer
         SerializerRegistrationHelper.TryRegisterSerializer(new ProductContentSerializer());
         
-        // Use of ProductExpirationDate Value Object serializer
-        SerializerRegistrationHelper.TryRegisterSerializer(new ProductExpirationDateSerializer());
-        
         // Use of ProductMinimumStock Value Object serializer
         SerializerRegistrationHelper.TryRegisterSerializer(new ProductMinimumStockSerializer());
         
         // Use of ProductName Value Object serializer
         SerializerRegistrationHelper.TryRegisterSerializer(new ProductNameSerializer());
-        
-        // Use of ProductStock Value Object serializer
-        SerializerRegistrationHelper.TryRegisterSerializer(new ProductStockSerializer());
+
+        //
+        // Register CareGuide mapping and serializers
+        //
+        CareGuideMapping.ConfigureBsonMapping();
         
         //
         // Use of Warehouse-related Value Object
         //
+        
+        // Use of WarehouseCapacity Value Object serializer
+        SerializerRegistrationHelper.TryRegisterSerializer(new WarehouseCapacitySerializer());
+        
+        // Use of WarehouseAddress Value Object serializer
+        SerializerRegistrationHelper.TryRegisterSerializer(new WarehouseAddressSerializer());
+        
+        //
+        // Use of Inventory-related Value Object
+        //
+        
+        // Use of ProductExpirationDate Value Object serializer
+        SerializerRegistrationHelper.TryRegisterSerializer(new ProductExpirationDateSerializer());
+        
+        // Use of ProductStock Value Object serializer
+        SerializerRegistrationHelper.TryRegisterSerializer(new ProductStockSerializer());
+        
+        // Use of EProductStates Value Object serializer
+        SerializerRegistrationHelper.TryRegisterSerializer(new EnumSerializer<EProductStates>(BsonType.String));
     }
 }

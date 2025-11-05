@@ -1,5 +1,8 @@
+using Cortex.Mediator;
+using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Repositories;
+using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Configuration;
 using LiquoTrack.StocksipPlatform.API.Shared.Infrastructure.Persistence.MongoDB.Repositories;
 using MongoDB.Bson;
@@ -10,7 +13,7 @@ namespace LiquoTrack.StocksipPlatform.API.ProfileManagement.Infrastructure.Persi
 /// <summary>
 ///     Repository implementation for the Profile aggregate. 
 /// </summary>
-public class ProfileRepository(AppDbContext context) : BaseRepository<Profile>(context), IProfileRepository
+public class ProfileRepository(AppDbContext context, IMediator mediator) : BaseRepository<Profile>(context, mediator), IProfileRepository
 {
     /// <summary>
     ///     The MongoDB collection for the Profile aggregate.   
@@ -88,5 +91,40 @@ public class ProfileRepository(AppDbContext context) : BaseRepository<Profile>(c
         return await _profileCollection
             .Find(x => x.UserId == userId)
             .AnyAsync();
+    }
+    
+    /// <summary>
+    ///     Method to find the profile picture URL by profile ID. 
+    /// </summary>
+    /// <param name="profileId">
+    ///     The ID of the profile to find the picture URL for.
+    /// </param>
+    /// <returns>
+    ///     A string containing the URL of the profile picture.
+    /// </returns>
+    public async Task<string> FindProfilePictureUrlByIdAsync(ObjectId profileId)
+    {
+        var imageUrlValueObject = await _profileCollection
+            .Find(x => x.Id == profileId)
+            .Project(p => p.ProfilePictureUrl)
+            .FirstOrDefaultAsync();
+
+        return imageUrlValueObject?.GetValue() ?? string.Empty;
+    }
+
+    /// <summary>
+    ///      Method to find all profiles by user ID.
+    /// </summary>
+    /// <param name="userId">
+    ///     The ID of the user to find profiles for.
+    /// </param>
+    /// <returns>
+    ///     A list of profiles for the specified user.
+    /// </returns>
+    public async Task<IEnumerable<Profile>> FindAllByUserIdAsync(string userId)
+    {
+        return await _profileCollection
+            .Find(x => x.UserId == userId)
+            .ToListAsync();
     }
 }

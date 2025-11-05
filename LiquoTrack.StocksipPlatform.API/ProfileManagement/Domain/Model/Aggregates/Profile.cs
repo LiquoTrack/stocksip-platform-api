@@ -2,6 +2,8 @@
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace LiquoTrack.StocksipPlatform.API.ProfileManagement.Domain.Model.Aggregates;
 
@@ -43,7 +45,8 @@ public class Profile : Entity
     /// <summary>
     /// Gets or sets the assigned role for the profile.
     /// </summary>
-    public string AssignedRole { get; private set; }
+    [BsonRepresentation(BsonType.String)]
+    public EProfileRole AssignedRole { get; private set; }
 
     /// <summary>
     /// Primary constructor for the Profile Aggregate Root.
@@ -77,7 +80,7 @@ public class Profile : Entity
 
         UserId = userId;
         FullName = name.GetFullName();
-        AssignedRole = assignedRole;
+        AssignedRole = Enum.Parse<EProfileRole>(assignedRole);
     }
 
     /// <summary>
@@ -87,11 +90,11 @@ public class Profile : Entity
     /// The command that triggered the creation of the profile.
     /// It contains the information needed to create the profile.
     /// </param>
-    public Profile(CreateProfileCommand command) : this(
+    public Profile(CreateProfileCommand command, string imageUrl) : this(
         command.Name,
         command.PersonContactNumber,
         command.ContactNumber,
-        command.ProfilePictureUrl,
+        new ImageUrl(imageUrl),
         command.UserId,
         command.AssignedRole)
     {
@@ -103,13 +106,13 @@ public class Profile : Entity
     /// <param name="command">
     /// The command containing the new profile information.
     /// </param>
-    public void UpdateInformation(UpdateProfileCommand command)
+    public void UpdateInformation(UpdateProfileCommand command, string imageUrl)
     {
         Name = command.Name;
         PersonContactNumber = command.PersonContactNumber;
         ContactNumber = command.ContactNumber;
-        ProfilePictureUrl = command.ProfilePictureUrl;
+        ProfilePictureUrl = new ImageUrl(imageUrl);
         FullName = command.Name.GetFullName();
-        AssignedRole = command.AssignedRole;
+        AssignedRole = Enum.Parse<EProfileRole>(command.AssignedRole);
     }
 }

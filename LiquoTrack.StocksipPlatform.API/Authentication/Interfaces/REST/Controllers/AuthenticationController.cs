@@ -1,21 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Mime;
-using System.Security.Claims;
-using System.Threading.Tasks;
-using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Authentication;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Services;
-using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google;
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google.Requests;
-using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google.Responses;
+using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Pipeline.Middleware.Attributes;
 using LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Resources;
 using LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Transform;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Controllers
@@ -26,29 +16,22 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
     [Produces(MediaTypeNames.Application.Json)]
     [SwaggerTag("Authentication endpoints")]
     [ApiExplorerSettings(GroupName = "v1")]
-    public class AuthenticationController : ControllerBase
+    public class AuthenticationController(
+        IGoogleAuthService googleAuthService,
+        IUserCommandService userCommandService,
+        IUserQueryService userQueryService,
+        ILogger<AuthenticationController> logger)
+        : ControllerBase
     {
         private const int DefaultPageSize = 10;
         private const int MaxPageSize = 50;
         private const string GoogleAuthProvider = "Google";
         private const string LogPrefix = "[AuthenticationController]";
 
-        private readonly IGoogleAuthService _googleAuthService;
-        private readonly IUserCommandService _userCommandService;
-        private readonly IUserQueryService _userQueryService;
-        private readonly ILogger<AuthenticationController> _logger;
-
-        public AuthenticationController(
-            IGoogleAuthService googleAuthService,
-            IUserCommandService userCommandService,
-            IUserQueryService userQueryService,
-            ILogger<AuthenticationController> logger)
-        {
-            _googleAuthService = googleAuthService ?? throw new ArgumentNullException(nameof(googleAuthService));
-            _userCommandService = userCommandService ?? throw new ArgumentNullException(nameof(userCommandService));
-            _userQueryService = userQueryService ?? throw new ArgumentNullException(nameof(userQueryService));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        }
+        private readonly IGoogleAuthService _googleAuthService = googleAuthService ?? throw new ArgumentNullException(nameof(googleAuthService));
+        private readonly IUserCommandService _userCommandService = userCommandService ?? throw new ArgumentNullException(nameof(userCommandService));
+        private readonly IUserQueryService _userQueryService = userQueryService ?? throw new ArgumentNullException(nameof(userQueryService));
+        private readonly ILogger<AuthenticationController> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         #region Google Authentication
 
@@ -58,7 +41,7 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
         /// <param name="request">Google authentication request containing ID token and client ID</param>
         /// <returns>Authentication response with user details and JWT token</returns>
         [HttpPost("auth/google")]
-        [AllowAnonymous]
+        [Microsoft.AspNetCore.Authorization.AllowAnonymous]
         [SwaggerOperation(
             Summary = "Authenticate with Google",
             Description = "Authenticates a user using Google's OAuth 2.0 ID token"
@@ -94,55 +77,6 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"{LogPrefix} Error during Google authentication");
-                return HandleException(ex);
-            }
-        }
-
-        #endregion
-
-        #region User Management
-
-        /// <summary>
-        /// Gets a paginated list of users (Admin only)
-        /// </summary>
-        /// <param name="page">Page number (1-based)</param>
-        /// <param name="pageSize">Number of items per page (max 50)</param>
-        [Authorize(Roles = "Admin")]
-        [HttpGet("users")]
-        [SwaggerOperation(
-            Summary = "Get users",
-            Description = "Gets a paginated list of users (Admin only)"
-        )]
-        [ProducesResponseType(typeof(PaginatedResponse<UserListResponse>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> GetUsers(int page = 1, int pageSize = DefaultPageSize)
-        {
-            _logger.LogInformation($"{LogPrefix} Fetching users - Page: {page}, PageSize: {pageSize}");
-            LogUserClaims();
-
-            try
-            {
-                if (page < 1)
-                {
-                    _logger.LogWarning($"{LogPrefix} Invalid page number: {page}");
-                    return BadRequest("Page number must be greater than 0");
-                }
-
-                pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
-                _logger.LogDebug($"{LogPrefix} Using page size: {pageSize}");
-
-                var users = await _userQueryService.GetAllUsersAsync(HttpContext.RequestAborted);
-                var usersList = users?.ToList() ?? new List<User>();
-
-                var paginatedResponse = CreatePaginatedResponse(usersList, page, pageSize);
-                return Ok(paginatedResponse);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"{LogPrefix} Error retrieving users");
                 return HandleException(ex);
             }
         }
@@ -194,8 +128,8 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
         /// Registers a new user
         /// </summary>
         /// <param name="signUpResource">User registration details</param>
-        [HttpPost("sign-up")]
         [AllowAnonymous]
+        [HttpPost("sign-up")]
         [SwaggerOperation(
             Summary = "Sign up",
             Description = "Register a new user"
@@ -213,7 +147,7 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
                 var result = await _userCommandService.Handle(signUpCommand);
 
                 _logger.LogInformation($"{LogPrefix} User registered successfully: {signUpResource.Email}");
-                return Ok(new { message = "User created successfully", userId = result?.Id });
+                return Ok(new { message = "User registered successfully" });
             }
             catch (Exception ex)
             {

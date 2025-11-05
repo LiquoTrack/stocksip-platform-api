@@ -1,4 +1,6 @@
-﻿using MongoDB.Bson;
+﻿using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Events;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.Entities;
 
@@ -23,4 +25,35 @@ public abstract class Entity
     ///     The date and time when the entity was last updated.
     /// </summary>
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    
+    /// <summary>
+    ///     The list of events related to the entity
+    /// </summary>
+    [BsonIgnore]
+    private readonly List<IDomainEvent> _domainEvents = [];
+    
+    /// <summary>
+    ///     The read-only collection of domain events associated with the entity.
+    /// </summary>
+    [BsonIgnore]
+    public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
+    
+    /// <summary>
+    ///     Method to add a domain event to the entity.
+    /// </summary>
+    /// <param name="eventItem">
+    ///     The domain event to add.
+    /// </param>
+    protected void AddDomainEvent(IDomainEvent eventItem)
+    {
+        _domainEvents.Add(eventItem);
+    }
+
+    /// <summary>
+    ///     Method to clear the domain events associated with the entity.
+    /// </summary>
+    public void ClearDomainEvents()
+    {
+        _domainEvents.Clear();
+    }
 }
