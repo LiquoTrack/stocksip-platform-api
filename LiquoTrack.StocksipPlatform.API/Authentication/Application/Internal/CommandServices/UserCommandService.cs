@@ -3,6 +3,7 @@ using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Outbou
 using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Token;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Commands;
+using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
@@ -92,7 +93,7 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
                 string.IsNullOrWhiteSpace(name) ? email.Split('@')[0] : name,
                 hashedPassword,
                 "1234",
-                "SuperAdmin"
+                EUserRoles.SuperAdmin.ToString()
             );
 
             try
