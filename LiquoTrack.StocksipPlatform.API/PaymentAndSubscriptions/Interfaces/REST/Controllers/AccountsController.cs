@@ -79,4 +79,41 @@ public class AccountsController(IAccountQueryService accountQueryService, IBusin
         var resource = AccountStatusResourceFromEntityAssembler.ToResourceFromEntity(status);
         return Ok(resource);
     }
+    
+    /// <summary>
+    ///     Endpoint to retrieve all accounts filtered by role.
+    /// </summary>
+    /// <param name="role">
+    ///     Optional role to filter accounts, e.g., "supplier".
+    /// </param>
+    /// <returns>
+    ///     A 200 OK response with the list of accounts matching the specified role,
+    ///     or a 404 Not Found response if no accounts match.
+    /// </returns>
+    [HttpGet]
+    [SwaggerOperation(
+        Summary = "Get Accounts By Role",
+        Description = "Retrieves all accounts with the specified role.",
+        OperationId = "GetAccountsByRole")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Accounts returned successfully.", typeof(IEnumerable<AccountResource>))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "No accounts found for the specified role.")]
+    public async Task<IActionResult> GetAccountsByRole([FromQuery] string? role)
+    {
+        var accounts = await accountQueryService.Handle(new GetAccountsByRoleQuery(role));
+
+        if (accounts is null || !accounts.Any())
+        {
+            return NotFound($"No accounts found with role '{role}'.");
+        }
+
+        var resources = accounts.Select(account =>
+            AccountResourceFromEntityAssembler.ToResourceFromEntity(
+                account,
+                null,
+                null
+            ));
+
+        return Ok(resources);
+    }
+
 }
