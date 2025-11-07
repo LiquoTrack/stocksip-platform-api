@@ -43,7 +43,7 @@ public class EmailService(IOptions<SmtpSettings> smtp) : IEmailService
         using var client = new SmtpClient(_smtp.Server, _smtp.Port)
         {
             Credentials = new NetworkCredential(_smtp.UserName, _smtp.Password),
-            EnableSsl = _smtp.EnableSsl
+            EnableSsl = _smtp.UseSsl
         };
         
         await client.SendMailAsync(message);
