@@ -15,7 +15,7 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Aggregates
  *     This class is used to represent a user
  * </remarks>
  */
-public class User : Entity
+public partial class User : Entity
 {
     /// <summary>
     ///     The user email.
