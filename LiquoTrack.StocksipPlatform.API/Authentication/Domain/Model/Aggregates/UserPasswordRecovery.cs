@@ -49,5 +49,13 @@ public partial class User
         RecoveryPassword = null;
         RecoveryPasswordExpiration = null;   
     }
-        
+
+    /// <summary>
+    ///     Method to update the password.
+    /// </summary>
+    /// <param name="newPassword">
+    ///     The new password.
+    /// </param>
+    public void UpdatePassword(string newPassword) => Password = newPassword;
+
 }
