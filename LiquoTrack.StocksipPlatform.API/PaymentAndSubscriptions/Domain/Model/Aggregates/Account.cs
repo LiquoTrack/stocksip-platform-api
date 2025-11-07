@@ -98,7 +98,6 @@ public class Account(
     /// </param>
     public void AddAddress(Address address)
     {
-        // Ensure the list is initialized (defensive programming)
         _addresses ??= new List<Address>();
         _addresses.Add(address);
     }

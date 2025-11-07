@@ -1,4 +1,5 @@
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Aggregates;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 using MongoDB.Bson;
@@ -9,10 +10,12 @@ namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Ex
 public class AccountContextFacade : IAccountContextFacade
 {
     private readonly IMongoCollection<Account> _accounts;
+    private readonly IMongoCollection<Business> _businesses;
 
     public AccountContextFacade(IMongoDatabase database)
     {
         _accounts = database.GetCollection<Account>("Accounts");
+        _businesses = database.GetCollection<Business>("Businesses");
     }
     
     public async Task<Account?> GetAccountByIdAsync(string accountId, Address address)
@@ -47,4 +50,14 @@ public class AccountContextFacade : IAccountContextFacade
 
         return result.ModifiedCount > 0;
     }
+    
+    public async Task<Business?> FindBusinessByAccountIdAsync(string accountId)
+    {
+        if (!ObjectId.TryParse(accountId, out var objectId))
+            return null;
+
+        var filter = Builders<Business>.Filter.Eq(b => b.Id, objectId);
+        return await _businesses.Find(filter).FirstOrDefaultAsync();
+    }
+
 }

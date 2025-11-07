@@ -92,4 +92,21 @@ public interface IPaymentAndSubscriptionsFacade
     ///     The address if found, null otherwise.
     /// </returns>
     Task<Address?> GetAccountAddressAsync(string accountId, int addressIndex);
+
+    /// <summary>
+    /// Asynchronously retrieves an account by its unique identifier.
+    /// </summary>
+    /// <param name="accountId">
+    /// The unique identifier of the account to retrieve.
+    /// </param>
+    /// <returns>
+    /// An account object if found; otherwise, null.
+    /// </returns>
+    Task<Account?> FindAccountByIdAsync(string accountId);
+
+
+    /// <summary>
+    /// Asynchronously retrieves a business by its associated account identifier.
+    /// </summary>
+    Task<Business?> FindBusinessByAccountIdAsync(string accountId);
 }

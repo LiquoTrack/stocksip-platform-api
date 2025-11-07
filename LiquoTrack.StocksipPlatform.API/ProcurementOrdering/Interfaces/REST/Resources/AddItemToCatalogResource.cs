@@ -5,8 +5,15 @@ namespace LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Interfaces.REST.Re
 /// <summary>
 /// Resource for adding an item to a catalog.
 /// </summary>
-/// <param name="productId">The product identifier.</param>
-
-public record AddItemToCatalogResource(
-    string productId
-);
+public record AddItemToCatalogResource
+{
+    /// <summary>
+    /// The product identifier.
+    /// </summary>
+    public string ProductId { get; init; } = string.Empty;
+    
+    /// <summary>
+    /// The warehouse identifier where the product is stored.
+    /// </summary>
+    public string WarehouseId { get; init; } = string.Empty;
+}
