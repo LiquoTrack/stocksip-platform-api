@@ -182,7 +182,6 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
                     Email = u.Email?.ToString() ?? string.Empty,
                     EmailVerified = true,
                     Provider = GoogleAuthProvider,
-                    // Add other properties as needed
                 })
                 .ToList();
 

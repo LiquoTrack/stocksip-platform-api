@@ -58,8 +58,6 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External
                     RoleClaimType = ClaimTypes.Role,
                     NameClaimType = ClaimTypes.Name,
                     ValidateIssuerSigningKey = jwtSettings.GetValue<bool>("ValidateIssuerSigningKey"),
-                    // For development, we'll disable signature validation
-                    // In production; you should validate the token signature using Google's public keys
                     SignatureValidator = (token, parameters) => new JwtSecurityToken(token)
                 };
 

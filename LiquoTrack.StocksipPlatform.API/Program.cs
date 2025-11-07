@@ -63,6 +63,9 @@ using LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Infrastructure.Persistence.EFC.Repositories;
 using LiquoTrack.StocksipPlatform.API.AlertsAndNotifications.Interfaces.ACL;
 using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Authentication;
+using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Email;
+using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Email.Gmail.Confirguration;
+using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Email.Gmail.Services;
 using AppGoogleAuthService = LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Services.GoogleAuthService;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.External.ACL;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
@@ -261,6 +264,10 @@ builder.Services.Configure<CloudinarySettings>(configuration.GetSection("Cloudin
 
 // MercadoPago Settings Configuration
 builder.Services.Configure<MercadoPagoSettings>(builder.Configuration.GetSection("MercadoPagoSettings"));
+
+// Gmail Settings Configuration
+builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpServiceSettings"));
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 //
 // Bounded context Inventory

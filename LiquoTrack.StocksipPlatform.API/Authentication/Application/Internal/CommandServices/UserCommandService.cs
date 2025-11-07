@@ -1,8 +1,10 @@
 using System.Security.Cryptography;
+using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Email;
 using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Hashing;
 using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Token;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Commands;
+using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
@@ -23,7 +25,8 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
         ITokenService tokenService,
         IHashingService hashingService,
         IPaymentAndSubscriptionsFacade paymentAndSubscriptionsFacade,
-        IProfileContextFacade profileContextFacade
+        IProfileContextFacade profileContextFacade,
+        IEmailService emailService
     ) : IUserCommandService
     {
         /// <summary>
@@ -92,7 +95,7 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
                 string.IsNullOrWhiteSpace(name) ? email.Split('@')[0] : name,
                 hashedPassword,
                 "1234",
-                "SuperAdmin"
+                EUserRoles.SuperAdmin.ToString()
             );
 
             try
@@ -270,6 +273,83 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
                     $"An error occurred while deleting sub user with ID: {command.UserId}. Details: {ex.Message}", ex);   
             }
 
+        }
+
+        /// <summary>
+        ///     Method to send a recovery code to the user's email address.'
+        /// </summary>
+        /// <param name="command">
+        ///     Command containing the details for sending a recovery code.
+        /// </param>
+        /// <exception cref="InvalidOperationException">
+        ///     An error occurred while sending the recovery code.
+        /// </exception>
+        public async Task Handle(SendCodeToRecoverPasswordCommand command)
+        {
+            var user = await userRepository.FindByEmailAsync(command.Email);
+            if (user is null)
+                throw new InvalidOperationException($"User with email {command.Email} does not exist.");
+            
+            var code = new Random().Next(100000, 999999).ToString();
+            var hashedCode = hashingService.HashPassword(code);
+            user.SetRecoveryCode(hashedCode, TimeSpan.FromMinutes(15));
+
+            try
+            {
+                await emailService.SendEmail(user.Email.Value, "Use this to recover your password",
+                    $"Your password recovery code is: {code}. It is valid for 15 minutes.");
+                await userRepository.UpdateAsync(user);
+            }
+            catch(Exception ex)
+            {
+                throw new InvalidOperationException(
+                    $"An error occurred while sending recovery code to email {command.Email}. Details: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        ///     Method to verify a recovery code.
+        /// </summary>
+        /// <param name="command">
+        ///     The command containing the details for verifying a recovery code.
+        /// </param>
+        /// <exception cref="InvalidOperationException">
+        ///     An error occurred while verifying the recovery code.
+        /// </exception>
+        public async Task Handle(VerifyRecoveryCodeCommand command)
+        {
+            var user = await userRepository.FindByEmailAsync(command.Email);
+            if (user is null)
+                throw new InvalidOperationException($"User with email {command.Email} does not exist.");
+            
+            if (!hashingService.VerifyPassword(command.RecoveryCode, user.RecoveryCode))
+                throw new Exception("Invalid username or password");
+
+            if (!user.IsRecoveryCodeExpirationTimeValid)
+                throw new InvalidOperationException("The recovery code has expired.");
+            
+            user.ClearRecoveryCode();
+            await userRepository.UpdateAsync(user);
+        }
+
+        /// <summary>
+        ///     Method to reset a user's password.'
+        /// </summary>
+        /// <param name="command">
+        ///     The command containing the details for resetting a user's password.'
+        /// </param>
+        /// <exception cref="InvalidOperationException">
+        ///     An error occurred while resetting the user's password.'
+        /// </exception>
+        public async Task Handle(ResetPasswordCommand command)
+        {
+            var user = await userRepository.FindByEmailAsync(command.Email);
+            if (user is null)
+                throw new InvalidOperationException($"User with email {command.Email} does not exist.");
+
+            var hashPassword = hashingService.HashPassword(command.NewPassword);
+            user.UpdatePassword(hashPassword);
+            await userRepository.UpdateAsync(user);
         }
     }
 }
