@@ -69,5 +69,47 @@ public interface IUserCommandService
     /// </returns>
     Task<User?> Handle(RegisterSubUserCommand command);
 
+    /// <summary>
+    ///     Method to delete a user.
+    /// </summary>
+    /// <param name="command">
+    ///     The command containing the details for deleting a user.
+    /// </param>
+    /// <returns>
+    ///     A boolean indicating whether the user was deleted successfully.
+    /// </returns>
     Task<bool?> Handle(DeleteUserWithProfielByIdCommand command);
+    
+    /// <summary>
+    ///     Method to send a recovery code to the user.
+    /// </summary>
+    /// <param name="command">
+    ///     Command containing the details for sending a recovery code.
+    /// </param>
+    /// <returns>
+    ///     A boolean indicating whether the recovery code was sent successfully.
+    /// </returns>
+    Task Handle(SendCodeToRecoverPasswordCommand command);
+
+    /// <summary>
+    ///     Method to verify a recovery code.
+    /// </summary>
+    /// <param name="command">
+    ///     Command containing the details for verifying a recovery code.
+    /// </param>
+    /// <returns>
+    ///     A boolean indicating whether the recovery code was verified successfully.
+    /// </returns>
+    Task Handle(VerifyRecoveryCodeCommand command);
+    
+    /// <summary>
+    ///     Method to reset a user's password.
+    /// </summary>
+    /// <param name="command">
+    ///     Command containing the details for resetting a user's password.'
+    /// </param>
+    /// <returns>
+    ///     A boolean indicating whether the password was reset successfully.
+    /// </returns>
+    Task Handle(ResetPasswordCommand command);
 }
