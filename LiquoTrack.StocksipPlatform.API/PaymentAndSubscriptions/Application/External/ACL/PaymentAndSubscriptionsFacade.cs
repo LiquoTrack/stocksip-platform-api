@@ -8,36 +8,21 @@ using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
 
 namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.External.ACL;
 
+
 /// <summary>
 ///     Implementation of the <see cref="IPaymentAndSubscriptionsFacade"/> interface.
 /// </summary>
-/// <param name="accountCommandService">
-///     The service for handling account-related commands.
-/// </param>
-/// <param name="accountQueryService">
-///     The service for handling account-related queries.
-/// </param>
-/// <param name="businessCommandService">
-///     The service for handling business-related commands.
-/// </param>
-public class PaymentAndSubscriptionsFacade(IAccountCommandService accountCommandService,
-                                            IBusinessCommandService businessCommandService,
-                                            ISubscriptionQueryService subscriptionQueryService,
-                                            IAccountQueryService accountQueryService) 
-                                            : IPaymentAndSubscriptionsFacade
+public class PaymentAndSubscriptionsFacade(
+    IAccountCommandService accountCommandService,
+    IBusinessCommandService businessCommandService,
+    ISubscriptionQueryService subscriptionQueryService,
+    IAccountQueryService accountQueryService,
+    IBusinessQueryService businessQueryService
+) : IPaymentAndSubscriptionsFacade
 {
     /// <summary>
     ///     Creates a new account.
     /// </summary>
-    /// <param name="role">
-    ///     The role of the account.
-    /// </param>
-    /// <param name="businessId">
-    ///     The ID of the business associated with the account.
-    /// </param>
-    /// <returns>
-    ///     The account object.
-    /// </returns>
     public async Task<Account?> CreateAccount(string role, string businessId)
     {
         var command = new CreateAccountCommand(businessId, role);
@@ -48,12 +33,6 @@ public class PaymentAndSubscriptionsFacade(IAccountCommandService accountCommand
     /// <summary>
     ///     Creates a new business.
     /// </summary>
-    /// <param name="businessName">
-    ///     The name of the business. 
-    /// </param>
-    /// <returns>
-    ///     The business object.
-    /// </returns>
     public async Task<Business?> CreateBusiness(string businessName)
     {
         var command = new CreateBusinessCommand(businessName);
@@ -62,93 +41,71 @@ public class PaymentAndSubscriptionsFacade(IAccountCommandService accountCommand
     }
 
     /// <summary>
-    ///     Method to get the plan warehouse limit by account id.
+    ///     Gets the warehouse limit of the plan associated with the account.
     /// </summary>
-    /// <param name="accountId">
-    ///     The ID of the account.
-    /// </param>
-    /// <returns>
-    ///     The warehouse limit for the plan associated with the account.
-    /// </returns>
     public async Task<int?> GetPlanWarehouseLimitByAccountId(string accountId)
     {
         var query = new GetPlanWarehouseLimitByAccountId(accountId);
-        var warehouseLimits = await subscriptionQueryService.Handle(query);
-        return warehouseLimits;
+        return await subscriptionQueryService.Handle(query);
     }
 
     /// <summary>
-    ///     Method to get the plan products limit by account id.
+    ///     Gets the products limit of the plan associated with the account.
     /// </summary>
-    /// <param name="acconntId">
-    ///     The ID of the account.         
-    /// </param>
-    /// <returns>
-    ///     The product limit of the plan associated with the account.
-    /// </returns>
-    public async Task<int?> GetPlanProductsLimitByAccountId(string acconntId)
+    public async Task<int?> GetPlanProductsLimitByAccountId(string accountId)
     {
-        var query = new GetPlanProductsLimitByAccountIdQuery(acconntId);
-        var productLimits = await subscriptionQueryService.Handle(query);
-        return productLimits;
+        var query = new GetPlanProductsLimitByAccountIdQuery(accountId);
+        return await subscriptionQueryService.Handle(query);
     }
 
     /// <summary>
-    ///     Method to get the plan users limit by account id.
+    ///     Gets the user limit of the plan associated with the account.
     /// </summary>
-    /// <param name="accountId">
-    ///     The ID of the account.       
-    /// </param>
-    /// <returns>
-    ///     The user limit of the plan associated with the account.
-    /// </returns>
     public async Task<int?> GetPlanUserLimitByAccountId(string accountId)
     {
         var query = new GetPlanUsersLimitByAccountIdQuery(accountId);
-        var userLimits = await subscriptionQueryService.Handle(query);
-        return userLimits;
+        return await subscriptionQueryService.Handle(query);
     }
-    
+
     /// <summary>
     ///     Gets all addresses associated with an account.
     /// </summary>
-    /// <param name="accountId">
-    ///     The account identifier.
-    /// </param>
-    /// <returns>
-    ///     A collection of addresses.
-    /// </returns>
     public async Task<IEnumerable<Address>> GetAccountAddressesAsync(string accountId)
     {
         var query = new GetAccountByIdQuery(accountId);
         var account = await accountQueryService.Handle(query);
         
-        if (account == null)
-            return Enumerable.Empty<Address>();
-        
-        return account.Addresses;
+        return account?.Addresses ?? Enumerable.Empty<Address>();
     }
-    
+
     /// <summary>
     ///     Gets a specific address by account and address index.
     /// </summary>
-    /// <param name="accountId">
-    ///     The account identifier.
-    /// </param>
-    /// <param name="addressIndex">
-    ///     The index of the address in the collection.
-    /// </param>
-    /// <returns>
-    ///     The address if found, null otherwise.
-    /// </returns>
     public async Task<Address?> GetAccountAddressAsync(string accountId, int addressIndex)
     {
         var addresses = await GetAccountAddressesAsync(accountId);
         var addressList = addresses.ToList();
-        
-        if (addressIndex < 0 || addressIndex >= addressList.Count)
-            return null;
-        
-        return addressList[addressIndex];
+
+        return (addressIndex >= 0 && addressIndex < addressList.Count)
+            ? addressList[addressIndex]
+            : null;
+    }
+
+    /// <summary>
+    ///     Finds an account by its identifier.
+    /// </summary>
+    public async Task<Account?> FindAccountByIdAsync(string accountId)
+    {
+        var query = new GetAccountByIdQuery(accountId);
+        return await accountQueryService.Handle(query);
+    }
+
+    /// <summary>
+    ///     Finds the business associated with a given account.
+    /// </summary>
+    public async Task<Business?> FindBusinessByAccountIdAsync(string accountId)
+    {
+        var query = new GetBusinessByAccountIdQuery(accountId);
+        return await businessQueryService.Handle(query);
     }
 }
