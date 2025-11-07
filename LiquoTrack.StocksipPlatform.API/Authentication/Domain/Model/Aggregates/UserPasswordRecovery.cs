@@ -5,12 +5,12 @@ public partial class User
     /// <summary>
     ///     The recovery password of the gmail service.
     /// </summary>
-    public string? RecoveryPassword { get; set; }
+    public string? RecoveryCode { get; set; }
     
     /// <summary>
     ///     Date when the recovery password expires.
     /// </summary>
-    public DateTime? RecoveryPasswordExpiration { get; set; }
+    public DateTime? RecoveryCodeExpiration { get; set; }
 
     /// <summary>
     ///     Method to set the recovery password.
@@ -23,31 +23,26 @@ public partial class User
     /// </param>
     public void SetRecoveryCode(string recoveryCode, TimeSpan expiration)
     {
-        RecoveryPassword = recoveryCode;
-        RecoveryPasswordExpiration = DateTime.UtcNow.Add(expiration);
+        RecoveryCode = recoveryCode;
+        RecoveryCodeExpiration = DateTime.UtcNow.Add(expiration);
     }
 
     /// <summary>
-    ///     Method to check if the recovery code is valid.
+    ///     Property to check if the recovery code expiration time is valid.
     /// </summary>
-    /// <param name="code">
-    ///     The recovery code to check.
-    /// </param>
     /// <returns>
-    ///     A boolean indicating whether the recovery code is valid.
+    ///     True if the recovery code expiration time is valid, false otherwise.
     /// </returns>
-    public bool IsRecoveryCodeValid(string code)
-    {
-        return RecoveryPassword == code && RecoveryPasswordExpiration > DateTime.UtcNow;
-    }
+    public bool IsRecoveryCodeExpirationTimeValid => RecoveryCodeExpiration > DateTime.UtcNow;
+    
 
     /// <summary>
     ///     Method to clear the recovery code.
     /// </summary>
     public void ClearRecoveryCode()
     {
-        RecoveryPassword = null;
-        RecoveryPasswordExpiration = null;   
+        RecoveryCode = null;
+        RecoveryCodeExpiration = null;   
     }
 
     /// <summary>

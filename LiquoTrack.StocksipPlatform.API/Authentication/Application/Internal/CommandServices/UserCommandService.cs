@@ -291,7 +291,8 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
                 throw new InvalidOperationException($"User with email {command.Email} does not exist.");
             
             var code = new Random().Next(100000, 999999).ToString();
-            user.SetRecoveryCode(code, TimeSpan.FromMinutes(15));
+            var hashedCode = hashingService.HashPassword(code);
+            user.SetRecoveryCode(hashedCode, TimeSpan.FromMinutes(15));
 
             try
             {
@@ -320,9 +321,12 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
             var user = await userRepository.FindByEmailAsync(command.Email);
             if (user is null)
                 throw new InvalidOperationException($"User with email {command.Email} does not exist.");
+            
+            if (!hashingService.VerifyPassword(command.RecoveryCode, user.RecoveryCode))
+                throw new Exception("Invalid username or password");
 
-            if (!user.IsRecoveryCodeValid(command.RecoveryCode))
-                throw new InvalidOperationException("Invalid or expired recovery code.");
+            if (!user.IsRecoveryCodeExpirationTimeValid)
+                throw new InvalidOperationException("The recovery code has expired.");
             
             user.ClearRecoveryCode();
             await userRepository.UpdateAsync(user);
