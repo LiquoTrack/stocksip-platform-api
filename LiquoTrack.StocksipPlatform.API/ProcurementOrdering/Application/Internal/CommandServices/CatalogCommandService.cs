@@ -23,6 +23,9 @@ public class CatalogCommandService : ICatalogCommandService
         _productContextFacade = productContextFacade ?? throw new ArgumentNullException(nameof(productContextFacade));
     }
 
+    /// <summary>
+    /// Handles the CreateCatalogCommand.
+    /// </summary>
     public async Task<CatalogId> Handle(CreateCatalogCommand command)
     {
         var catalog = new Catalog(command);
@@ -30,72 +33,74 @@ public class CatalogCommandService : ICatalogCommandService
         return catalog.CatalogId;
     }
 
+    /// <summary>
+    /// Handles the UpdateCatalogCommand.
+    /// </summary>
     public async Task Handle(UpdateCatalogCommand command)
     {
-        var catalogId = new CatalogId(command.catalogId);
-        var catalog = await _catalogRepository.GetByIdAsync(catalogId)
-                      ?? throw new InvalidOperationException($"Catalog with ID {command.catalogId} not found");
-
+        var catalog = await GetCatalogByIdAsync(command.catalogId);
         catalog.UpdateCatalog(command);
         await _catalogRepository.UpdateAsync(catalog);
     }
 
+    /// <summary>
+    /// Handles the PublishCatalogCommand.
+    /// </summary>
     public async Task Handle(PublishCatalogCommand command)
     {
-        var catalogId = new CatalogId(command.catalogId);
-        var catalog = await _catalogRepository.GetByIdAsync(catalogId)
-                      ?? throw new InvalidOperationException($"Catalog with ID {command.catalogId} not found");
-
+        var catalog = await GetCatalogByIdAsync(command.catalogId);
         catalog.PublishCatalog();
         await _catalogRepository.UpdateAsync(catalog);
     }
 
+    /// <summary>
+    /// Handles the UnpublishCatalogCommand.
+    /// </summary>
     public async Task Handle(UnpublishCatalogCommand command)
     {
-        var catalogId = new CatalogId(command.catalogId);
-        var catalog = await _catalogRepository.GetByIdAsync(catalogId)
-                      ?? throw new InvalidOperationException($"Catalog with ID {command.catalogId} not found");
-
+        var catalog = await GetCatalogByIdAsync(command.catalogId);
         catalog.UnpublishCatalog();
         await _catalogRepository.UpdateAsync(catalog);
     }
 
     /// <summary>
-    /// Adds a product as an item to a catalog, fetching product data from the Inventory context.
+    /// Handles the AddItemToCatalogCommand.
+    /// Fetches product details and stock from the Inventory context and adds it to the catalog.
     /// </summary>
     public async Task Handle(AddItemToCatalogCommand command)
     {
-        if (command is null)
-            throw new ArgumentNullException(nameof(command));
+        var catalog = await GetCatalogByIdAsync(command.CatalogId);
 
-        var catalogId = new CatalogId(command.CatalogId);
-        var catalog = await _catalogRepository.GetByIdAsync(catalogId)
-                      ?? throw new InvalidOperationException($"Catalog with ID {command.CatalogId} not found");
+        // Fetch product details
+        var product = await _productContextFacade.GetProductDetailsByIdAsync(command.ProductId)
+            ?? throw new InvalidOperationException($"Product with ID {command.ProductId} not found");
 
-        // Fetch product details from the Inventory context
-        var product = await _productContextFacade.GetProductDetailsByIdAsync(command.ProductId);
-        if (product == null)
-            throw new InvalidOperationException($"Product with ID {command.ProductId} not found in Inventory context");
+        // Fetch stock
+        var stock = await _productContextFacade.GetProductStockInWarehouseAsync(command.ProductId, command.WarehouseId)
+            ?? throw new InvalidOperationException($"No inventory found for product {command.ProductId} in warehouse {command.WarehouseId}");
 
-        // Add item to catalog using product data
-        catalog.AddItem(
-            product.Id,
-            product.Name,
-            product.UnitPrice,
-            product.Currency,
-            product.ImageUrl
-        );
-
+        // Add item with stock
+        catalog.AddItem(product.Id, product.Name, product.UnitPrice, product.Currency, product.ImageUrl, stock);
         await _catalogRepository.UpdateAsync(catalog);
     }
 
+    /// <summary>
+    /// Handles the RemoveItemFromCatalogCommand.
+    /// </summary>
     public async Task Handle(RemoveItemFromCatalogCommand command)
     {
-        var catalogId = new CatalogId(command.catalogId);
-        var catalog = await _catalogRepository.GetByIdAsync(catalogId)
-                      ?? throw new InvalidOperationException($"Catalog with ID {command.catalogId} not found");
-
+        var catalog = await GetCatalogByIdAsync(command.catalogId);
         catalog.RemoveItem(command);
         await _catalogRepository.UpdateAsync(catalog);
+    }
+
+    /// <summary>
+    /// Helper method to get a catalog by ID or throw an exception if not found.
+    /// </summary>
+    private async Task<Catalog> GetCatalogByIdAsync(string catalogId)
+    {
+        var id = new CatalogId(catalogId);
+        return await _catalogRepository.GetByIdAsync(id)
+            ?? throw new InvalidOperationException($"Catalog with ID {catalogId} not found");
     }
 }

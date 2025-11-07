@@ -1,4 +1,6 @@
 using System.Net.Mime;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Queries;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
 using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Model.Commands;
 using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Model.Queries;
 using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Services;
@@ -19,8 +21,12 @@ namespace LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Interfaces.REST.Co
 [SwaggerTag("Available endpoints for managing catalogs.")]
 public class CatalogController(
     ICatalogCommandService catalogCommandService,
-    ICatalogQueryService catalogQueryService) : ControllerBase
+    ICatalogQueryService catalogQueryService,
+    IPaymentAndSubscriptionsFacade paymentFacade) : ControllerBase
 {
+    /// <summary>
+    /// Retrieves a catalog by its unique identifier.
+    /// </summary>
     [HttpGet("{catalogId}")]
     [SwaggerOperation(
         Summary = "Get catalog by ID.",
@@ -48,6 +54,9 @@ public class CatalogController(
         }
     }
 
+    /// <summary>
+    /// Retrieves all catalogs in the system.
+    /// </summary>
     [HttpGet]
     [SwaggerOperation(
         Summary = "Get all catalogs.",
@@ -62,6 +71,9 @@ public class CatalogController(
         return Ok(resources);
     }
 
+    /// <summary>
+    /// Retrieves all published catalogs.
+    /// </summary>
     [HttpGet("published")]
     [SwaggerOperation(
         Summary = "Get all published catalogs.",
@@ -76,6 +88,9 @@ public class CatalogController(
         return Ok(resources);
     }
 
+    /// <summary>
+    /// Updates the details of an existing catalog.
+    /// </summary>
     [HttpPut("{catalogId}")]
     [SwaggerOperation(
         Summary = "Update a catalog.",
@@ -102,6 +117,9 @@ public class CatalogController(
         }
     }
 
+    /// <summary>
+    /// Marks a catalog as published and visible.
+    /// </summary>
     [HttpPut("{catalogId}/publications")]
     [SwaggerOperation(
         Summary = "Publish a catalog.",
@@ -128,6 +146,9 @@ public class CatalogController(
         }
     }
 
+    /// <summary>
+    /// Marks a catalog as unpublished and hidden.
+    /// </summary>
     [HttpDelete("{catalogId}/publications")]
     [SwaggerOperation(
         Summary = "Unpublish a catalog.",
@@ -154,19 +175,22 @@ public class CatalogController(
         }
     }
 
+    /// <summary>
+    /// Adds a product item with stock information to a catalog.
+    /// </summary>
     [HttpPost("{catalogId}/items")]
     [SwaggerOperation(
         Summary = "Add item to catalog.",
-        Description = "Adds a product item to an existing catalog and returns the updated catalog.",
+        Description = "Adds a product item with stock information to an existing catalog and returns the updated catalog.",
         OperationId = "AddItemToCatalog")]
     [SwaggerResponse(StatusCodes.Status200OK, "Item added and catalog updated successfully.", typeof(CatalogResource))]
-    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request.")]
-    [SwaggerResponse(StatusCodes.Status404NotFound, "Catalog not found.")]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request or product has no stock.")]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Catalog, product, or inventory not found.")]
     public async Task<IActionResult> AddItemToCatalog(string catalogId, [FromBody] AddItemToCatalogResource resource)
     {
         try
         {
-            var command = new AddItemToCatalogCommand(catalogId, resource.productId);
+            var command = new AddItemToCatalogCommand(catalogId, resource.ProductId, resource.WarehouseId);
             await catalogCommandService.Handle(command);
 
             var query = new GetCatalogByIdQuery(catalogId);
@@ -180,7 +204,7 @@ public class CatalogController(
         }
         catch (InvalidOperationException ex)
         {
-            return NotFound(new { message = ex.Message });
+            return BadRequest(new { message = ex.Message });
         }
         catch (Exception ex)
         {
@@ -188,6 +212,9 @@ public class CatalogController(
         }
     }
 
+    /// <summary>
+    /// Removes a product item from a catalog.
+    /// </summary>
     [HttpDelete("{catalogId}/items/{productId}")]
     [SwaggerOperation(
         Summary = "Remove item from catalog.",
@@ -212,5 +239,36 @@ public class CatalogController(
         {
             return BadRequest(new { message = ex.Message });
         }
+    }
+
+    /// <summary>
+    /// Returns the account data, its associated business, and all published catalogs.
+    /// </summary>
+    [HttpGet("with-business")]
+    [SwaggerOperation(
+        Summary = "Get account info with its business and published catalogs.",
+        Description = "Returns the account data, its associated business and all published catalogs.",
+        OperationId = "GetAccountBusinessAndCatalogs")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Data retrieved successfully.", typeof(AccountCatalogsResource))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Account or business not found.")]
+    public async Task<IActionResult> GetAccountBusinessAndCatalogs([FromQuery] string accountId)
+    {
+        // 1. Get account from PaymentAndSubscriptions BC
+        var account = await paymentFacade.FindAccountByIdAsync(accountId);
+        if (account == null)
+            return NotFound(new { message = $"Account with ID {accountId} not found." });
+
+        // 2. Get business associated to that account
+        var business = await paymentFacade.FindBusinessByAccountIdAsync(accountId);
+        if (business == null)
+            return NotFound(new { message = $"Business for account {accountId} not found." });
+
+        // 3. Get catalogs owned by the account
+        var catalogs = await catalogQueryService.Handle(new GetCatalogsByOwnerQuery(accountId));
+
+        // 4. Assemble response
+        var resource = AccountCatalogsResourceAssembler.ToResource(account, business, catalogs);
+
+        return Ok(resource);
     }
 }
