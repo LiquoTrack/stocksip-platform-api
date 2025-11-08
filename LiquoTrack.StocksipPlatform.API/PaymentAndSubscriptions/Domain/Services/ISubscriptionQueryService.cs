@@ -1,4 +1,5 @@
 ﻿using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Aggregates;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Queries;
 
 namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Services;
@@ -51,4 +52,15 @@ public interface ISubscriptionQueryService
     ///     A task that represents the asynchronous operation.
     /// </returns>
     Task<int?> Handle(GetPlanUsersLimitByAccountIdQuery query);
+
+    /// <summary>
+    ///     Method to handle the retrieval of an account's subscriptions.'
+    /// </summary>
+    /// <param name="query">
+    ///     The query object containing the account ID.
+    /// </param>
+    /// <returns>
+    ///     A task that represents the asynchronous operation. The task result contains the subscription if found; otherwise, null. 
+    /// </returns>
+    Task<(Subscription?, Plan?)> Handle(GetSubscriptionByAccountIdQuery query);
 }

@@ -1,4 +1,6 @@
-﻿using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Queries;
+﻿using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Aggregates;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Entities;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Queries;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Services;
 
@@ -78,5 +80,21 @@ public class SubscriptionQueryService(
         
         var userLimits = await planRepository.FindPlanUsersLimitByAccountIdAsync(subscription.PlanId);
         return userLimits;
+    }
+
+    /// <summary>
+    ///     Method to handle the retrieval of a subscription by account ID.
+    /// </summary>
+    /// <param name="query">
+    ///     The query object containing the account ID.
+    /// </param>
+    /// <returns>
+    ///     A task that represents the asynchronous operation. The task result contains the subscription.
+    /// </returns>
+    public async Task<(Subscription?, Plan?)> Handle(GetSubscriptionByAccountIdQuery query)
+    {
+        var subscription = await subscriptionRepository.FindByAccountIdAsync(query.AccountId);
+        var currentPlan = await planRepository.FindByIdAsync(subscription.PlanId);
+        return (subscription, currentPlan);
     }
 }

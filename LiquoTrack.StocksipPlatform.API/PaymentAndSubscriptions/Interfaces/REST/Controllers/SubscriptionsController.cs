@@ -33,8 +33,6 @@ public class SubscriptionsController(
         Summary = "Confirm subscription",
         Description = "Endpoint to confirm a subscription based on the provided notification from MercadoPago.",
         OperationId = "ConfirmedSubscription")]
-    [SwaggerResponse(StatusCodes.Status200OK, "Subscription confirmed successfully.", typeof(SubscriptionConfirmResource))]
-    [SwaggerResponse(StatusCodes.Status400BadRequest, "Subscription could not be confirmed.")]
     public async Task<IActionResult> ConfirmedSubscription([FromServices] ILogger<SubscriptionsController> logger)
     {
         try
