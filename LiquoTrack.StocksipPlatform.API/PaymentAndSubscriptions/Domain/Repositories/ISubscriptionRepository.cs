@@ -51,4 +51,12 @@ public interface ISubscriptionRepository : IBaseRepository<Subscription>
     ///     A string representing the status of the subscription.
     /// </returns>
     Task<string?> FindSubscriptionStatusByPreferenceId(string preferenceId);
+    
+    /// <summary>
+    ///     Method to find all pending updates for an account.
+    /// </summary>
+    /// <returns>
+    ///     A list of subscriptions.
+    /// </returns>
+    Task<IEnumerable<Subscription?>> FindAllPendingUpdateAsync();
 } 
