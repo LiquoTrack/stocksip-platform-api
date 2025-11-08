@@ -19,7 +19,6 @@ namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.RES
 [Tags("Accounts")]
 public class AccountSubscriptionsController(ISubscriptionsCommandService subscriptionsCommandService) : ControllerBase
 {
-    
     /// <summary>
     ///     The service for handling subscription-related commands.
     /// </summary>
@@ -37,10 +36,11 @@ public class AccountSubscriptionsController(ISubscriptionsCommandService subscri
         Summary = "Create a new subscription for an account.",
         Description = "Initializes a new subscription for the specified account.",
         OperationId = "CreateSubscription"
-        )]
+    )]
     [SwaggerResponse(StatusCodes.Status201Created, "Subscription created successfully.", typeof(SubscriptionResource))]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Subscription could not be created.")]
-    public async Task<IActionResult> CreateSubscription([FromRoute] string accountId, [FromBody] InitialSubscriptionResource resource)
+    public async Task<IActionResult> CreateSubscription([FromRoute] string accountId,
+        [FromBody] InitialSubscriptionResource resource)
     {
         var command = InitialSubscriptionCommandFromResourceAssembler.FromCommandToEntity(resource, accountId);
         var (preferenceId, initPoint) = await subscriptionsCommandService.Handle(command);
@@ -53,9 +53,50 @@ public class AccountSubscriptionsController(ISubscriptionsCommandService subscri
         }
 
         var subscriptionResource =
-            SubscriptionResourceFromEntityAssembler.ToResourceFromEntity(preferenceId!, initPoint!, message: "Processing subscription request..");
+            SubscriptionResourceFromEntityAssembler.ToResourceFromEntity(preferenceId!, initPoint!,
+                message: "Processing subscription request..");
 
         return CreatedAtAction(nameof(CreateSubscription), subscriptionResource);
     }
-    
+
+    /// <summary>
+    ///     Method to upgrade an existing subscription.
+    /// </summary>
+    /// <param name="accountId">
+    ///     The route parameter representing the unique identifier of the account for which to create a subscription. 
+    /// </param>
+    /// <param name="subscriptionId">
+    ///     The route parameter representing the unique identifier of the subscription to upgrade.
+    /// </param>
+    /// <param name="resource">
+    ///     A resource containing the details for upgrading the subscription. 
+    /// </param>
+    /// <returns>
+    ///     A 201 Created response with the newly created subscription, or a 400 Bad Request response if the subscription could not be upgraded. 
+    /// </returns>
+    [HttpPut("{subscriptionId}")]
+    [SwaggerOperation(
+        Summary = "Upgrade an existing subscription for an account.",
+        Description = "Upgrades an existing subscription for the specified account.",
+        OperationId = "UpdateSubscription"
+        )]
+    [SwaggerResponse(StatusCodes.Status201Created, "Subscription created successfully.", typeof(SubscriptionResource))]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Subscription could not be created.")]
+    public async Task<IActionResult> UpdateSubscription([FromRoute] string accountId, [FromRoute] string subscriptionId,
+        [FromBody] UpgradeSubscriptionResource resource)
+    {
+        var command =
+            UpgradeSubscriptionCommandFromResourceAssembler.ToCommandFromResource(accountId, subscriptionId, resource);
+        var (preferenceId, initPoint) = await subscriptionsCommandService.Handle(command);
+        var subscriptionResource =
+            SubscriptionResourceFromEntityAssembler.ToResourceFromEntity(preferenceId!, initPoint!,
+                message: "Processing subscription request..");
+
+        return CreatedAtAction(
+            nameof(CreateSubscription),
+            new { accountId = accountId, subscriptionId = subscriptionId },
+            subscriptionResource
+        );
+    }
+
 }
