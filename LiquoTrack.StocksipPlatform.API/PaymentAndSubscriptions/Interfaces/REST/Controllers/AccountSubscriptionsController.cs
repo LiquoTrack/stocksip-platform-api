@@ -1,4 +1,5 @@
 ﻿using System.Net.Mime;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Queries;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.REST.Assemblers;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.REST.Resources;
@@ -17,7 +18,9 @@ namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.RES
 [Route("api/v1/accounts/{accountId}/subscriptions")]
 [Produces(MediaTypeNames.Application.Json)]
 [Tags("Accounts")]
-public class AccountSubscriptionsController(ISubscriptionsCommandService subscriptionsCommandService) : ControllerBase
+public class AccountSubscriptionsController(
+    ISubscriptionsCommandService subscriptionsCommandService,
+    ISubscriptionQueryService subscriptionQueryService) : ControllerBase
 {
     /// <summary>
     ///     The service for handling subscription-related commands.
@@ -37,7 +40,7 @@ public class AccountSubscriptionsController(ISubscriptionsCommandService subscri
         Description = "Initializes a new subscription for the specified account.",
         OperationId = "CreateSubscription"
     )]
-    [SwaggerResponse(StatusCodes.Status201Created, "Subscription created successfully.", typeof(SubscriptionResource))]
+    [SwaggerResponse(StatusCodes.Status201Created, "Subscription created successfully.", typeof(PaymentPreferenceResource))]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Subscription could not be created.")]
     public async Task<IActionResult> CreateSubscription([FromRoute] string accountId,
         [FromBody] InitialSubscriptionResource resource)
@@ -47,13 +50,13 @@ public class AccountSubscriptionsController(ISubscriptionsCommandService subscri
 
         if (preferenceId is null && initPoint is null)
         {
-            var freeSubscription = new SubscriptionResource(null, null, "Free plan activated successfully.");
+            var freeSubscription = new PaymentPreferenceResource(null, null, "Free plan activated successfully.");
 
             return CreatedAtAction(nameof(CreateSubscription), freeSubscription);
         }
 
         var subscriptionResource =
-            SubscriptionResourceFromEntityAssembler.ToResourceFromEntity(preferenceId!, initPoint!,
+            PaymentPreferenceResourceFromEntityAssembler.ToResourceFromEntity(preferenceId!, initPoint!,
                 message: "Processing subscription request..");
 
         return CreatedAtAction(nameof(CreateSubscription), subscriptionResource);
@@ -80,7 +83,7 @@ public class AccountSubscriptionsController(ISubscriptionsCommandService subscri
         Description = "Upgrades an existing subscription for the specified account.",
         OperationId = "UpdateSubscription"
         )]
-    [SwaggerResponse(StatusCodes.Status201Created, "Subscription created successfully.", typeof(SubscriptionResource))]
+    [SwaggerResponse(StatusCodes.Status201Created, "Subscription created successfully.", typeof(PaymentPreferenceResource))]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Subscription could not be created.")]
     public async Task<IActionResult> UpdateSubscription([FromRoute] string accountId, [FromRoute] string subscriptionId,
         [FromBody] UpgradeSubscriptionResource resource)
@@ -89,7 +92,7 @@ public class AccountSubscriptionsController(ISubscriptionsCommandService subscri
             UpgradeSubscriptionCommandFromResourceAssembler.ToCommandFromResource(accountId, subscriptionId, resource);
         var (preferenceId, initPoint) = await subscriptionsCommandService.Handle(command);
         var subscriptionResource =
-            SubscriptionResourceFromEntityAssembler.ToResourceFromEntity(preferenceId!, initPoint!,
+            PaymentPreferenceResourceFromEntityAssembler.ToResourceFromEntity(preferenceId!, initPoint!,
                 message: "Processing subscription request..");
 
         return CreatedAtAction(
@@ -99,4 +102,32 @@ public class AccountSubscriptionsController(ISubscriptionsCommandService subscri
         );
     }
 
+    /// <summary>
+    ///     Method to get a subscription by account ID.
+    /// </summary>
+    /// <param name="accountId">
+    ///     The route parameter representing the unique identifier of the account for which to retrieve a subscription.
+    /// </param>
+    /// <returns>
+    ///     A 200 OK response with the subscription, or a 404 Not Found response if the subscription does not exist.
+    /// </returns>
+    [HttpGet]
+    [SwaggerOperation(
+        Summary = "Get subscription by account id",
+        Description = "Retrieves a subscription for the specified account.",
+        OperationId = "GetSubscriptionByAccountId"
+        )]
+    [SwaggerResponse(StatusCodes.Status200OK, "Subscription returned successfully.", typeof(SubscriptionResource))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Subscription not found.")]
+    public async Task<IActionResult> GetSubscriptionByAccountId([FromRoute] string accountId)
+    {
+        var getSubscriptionByAccountIdQuery = new GetSubscriptionByAccountIdQuery(accountId);
+        var (subscription, plan) = await subscriptionQueryService.Handle(getSubscriptionByAccountIdQuery);
+        if (subscription is null || plan is null)
+        {
+            return NotFound($"Subscription with account ID {accountId} not found.");
+        }
+        var subscriptionResource = SubscriptionResourceFromEntityAssembler.ToResourceFromEntity(subscription, plan);
+        return Ok(subscriptionResource);
+    }
 }

@@ -1,4 +1,5 @@
 ﻿using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Aggregates;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.REST.Resources;
 
 namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.REST.Assemblers;
@@ -11,24 +12,25 @@ public class SubscriptionResourceFromEntityAssembler
     /// <summary>
     ///     Method to convert Subscription entity to SubscriptionResource.
     /// </summary>
-    /// <param name="preferenceId">}
-    ///     The preference id of the subscription in MercadoPago.
+    /// <param name="subscription">
+    ///     Subscription entity to convert.
     /// </param>
-    /// <param name="initPoint">
-    ///     The url to redirect to after the subscription is created.
-    /// </param>
-    /// <param name="message">
-    ///     The message to display to the user.
+    /// <param name="plan">
+    ///     Subscription plan to convert.
     /// </param>
     /// <returns>
-    ///     A SubscriptionResource object.
+    ///     A new instance of SubscriptionResource representing the provided entity. 
     /// </returns>
-    public static SubscriptionResource ToResourceFromEntity(string preferenceId, string initPoint, string message)
-    {
-        return new SubscriptionResource(
-            preferenceId,
-            initPoint,
-            message
+    public static SubscriptionResource ToResourceFromEntity(Subscription subscription, Plan plan)
+        => new SubscriptionResource(
+            subscription.Id.ToString(), 
+            subscription.PlanId, 
+            subscription.Status.ToString(), 
+            subscription.ExpirationDate.ToShortDateString(),
+            plan.PlanType.ToString(),
+            plan.PaymentFrequency.ToString(),
+            plan.PlanLimits.MaxUsers,
+            plan.PlanLimits.MaxProducts,
+            plan.PlanLimits.MaxWarehouses
             );
-    }
 }
