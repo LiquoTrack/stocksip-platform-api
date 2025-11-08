@@ -53,7 +53,7 @@ public class MercadoPagoService : IMercadoPagoService
     /// <returns>
     ///     A string representing the ID of the payment preference.
     /// </returns>
-    public (string PreferenceId, string InitPoint) CreatePaymentPreference(string title, decimal price, string currency, int quantity, string accountId)
+    public (string PreferenceId, string InitPoint) CreatePaymentPreference(string title, decimal price, string currency, int quantity, string accountId, DateTime? expirationDateFrom, DateTime? expirationDateTo)
     {
         var request = new PreferenceRequest
         {
@@ -78,14 +78,18 @@ public class MercadoPagoService : IMercadoPagoService
             Metadata = new Dictionary<string, object>
             {
                 {"account_id", accountId}
-            }
+            },
+            
+            Expires = true,
+            ExpirationDateFrom = expirationDateFrom,
+            ExpirationDateTo = expirationDateTo
         };
         
         var client = new PreferenceClient();
         var preference = client.CreateAsync(request).Result;
         return (preference.Id, preference.InitPoint);
     }
-    
+
     /// <summary>
     ///     Method to get a payment by ID.  
     /// </summary>
