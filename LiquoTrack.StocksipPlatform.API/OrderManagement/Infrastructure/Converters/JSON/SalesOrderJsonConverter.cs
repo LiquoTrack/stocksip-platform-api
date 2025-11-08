@@ -72,9 +72,12 @@ public class SalesOrderJsonConverter : JsonConverter<SalesOrder>
                 ?? throw new JsonException("unitPrice.currency must be a valid string");
 
             var quantity = itemElement.GetProperty("quantityToSell").GetInt32();
+            
+            var productName = itemElement.GetProperty("productName").GetString()
+                ?? throw new JsonException("productName is required for each item");
 
             var unitPrice = new Money(amount, new Currency(currencyCode));
-            var salesOrderItem = new SalesOrderItem(new ProductId(productIdValue), unitPrice, quantity);
+            var salesOrderItem = new SalesOrderItem(new ProductId(productIdValue), unitPrice, quantity, productName);
 
             if (itemElement.TryGetProperty("inventoryId", out var inventoryElement) &&
                 inventoryElement.ValueKind == JsonValueKind.String)

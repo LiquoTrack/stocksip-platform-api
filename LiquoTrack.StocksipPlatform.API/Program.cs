@@ -330,7 +330,7 @@ builder.Services.AddScoped<ICatalogCommandService, CatalogCommandService>();
 builder.Services.AddScoped<ICatalogQueryService, CatalogQueryService>();
 
 builder.Services.AddScoped<IProductContextFacade, ProductContextFacade>();
-builder.Services.AddScoped<ISalesOrderFacade, SalesOrderFacade>();
+builder.Services.AddScoped<IProcurementOrderingFacade, ProcurementOrderingFacade>();
 
 // Purchase Order converters
 builder.Services.Configure<JsonOptions>(options =>

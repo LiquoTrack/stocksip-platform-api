@@ -2,6 +2,7 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Interfaces.REST.Resour
 
 public record CreateSalesOrderItemResource(
     string ProductId,
+    string ProductName,
     decimal UnitPrice,
     string Currency,
     string? InventoryId,
