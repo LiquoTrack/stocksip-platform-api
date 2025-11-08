@@ -85,7 +85,10 @@ using LiquoTrack.StocksipPlatform.API.OrderManagement.Application.Internal.Comma
 using LiquoTrack.StocksipPlatform.API.OrderManagement.Application.Internal.QueryServices;
 using LiquoTrack.StocksipPlatform.API.OrderManagement.Application.Internal.Services;
 using LiquoTrack.StocksipPlatform.API.OrderManagement.Domain.Model.ValueObjects;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.OutBoundServices.Jobs.Hosted;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.OutBoundServices.PaymentProviders.services;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.Jobs.Hosted;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.Jobs.Services;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.PaymentProviders.MercadoPago.Configuration;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.PaymentProviders.MercadoPago.Services;
 using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Application.Internal.CommandServices;
@@ -268,6 +271,10 @@ builder.Services.Configure<MercadoPagoSettings>(builder.Configuration.GetSection
 // Gmail Settings Configuration
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpServiceSettings"));
 builder.Services.AddScoped<IEmailService, EmailService>();
+
+// Subscriptions Job
+builder.Services.AddSingleton<ISubscriptionsExpirationService, SubscriptionsExpirationService>();
+builder.Services.AddHostedService<SubscriptionsExpirationJob>();
 
 //
 // Bounded context Inventory
