@@ -41,14 +41,25 @@ public class CatalogItem : Entity
     public int? AvailableStock { get; private set; }
 
     /// <summary>
+    /// Provides access to the current stock value. 
+    /// Returns 0 if stock tracking is disabled.
+    /// </summary>
+    [BsonIgnore]
+    public int Stock
+    {
+        get => AvailableStock ?? 0;
+        internal set
+        {
+            if (value < 0)
+                throw new ArgumentException("Stock cannot be negative.", nameof(value));
+
+            AvailableStock = value;
+        }
+    }
+
+    /// <summary>
     /// Creates a new catalog item.
     /// </summary>
-    /// <param name="productId">The product identifier.</param>
-    /// <param name="productName">The product name.</param>
-    /// <param name="unitPrice">The unit price.</param>
-    /// <param name="imageUrl">The product image URL.</param>
-    /// <param name="addedAt">The date when added to catalog.</param>
-    /// <param name="availableStock">The available stock quantity (optional).</param>
     public CatalogItem(
         ProductId productId, 
         string productName, 
@@ -74,8 +85,6 @@ public class CatalogItem : Entity
     /// <summary>
     /// Updates the available stock for this catalog item.
     /// </summary>
-    /// <param name="newStock">The new stock quantity.</param>
-    /// <exception cref="ArgumentException">Thrown when the new stock is negative.</exception>
     public void UpdateStock(int newStock)
     {
         if (newStock < 0)
@@ -87,8 +96,6 @@ public class CatalogItem : Entity
     /// <summary>
     /// Checks if the item has sufficient stock for a given quantity.
     /// </summary>
-    /// <param name="requestedQuantity">The requested quantity.</param>
-    /// <returns>True if stock is sufficient or stock tracking is disabled, false otherwise.</returns>
     public bool HasSufficientStock(int requestedQuantity)
     {
         if (AvailableStock == null)
@@ -96,12 +103,29 @@ public class CatalogItem : Entity
         
         return AvailableStock >= requestedQuantity;
     }
+    
+    /// <summary>
+    /// Reduces the stock of this item by the specified quantity.
+    /// Throws an exception if there is insufficient stock.
+    /// </summary>
+    public void ReduceStock(int quantity)
+    {
+        if (AvailableStock == null)
+            return; // Stock tracking disabled
+
+        if (quantity <= 0)
+            throw new ArgumentException("Quantity must be greater than zero.", nameof(quantity));
+
+        if (!HasSufficientStock(quantity))
+            throw new InvalidOperationException(
+                $"Insufficient stock for product '{ProductName}'. Available: {AvailableStock}, Requested: {quantity}");
+
+        AvailableStock -= quantity;
+    }
 
     /// <summary>
     /// Calculates the subtotal for a given quantity of this item.
     /// </summary>
-    /// <param name="quantity">The quantity to calculate.</param>
-    /// <returns>The subtotal amount.</returns>
     public decimal CalculateSubTotal(int quantity)
     {
         if (quantity <= 0)
