@@ -20,6 +20,7 @@ public static class PurchaseOrderResourceFromEntityAssembler
             entity.OrderCode,
             entity.Items.Select(item => new PurchaseOrderItemResource(
                 item.ProductId.GetId,
+                item.ProductName,
                 item.UnitPrice,
                 item.Quantity,
                 item.CalculateSubTotal()

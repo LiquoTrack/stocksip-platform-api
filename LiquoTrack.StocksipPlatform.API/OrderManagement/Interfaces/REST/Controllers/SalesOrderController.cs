@@ -26,7 +26,7 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Interfaces.REST.Contro
         private readonly ISalesOrderCommandService _salesOrderCommandService;
         private readonly ISalesOrderQueryService _salesOrderQueryService;
         private readonly ISalesOrderRepository _salesOrderRepository;
-        private readonly ISalesOrderFacade _salesOrderFacade;
+        private readonly IProcurementOrderingFacade _procurementOrderingFacade;
         private readonly AppDbContext _dbContext;
         private readonly IUserQueryService _userQueryService;
 
@@ -34,14 +34,14 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Interfaces.REST.Contro
             ISalesOrderCommandService salesOrderCommandService,
             ISalesOrderQueryService salesOrderQueryService,
             ISalesOrderRepository salesOrderRepository,
-            ISalesOrderFacade salesOrderFacade,
+            IProcurementOrderingFacade procurementOrderingFacade,
             AppDbContext dbContext,
             IUserQueryService userQueryService)
         {
             _salesOrderCommandService = salesOrderCommandService;
             _salesOrderQueryService = salesOrderQueryService;
             _salesOrderRepository = salesOrderRepository;
-            _salesOrderFacade = salesOrderFacade;
+            _procurementOrderingFacade = procurementOrderingFacade;
             _dbContext = dbContext;
             _userQueryService = userQueryService;
         }
@@ -107,29 +107,40 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Interfaces.REST.Contro
 
         [HttpPost("from-procurement/{purchaseOrderId}")]
         [AllowAnonymous]
-        [SwaggerOperation(Summary = "Convert a completed purchase order to a sales order")]
-        [SwaggerResponse(StatusCodes.Status201Created, "Sales order created from purchase order", typeof(SalesOrderResource))]
-        [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid purchase order ID")]
+        [SwaggerOperation(
+            Summary = "Automatically creates a Sales Order from a Purchase Order",
+            Description = "This endpoint generates a Sales Order based on the specified Purchase Order ID. " +
+                          "The order is created automatically with all items, supplier information, and product names."
+        )]
+        [SwaggerResponse(StatusCodes.Status201Created, "Sales Order successfully created", typeof(SalesOrderResource))]
+        [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request or validation error")]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "Purchase Order not found")]
         public async Task<IActionResult> CreateFromPurchaseOrder([FromRoute] string purchaseOrderId)
         {
             try
             {
-                var salesOrderId = await _salesOrderFacade.ConvertPurchaseOrderToSalesOrderAsync(purchaseOrderId);
-                var order = await _salesOrderRepository.GetByIdAsync(salesOrderId);
+                // Create the sales order from the Purchase Order
+                var order = await _salesOrderCommandService.CreateFromPurchaseOrderAsync(purchaseOrderId);
 
-                if (order == null)
-                    return NotFound($"Sales order {salesOrderId} not found after conversion");
-
+                // Convert entity to REST resource including product names already set in SalesOrderItem
                 var resource = SalesOrderResourceFromEntityAssembler.ToResourceFromEntity(order);
-                return CreatedAtAction(nameof(GetOrderById), new { id = salesOrderId }, resource);
+
+                // Return 201 Created
+                return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, resource);
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
             }
         }
-        
-        
 
         [HttpGet("{id}")]
         [SwaggerOperation(Summary = "Get order by ID")]
@@ -249,5 +260,102 @@ namespace LiquoTrack.StocksipPlatform.API.OrderManagement.Interfaces.REST.Contro
 
             return Ok(response);
         }
+        
+        [HttpPut("{orderId}/confirm")]
+        [SwaggerOperation(
+            Summary = "Confirm a Sales Order",
+            Description = "Updates the status of the specified Sales Order to Confirmed.")]
+        [SwaggerResponse(StatusCodes.Status204NoContent, "Order confirmed successfully")]
+        [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request")]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "Order not found")]
+        public async Task<IActionResult> ConfirmOrder(string orderId)
+        {
+            try
+            {
+                await _salesOrderCommandService.ConfirmOrderAsync(orderId);
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+        
+        [HttpPut("{orderId}/receive")]
+        [SwaggerOperation(
+            Summary = "Mark Sales Order as Received",
+            Description = "Updates the status of the specified Sales Order to Received.")]
+        [SwaggerResponse(StatusCodes.Status204NoContent, "Order marked as received")]
+        [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request")]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "Order not found")]
+        public async Task<IActionResult> ReceiveOrder(string orderId)
+        {
+            try
+            {
+                await _salesOrderCommandService.ReceiveOrderAsync(orderId);
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+        
+        [HttpPut("{orderId}/ship")]
+        [SwaggerOperation(
+            Summary = "Mark Sales Order as Shipped",
+            Description = "Updates the status of the specified Sales Order to Shipped.")]
+        [SwaggerResponse(StatusCodes.Status204NoContent, "Order marked as shipped")]
+        [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request")]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "Order not found")]
+        public async Task<IActionResult> ShipOrder(string orderId)
+        {
+            try
+            {
+                await _salesOrderCommandService.ShipOrderAsync(orderId);
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPut("{orderId}/cancel")]
+        [SwaggerOperation(
+            Summary = "Cancel a Sales Order",
+            Description = "Updates the status of the specified Sales Order to Canceled.")]
+        [SwaggerResponse(StatusCodes.Status204NoContent, "Order canceled successfully")]
+        [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request")]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "Order not found")]
+        public async Task<IActionResult> CancelOrder(string orderId)
+        {
+            try
+            {
+                await _salesOrderCommandService.CancelOrderAsync(orderId);
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+        
     }
 }

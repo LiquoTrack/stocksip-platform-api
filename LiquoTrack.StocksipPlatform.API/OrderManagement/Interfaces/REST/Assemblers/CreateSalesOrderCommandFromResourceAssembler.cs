@@ -32,7 +32,8 @@ public static class CreateSalesOrderCommandFromResourceAssembler
             var salesOrderItem = new SalesOrderItem(
                 new ProductId(item.ProductId),
                 new Money(item.UnitPrice, new Currency(item.Currency)),
-                item.QuantityToSell);
+                item.QuantityToSell,
+                item.ProductName);
 
             if (!string.IsNullOrWhiteSpace(item.InventoryId))
             {

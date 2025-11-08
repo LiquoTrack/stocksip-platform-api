@@ -16,7 +16,7 @@ public static class ProcurementCompletedToGenerateSalesOrderCommandAssembler
         foreach (var it in resource.Items)
         {
             var unit = new Money(it.UnitPrice, new Currency(EValidCurrencyCodes.USD.ToString()));
-            var soi = new SalesOrderItem(new ProductId(it.ProductId), unit, it.Quantity)
+            var soi = new SalesOrderItem(new ProductId(it.ProductId), unit, it.Quantity, it.ProductName)
             {
                 InventoryId = new InventoryId(Guid.NewGuid().ToString())
             };
