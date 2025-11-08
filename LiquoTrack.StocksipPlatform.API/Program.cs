@@ -88,12 +88,14 @@ using LiquoTrack.StocksipPlatform.API.OrderManagement.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.OutBoundServices.PaymentProviders.services;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.PaymentProviders.MercadoPago.Configuration;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Infrastructure.PaymentProviders.MercadoPago.Services;
+using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Application.ACL;
 using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Application.Internal.CommandServices;
 using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Application.Internal.QueryServices;
 using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Infrastructure.Converters.JSON;
 using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Infrastructure.Persistence.MongoDB.Repositories;
+using LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Interfaces.ACL;
 
 // Register MongoDB mappings
 GlobalMongoMappingHelper.RegisterAllBoundedContextMappings();
@@ -328,6 +330,7 @@ builder.Services.AddScoped<ICatalogCommandService, CatalogCommandService>();
 builder.Services.AddScoped<ICatalogQueryService, CatalogQueryService>();
 
 builder.Services.AddScoped<IProductContextFacade, ProductContextFacade>();
+builder.Services.AddScoped<ISalesOrderFacade, SalesOrderFacade>();
 
 // Purchase Order converters
 builder.Services.Configure<JsonOptions>(options =>
