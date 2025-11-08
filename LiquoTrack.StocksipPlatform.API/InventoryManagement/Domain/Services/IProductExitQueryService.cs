@@ -9,17 +9,6 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Services;
 public interface IProductExitQueryService
 {
     /// <summary>
-    ///     Handler for the retrieval of all product exits for a given account ID.
-    /// </summary>
-    /// <param name="query">
-    ///     The query object containing the account ID for which product exits are to be retrieved.
-    /// </param>
-    /// <returns>
-    ///     A list of product exits for the specified account ID, if any; otherwise, an empty list.   
-    /// </returns>
-    Task<IEnumerable<ProductExit>> Handle(GetAllProductExitsByAccountIdQuery query);
-    
-    /// <summary>
     ///     Handler for the retrieval of all product exits for a given warehouse ID.
     /// </summary>
     /// <param name="query">

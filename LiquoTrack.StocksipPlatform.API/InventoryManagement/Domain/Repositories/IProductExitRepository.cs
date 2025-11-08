@@ -11,17 +11,6 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Repositorie
 public interface IProductExitRepository : IBaseRepository<ProductExit>
 {
     /// <summary>
-    ///     Retrieves all product exits for a given account ID.
-    /// </summary>
-    /// <param name="accountId">
-    ///     The ID of the account to retrieve product exits for.
-    /// </param>
-    /// <returns>
-    ///     A list of product exits for the specified account or a blank list if no product exits are found.
-    /// </returns>
-    Task<IEnumerable<ProductExit>> GetAllByAccountIdAsync(AccountId accountId);
-    
-    /// <summary>
     ///     Retrieves all product exits for a given warehouse ID.
     /// </summary>
     /// <param name="warehouseId">
