@@ -88,4 +88,17 @@ public class SubscriptionRepository(AppDbContext context, IMediator mediator) : 
             .Project(s => s.Status.ToString())
             .FirstOrDefaultAsync();
     }
+
+    /// <summary>
+    ///     Method to find all pending subscriptions for upgrade.
+    /// </summary>
+    /// <returns>
+    ///     A list of subscriptions. 
+    /// </returns>
+    public async Task<IEnumerable<Subscription?>> FindAllPendingUpdateAsync()
+    {
+        return await _subscriptionCollection
+            .Find(s => s.Status == ESubscriptionStatus.PendingUpgradePayment)
+            .ToListAsync();
+    }
 }

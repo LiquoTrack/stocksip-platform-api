@@ -1,6 +1,6 @@
 ﻿namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.REST.Resources;
 
 /// <summary>
-///     Resource representing a subscription.
+///     Resource class for Subscriptions.
 /// </summary>
-public record SubscriptionResource(string PreferenceId, string InitPoint, string Message);
+public record SubscriptionResource(string SubscriptionId, string PlanId, string Status, string ExpirationDate, string PlanType, string PaymentFrequency, int MaxUsers, int MaxProducts, int MaxWarehouses);
