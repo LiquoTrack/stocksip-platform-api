@@ -10,17 +10,6 @@ namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Service
 public interface ISubscriptionQueryService
 {
     /// <summary>
-    ///     Method to handle the retrieval of a subscription by its preference ID.
-    /// </summary>
-    /// <param name="query">
-    ///     The query object containing the preference ID.
-    /// </param>
-    /// <returns>
-    ///     A task that represents the asynchronous operation.
-    /// </returns>
-    Task<string?> Handle(GetSubscriptionStatusByPreferenceIdQuery query);
-
-    /// <summary>
     ///     Method to handle the retrieval of a plan's warehouse limit by account ID.   '
     /// </summary>
     /// <param name="query">

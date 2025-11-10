@@ -30,8 +30,8 @@ public class SubscriptionsController(
     [HttpPost]
     [AllowAnonymous]
     [SwaggerOperation(
-        Summary = "Confirm subscription",
-        Description = "Endpoint to confirm a subscription based on the provided notification from MercadoPago.",
+        Summary = "Creates a new subscription",
+        Description = "Endpoint to creates a subscription based on the provided notification from MercadoPago.",
         OperationId = "ConfirmedSubscription")]
     public async Task<IActionResult> ConfirmedSubscription([FromServices] ILogger<SubscriptionsController> logger)
     {
@@ -80,30 +80,5 @@ public class SubscriptionsController(
             logger.LogError(ex, "Error processing webhook");
             return Ok(new { message = "Webhook received with errors (but confirmed)" });
         }
-    }
-
-    /// <summary>
-    ///     Method to get the subscription status by preference ID.
-    /// </summary>
-    /// <param name="preferenceId">
-    ///     The ID of the preference.
-    /// </param>
-    /// <returns>
-    ///     A subscription status resource.
-    /// </returns>
-    [HttpGet("status")]
-    [SwaggerOperation(
-        Summary = "Get the subscription status by preference ID",
-        Description = "Retrieves the status of a subscription based on the provided preference ID.",
-        OperationId = "GetSubscriptionStatus"
-    )]
-    [SwaggerResponse(StatusCodes.Status200OK, "Subscription status returned successfully.", typeof(SubscriptionStatusResource))]
-    [SwaggerResponse(StatusCodes.Status400BadRequest, "Subscription status could not be retrieved.")]
-    public async Task<IActionResult> GetSubscriptionStatus([FromQuery] string preferenceId)
-    {
-        var getSubscriptionStatusByPreferenceIdQuery = new GetSubscriptionStatusByPreferenceIdQuery(preferenceId);
-        var subscriptionStatus = await subscriptionQueryService.Handle(getSubscriptionStatusByPreferenceIdQuery);
-        var response = SubscriptionStatusResourceFromEntityAssembler.ToResourceFromEntity(subscriptionStatus);
-        return Ok(response);
     }
 }
