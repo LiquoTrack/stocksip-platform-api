@@ -13,19 +13,6 @@ public class SubscriptionQueryService(
     ISubscriptionRepository subscriptionRepository,
     IPlanRepository planRepository) : ISubscriptionQueryService
 {
-    /// <summary>
-    ///     Method to handle the retrieval of a subscription by its preference ID. 
-    /// </summary>
-    /// <param name="query">
-    ///     The query object containing the preference ID.
-    /// </param>
-    /// <returns>
-    ///     A task that represents the asynchronous operation. The task result contains the subscription status.
-    /// </returns>
-    public async Task<string?> Handle(GetSubscriptionStatusByPreferenceIdQuery query)
-    {
-        return await subscriptionRepository.FindSubscriptionStatusByPreferenceId(query.PreferenceId);
-    }
 
     /// <summary>
     ///     Method to handle the retrieval of a plan's warehouse limit by account ID. '
