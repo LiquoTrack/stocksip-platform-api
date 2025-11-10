@@ -38,7 +38,7 @@ public class UserPasswordRecoveryController(
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request.", typeof(string))]
     public async Task<IActionResult> RecoveryCode([FromBody] SendCodeToRecoverPasswordResource resource)
     {
-        var command = SendCodeToRecoverCommandFromResourceAssembler.ToCommandFromResource(resource);
+        var command = SendCodeToRecoverPasswordCommandFromResourceAssembler.ToCommandFromResource(resource);
         await userCommandService.Handle(command);
         return Ok(new { Message = "Recovery code sent successfully" });
     }
