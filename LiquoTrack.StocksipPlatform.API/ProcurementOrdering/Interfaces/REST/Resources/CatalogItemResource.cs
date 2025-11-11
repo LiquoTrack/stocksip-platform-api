@@ -6,5 +6,6 @@ public record CatalogItemResource(
     string Currency,
     DateTime AddedDate,
     string? ProductName,
-    string? ProductImage
+    string? ProductImage,
+    int? AvailableStock
 );

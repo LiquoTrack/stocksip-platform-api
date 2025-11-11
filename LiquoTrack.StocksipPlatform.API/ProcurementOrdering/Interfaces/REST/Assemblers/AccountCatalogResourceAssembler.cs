@@ -53,7 +53,8 @@ public static class AccountCatalogsResourceAssembler
                     Currency: item.UnitPrice.GetCurrencyCode(),
                     AddedDate: item.AddedAt,
                     ProductName: item.ProductName,
-                    ProductImage: item.ImageUrl
+                    ProductImage: item.ImageUrl,
+                    AvailableStock: item.AvailableStock
                 )).ToList() ?? new List<CatalogItemResource>(),
                 ownerAccount: c.OwnerAccount.GetId,
                 contactEmail: c.ContactEmail?.Value ?? "Not provided",
