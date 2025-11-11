@@ -20,17 +20,6 @@ public interface ISubscriptionsCommandService
     Task<(string?, string?)> Handle(InitialSubscriptionCommand command);
 
     /// <summary>
-    ///     Method to handle the confirmation of a payment.
-    /// </summary>
-    /// <param name="command">
-    ///     The command containing the details for confirming a payment.
-    /// </param>
-    /// <returns>
-    ///     A task that represents the asynchronous operation. The task result contains the confirmed subscription.
-    /// </returns>
-    Task<Subscription?> Handle(ConfirmPaymentCommand command);
-
-    /// <summary>
     ///     Method to handle webhook payment notifications.
     /// </summary>
     /// <param name="command">
@@ -50,5 +39,5 @@ public interface ISubscriptionsCommandService
     /// <returns>
     ///     A task that represents the asynchronous operation. The task result contains the upgraded subscription.
     /// </returns>
-    Task<Subscription?> Handle(UpgradeSubscriptionCommand command);
+    Task<(string?, string?)> Handle(UpgradeSubscriptionCommand command);
 }

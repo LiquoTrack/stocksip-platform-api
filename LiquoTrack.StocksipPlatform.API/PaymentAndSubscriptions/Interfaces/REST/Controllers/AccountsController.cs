@@ -1,4 +1,4 @@
-﻿using System.Net.Mime;
+using System.Net.Mime;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Queries;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.REST.Assemblers;
@@ -18,7 +18,7 @@ namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.RES
 [Route("api/v1/[controller]")]
 [Produces(MediaTypeNames.Application.Json)]
 [SwaggerTag("Available endpoints for accounts.")]
-public class AccountsController(IAccountQueryService accountQueryService) : ControllerBase
+public class AccountsController(IAccountQueryService accountQueryService, IBusinessQueryService businessQueryService) : ControllerBase
 {
     /// <summary>
     ///     Endpoint to handle the retrieval of an account by its ID.
@@ -40,7 +40,18 @@ public class AccountsController(IAccountQueryService accountQueryService) : Cont
     {
         var account = await accountQueryService.Handle(new GetAccountByIdQuery(accountId));
         if (account is null) return NotFound($"Account with ID {accountId} not found.");
-        var resource = AccountResourceFromEntityAssembler.ToResourceFromEntity(account);
+        // Enrich with Business email if available
+        string? email = null;
+        try
+        {
+            var business = await businessQueryService.Handle(new GetBusinessByAccountIdQuery(accountId));
+            email = business?.BusinessEmail?.Value;
+        }
+        catch
+        {
+            // If business is not found or any error occurs, we proceed without email
+        }
+        var resource = AccountResourceFromEntityAssembler.ToResourceFromEntity(account, email, null);
         return Ok(resource);
     }
     
@@ -68,4 +79,41 @@ public class AccountsController(IAccountQueryService accountQueryService) : Cont
         var resource = AccountStatusResourceFromEntityAssembler.ToResourceFromEntity(status);
         return Ok(resource);
     }
+    
+    /// <summary>
+    ///     Endpoint to retrieve all accounts filtered by role.
+    /// </summary>
+    /// <param name="role">
+    ///     Optional role to filter accounts, e.g., "supplier".
+    /// </param>
+    /// <returns>
+    ///     A 200 OK response with the list of accounts matching the specified role,
+    ///     or a 404 Not Found response if no accounts match.
+    /// </returns>
+    [HttpGet]
+    [SwaggerOperation(
+        Summary = "Get Accounts By Role",
+        Description = "Retrieves all accounts with the specified role.",
+        OperationId = "GetAccountsByRole")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Accounts returned successfully.", typeof(IEnumerable<AccountResource>))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "No accounts found for the specified role.")]
+    public async Task<IActionResult> GetAccountsByRole([FromQuery] string? role)
+    {
+        var accounts = await accountQueryService.Handle(new GetAccountsByRoleQuery(role));
+
+        if (accounts is null || !accounts.Any())
+        {
+            return NotFound($"No accounts found with role '{role}'.");
+        }
+
+        var resources = accounts.Select(account =>
+            AccountResourceFromEntityAssembler.ToResourceFromEntity(
+                account,
+                null,
+                null
+            ));
+
+        return Ok(resources);
+    }
+
 }

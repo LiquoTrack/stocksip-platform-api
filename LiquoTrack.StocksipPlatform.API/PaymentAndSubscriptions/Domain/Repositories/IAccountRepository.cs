@@ -19,4 +19,16 @@ public interface IAccountRepository : IBaseRepository<Account>
     ///     The status of the account.
     /// </returns>
     Task<string?> GetAccountStatusByIdAsync(string accountId);
+
+    /// <summary>
+    /// Method to find accounts based on their assigned role.
+    /// </summary>
+    /// <param name="role">
+    /// The role of the accounts to be retrieved.
+    /// Can be null to include accounts with all roles.
+    /// </param>
+    /// <returns>
+    /// A collection of accounts that have the specified role.
+    /// </returns>
+    Task<IEnumerable<Account>> FindAccountsByRoleAsync(string? role);
 }

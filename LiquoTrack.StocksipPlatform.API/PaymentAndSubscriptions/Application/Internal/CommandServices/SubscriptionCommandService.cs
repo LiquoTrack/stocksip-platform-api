@@ -1,4 +1,5 @@
-﻿using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.OutBoundServices.PaymentProviders.services;
+﻿using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.OutBoundServices.PaymentProviders.
+    services;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.Commands;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.ValueObjects;
@@ -7,31 +8,13 @@ using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Services;
 
 namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.Internal.CommandServices;
 
-/// <summary>
-///     Implementation of the <see cref="ISubscriptionsCommandService"/> interface.
-/// </summary>
 public class SubscriptionCommandService(
     ISubscriptionRepository subscriptionRepository,
     IAccountRepository accountRepository,
     IPlanRepository planRepository,
     IMercadoPagoService mercadoPagoService
-    ) : ISubscriptionsCommandService
+) : ISubscriptionsCommandService
 {
-    /// <summary>
-    ///     Method to handle the creation of a new subscription.
-    /// </summary>
-    /// <param name="command">
-    ///     The command containing the details for creating a new subscription.
-    /// </param>
-    /// <returns>
-    ///     A task representing the asynchronous operation. The task result contains the newly created subscription.
-    /// </returns>
-    /// <exception cref="Exception">
-    ///     An exception is thrown if the account or plan could not be found.
-    /// </exception>
-    /// <exception cref="InvalidOperationException">
-    ///     A thrown when an unknown plan type is encountered.
-    /// </exception>
     public async Task<(string?, string?)> Handle(InitialSubscriptionCommand command)
     {
         var account = await accountRepository.FindByIdAsync(command.AccountId)
@@ -39,13 +22,17 @@ public class SubscriptionCommandService(
 
         var plan = await planRepository.FindByIdAsync(command.SelectedPlanId)
                    ?? throw new Exception($"Plan with ID {command.SelectedPlanId} not found.");
-        
-        var pendingSubscription = await subscriptionRepository.FindPendingSubscriptionByAccountIdIdAsync(command.AccountId);
+
+        var pendingSubscription =
+            await subscriptionRepository.FindPendingSubscriptionByAccountIdIdAsync(command.AccountId);
+        var currentSubscription =
+            await subscriptionRepository.FindActiveSubscriptionByAccountIdAsync(command.AccountId);
+
         if (pendingSubscription is not null)
-        {
             await subscriptionRepository.DeleteAsync(pendingSubscription.Id.ToString());
-        }
-        
+        if (currentSubscription is not null)
+            throw new Exception("An active subscription already exists for this account.");
+
         var subscription = new Subscription(command.AccountId, command.SelectedPlanId);
 
         string? preferenceId = null;
@@ -55,34 +42,24 @@ public class SubscriptionCommandService(
         {
             case EPlanType.Free:
                 subscription.ActivateFreePlan(plan);
-                
                 if (account.Status == EAccountStatuses.Inactive)
                 {
                     account.ActivateAccount();
                     await accountRepository.UpdateAsync(account);
                 }
+
                 break;
 
             case EPlanType.Premium:
-                var premiumPreference = mercadoPagoService.CreatePaymentPreference(
-                    title: plan.Description,
-                    price: plan.PlanPrice.GetAmount(),
-                    currency: plan.PlanPrice.GetCurrencyCode(),
-                    quantity: 1,
-                    command.AccountId
-                );
-                preferenceId = premiumPreference.PreferenceId;
-                initPoint = premiumPreference.InitPoint;
-                subscription.MarkAsPending(plan, preferenceId);
-                break;
-            
             case EPlanType.Enterprise:
                 var preference = mercadoPagoService.CreatePaymentPreference(
                     title: plan.Description,
                     price: plan.PlanPrice.GetAmount(),
                     currency: plan.PlanPrice.GetCurrencyCode(),
                     quantity: 1,
-                    command.AccountId
+                    command.AccountId,
+                    null,
+                    null
                 );
                 preferenceId = preference.PreferenceId;
                 initPoint = preference.InitPoint;
@@ -97,96 +74,118 @@ public class SubscriptionCommandService(
         return (preferenceId, initPoint);
     }
 
-    /// <summary>
-    ///     Method to handle the confirmation of a payment for a subscription.
-    /// </summary>
-    /// <param name="command">
-    ///     The command containing the details for confirming a payment.   
-    /// </param>
-    /// <returns>
-    ///     A task representing the asynchronous operation. The task result contains the updated subscription.
-    /// </returns>
-    /// <exception cref="Exception">
-    ///     An exception is thrown if the subscription or plan could not be found.
-    /// </exception>
-    /// <exception cref="InvalidOperationException">
-    ///     A thrown when an unknown payment status is encountered or when the plan type cannot be activated via payment confirmation.
-    /// </exception>
-    public async Task<Subscription?> Handle(ConfirmPaymentCommand command)
+    public async Task<Subscription?> Handle(WebhookPaymentCommand command)
     {
-        var subscription = await subscriptionRepository.FindByAccountIdAsync(command.AccountId)
-                           ?? throw new Exception($"Subscription with Preference ID {command.AccountId} not found.");
-        
-        var plan = await planRepository.FindByIdAsync(subscription.PlanId)
-                   ?? throw new Exception($"Plan with ID {subscription.PlanId} not found.");
-        
+        var payment = await mercadoPagoService.GetPaymentById(command.paymentId)
+                      ?? throw new Exception($"Payment with ID {command.paymentId} not found");
+
+        if (string.IsNullOrEmpty(payment.AccountId))
+            throw new Exception("Payment does not contain a valid Account ID");
+
+        var subscription = await subscriptionRepository.FindByAccountIdAsync(payment.AccountId)
+                           ?? throw new Exception("Subscription not found for this payment");
+
         var account = await accountRepository.FindByIdAsync(subscription.AccountId)
                       ?? throw new Exception($"Account with ID {subscription.AccountId} not found.");
 
-        switch (command.Status.ToLower())
+        switch (payment.Status.ToLower())
         {
             case "approved":
-                switch (plan.PlanType)
+                if (!string.IsNullOrEmpty(subscription.PendingPlanId))
                 {
-                    case EPlanType.Premium:
-                        subscription.ActivatePremiumPlan(plan);
-                        break;
+                    var pendingPlan = await planRepository.FindByIdAsync(subscription.PendingPlanId)
+                                      ?? throw new Exception(
+                                          $"Pending plan with ID {subscription.PendingPlanId} not found");
 
-                    case EPlanType.Enterprise:
-                        subscription.ActivateEnterprisePlan(plan);
-                        break;
+                    switch (pendingPlan.PlanType)
+                    {
+                        case EPlanType.Premium:
+                            subscription.ActivatePremiumPlan(pendingPlan);
+                            break;
+                        case EPlanType.Enterprise:
+                            subscription.ActivateEnterprisePlan(pendingPlan);
+                            break;
+                    }
 
-                    default:
-                        throw new InvalidOperationException($"Plan type '{plan.PlanType}' cannot be activated via payment confirmation.");
+                    subscription.PlanId = subscription.PendingPlanId;
+                    subscription.PendingPlanId = null;
+                    subscription.PreferenceId = null;
+                    subscription.Status = ESubscriptionStatus.Active;
                 }
-
-                if (account.Status == EAccountStatuses.Inactive)
+                else
                 {
-                    account.ActivateAccount();
-                    await accountRepository.UpdateAsync(account);
+                    var plan = await planRepository.FindByIdAsync(subscription.PlanId)
+                               ?? throw new Exception($"Plan with ID {subscription.PlanId} not found");
+
+                    switch (plan.PlanType)
+                    {
+                        case EPlanType.Premium:
+                            subscription.ActivatePremiumPlan(plan);
+                            break;
+                        case EPlanType.Enterprise:
+                            subscription.ActivateEnterprisePlan(plan);
+                            break;
+                    }
                 }
                 break;
-            default:
-                throw new InvalidOperationException($"Unknown payment status: {command.Status}");
+
+            case "expired":
+                if (subscription.Status == ESubscriptionStatus.PendingUpgradePayment)
+                {
+                    subscription.Status = ESubscriptionStatus.Active;
+                    subscription.PendingPlanId = null;
+                    subscription.PreferenceId = null;
+                }
+
+                break;
+        }
+
+        if (account.Status == EAccountStatuses.Inactive)
+        {
+            account.ActivateAccount();
+            await accountRepository.UpdateAsync(account);
         }
 
         await subscriptionRepository.UpdateAsync(subscription);
         return subscription;
     }
 
+
     /// <summary>
-    ///     Method to handle the webhook payment.
+    ///     Method to handle the upgrade of a subscription.
     /// </summary>
-    /// <param name="command">
-    ///     The command containing the details for handling the webhook payment. 
-    /// </param>
-    /// <returns>
-    ///     A task representing the asynchronous operation. The task result contains the updated subscription.
-    /// </returns>
-    /// <exception cref="Exception">
-    ///     An exception is thrown if the payment could not be found or if the payment does not contain a valid Account ID.
-    /// </exception>
-    /// <exception cref="InvalidOperationException">
-    ///     A thrown when the payment status is not approved.
-    /// </exception>
-    public async Task<Subscription?> Handle(WebhookPaymentCommand command)
+    /// <param name="command"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception"></exception>
+    /// <exception cref="InvalidOperationException"></exception>
+    public async Task<(string?, string?)> Handle(UpgradeSubscriptionCommand command)
     {
-        var payment = await mercadoPagoService.GetPaymentById(command.paymentId)
-                      ?? throw new Exception($"Payment with ID {command.paymentId} not found");
+        var currentSubscription =
+            await subscriptionRepository.FindByIdAsync(command.SubscriptionId)
+            ?? throw new Exception($"No active subscription found for account {command.AccountId}.");
 
-        if (payment.Status.ToLower() != "approved")
-            throw new InvalidOperationException($"Payment status is '{payment.Status}', cannot confirm subscription");
+        var newPlan = await planRepository.FindByIdAsync(command.NewPlanId)
+                      ?? throw new Exception($"Plan with ID {command.NewPlanId} not found.");
 
-        if (string.IsNullOrEmpty(payment.AccountId))
-            throw new Exception("Payment does not contain a valid Account ID");
+        var currentPlan = await planRepository.FindByIdAsync(currentSubscription.PlanId)
+                          ?? throw new Exception($"Current plan with ID {currentSubscription.PlanId} not found.");
 
-        var confirmPaymentCommand = new ConfirmPaymentCommand(payment.AccountId, payment.Status);
-        return await Handle(confirmPaymentCommand);
-    }
+        if (newPlan.PlanType <= currentPlan.PlanType)
+            throw new InvalidOperationException("Upgrade can only be done to a higher plan.");
 
+        var paymentPreference = mercadoPagoService.CreatePaymentPreference(
+            title: $"Upgrade to {newPlan.Description}",
+            price: newPlan.PlanPrice.GetAmount(),
+            currency: newPlan.PlanPrice.GetCurrencyCode(),
+            quantity: 1,
+            command.AccountId,
+            DateTime.Now,
+            DateTime.Now.AddMinutes(15)
+        );
 
-    public Task<Subscription?> Handle(UpgradeSubscriptionCommand command)
-    {
-        throw new NotImplementedException();
+        currentSubscription.MarkAsPendingUpgrade(command.NewPlanId, paymentPreference.PreferenceId);
+        await subscriptionRepository.UpdateAsync(currentSubscription);
+
+        return (paymentPreference.PreferenceId, paymentPreference.InitPoint);
     }
 }
