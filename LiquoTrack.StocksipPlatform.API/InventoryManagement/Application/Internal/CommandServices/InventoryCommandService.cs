@@ -37,7 +37,13 @@ public class InventoryCommandService(
         // Validate if the warehouse exists
         var warehouse = await warehouseRepository.FindByIdAsync(command.WarehouseId.ToString())
             ?? throw new ArgumentException($"Warehouse with ID {command.WarehouseId} does not exist.");
-        
+
+        // Validate if the expiration date is provided
+        if (command.ExpirationDate == null)
+        {
+            throw new ArgumentException("Expiration date is required when adding products with expiration date.");
+        }
+
         // Validate if the inventory already exists
         var inventory = await inventoryRepository.GetByProductIdWarehouseIdAndExpirationDateAsync(command.ProductId,
                 command.WarehouseId, command.ExpirationDate);

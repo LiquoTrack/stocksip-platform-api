@@ -62,37 +62,39 @@ public class InventoryImageService : IInventoryImageService
     {
         if (string.IsNullOrWhiteSpace(imageUrl))
             throw new ArgumentException("Image URL cannot be null or empty.", nameof(imageUrl));
-        
+
         var protectedImages = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            // Default Products Image
             "Default-product_kt9bxf",
-            
-            // Default Warehouse Image
             "Default-warehouse_qdgvkw"
         };
 
-        var uri = new Uri(imageUrl);
-        var parts = uri.AbsolutePath.Split('/');
+        try
+        {
+            var uri = new Uri(imageUrl);
+            var segments = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            
+            var uploadIndex = Array.IndexOf(segments, "upload");
+            if (uploadIndex < 0)
+                throw new ArgumentException("Invalid Cloudinary URL structure - missing 'upload' segment.");
+            
+            var resourcePath = string.Join("/", segments.Skip(uploadIndex + 2));
+            
+            var publicId = Path.ChangeExtension(resourcePath, null);
+            
+            var fileName = Path.GetFileName(publicId);
+            if (protectedImages.Contains(fileName))
+                return false;
 
-        if (parts.Length < 3)
-            throw new ArgumentException("Invalid Cloudinary URL format.");
+            var deletionParams = new DeletionParams(publicId);
+            var result = _cloudinary.Destroy(deletionParams);
 
-        var folderIndex = Array.IndexOf(parts, "StockSip-MB");
-        if (folderIndex < 0 || folderIndex + 2 >= parts.Length)
-            throw new ArgumentException("Invalid Cloudinary URL structure.");
-        
-        var folderPath = string.Join('/', parts.Skip(folderIndex).Take(parts.Length - folderIndex - 1));
-        var fileName = Path.GetFileNameWithoutExtension(parts[^1]);
-        
-        if (protectedImages.Contains(fileName))
+            return result.Result == "ok";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error deleting image '{imageUrl}': {ex.Message}");
             return false;
-
-        var publicId = $"{folderPath}/{fileName}";
-
-        var deletionParams = new DeletionParams(publicId);
-        var result = _cloudinary.Destroy(deletionParams);
-
-        return result.Result == "ok";
+        }
     }
 }

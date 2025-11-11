@@ -65,6 +65,9 @@ public class ProfilesImageService : IProfilesImageService
             // Default Profile Image
             "Default-profile_xbpv55"
         };
+        
+        if (protectedImages.Contains(Path.GetFileNameWithoutExtension(imageUrl)))
+            return false;
 
         var uri = new Uri(imageUrl);
         var parts = uri.AbsolutePath.Split('/');

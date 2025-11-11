@@ -2,9 +2,9 @@ using System.Net.Mime;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Services;
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google.Requests;
+using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Pipeline.Middleware.Attributes;
 using LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Resources;
 using LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Transform;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -41,7 +41,7 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
         /// <param name="request">Google authentication request containing ID token and client ID</param>
         /// <returns>Authentication response with user details and JWT token</returns>
         [HttpPost("auth/google")]
-        [AllowAnonymous]
+        [Microsoft.AspNetCore.Authorization.AllowAnonymous]
         [SwaggerOperation(
             Summary = "Authenticate with Google",
             Description = "Authenticates a user using Google's OAuth 2.0 ID token"
@@ -128,8 +128,8 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
         /// Registers a new user
         /// </summary>
         /// <param name="signUpResource">User registration details</param>
-        [HttpPost("sign-up")]
         [AllowAnonymous]
+        [HttpPost("sign-up")]
         [SwaggerOperation(
             Summary = "Sign up",
             Description = "Register a new user"
@@ -182,7 +182,6 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Control
                     Email = u.Email?.ToString() ?? string.Empty,
                     EmailVerified = true,
                     Provider = GoogleAuthProvider,
-                    // Add other properties as needed
                 })
                 .ToList();
 
