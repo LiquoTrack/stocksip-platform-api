@@ -90,7 +90,7 @@ public class AccountsController(IAccountQueryService accountQueryService, IBusin
     ///     A 200 OK response with the list of accounts matching the specified role,
     ///     or a 404 Not Found response if no accounts match.
     /// </returns>
-    [HttpGet]
+    [HttpGet("roles")]
     [SwaggerOperation(
         Summary = "Get Accounts By Role",
         Description = "Retrieves all accounts with the specified role.",

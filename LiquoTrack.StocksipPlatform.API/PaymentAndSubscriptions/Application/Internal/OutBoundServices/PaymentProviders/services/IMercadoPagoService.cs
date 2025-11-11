@@ -7,6 +7,7 @@ namespace LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.In
 /// </summary>
 public interface IMercadoPagoService
 {
+    
     /// <summary>
     ///     Method to create a payment preference in MercadoPago.
     /// </summary>
@@ -22,10 +23,19 @@ public interface IMercadoPagoService
     /// <param name="quantity">
     ///     The quantity of the payment preference.
     /// </param>
+    /// <param name="accountId">
+    ///     The ID of the account.
+    /// </param>
+    /// <param name="expirationDateFrom">
+    ///     The expiration date from.
+    /// </param>
+    /// <param name="expirationDateTo">
+    ///     The expiration date to.
+    /// </param>
     /// <returns>
     ///     A string representing the ID of the payment preference.
     /// </returns>
-    (string PreferenceId, string InitPoint) CreatePaymentPreference(string title, decimal price, string currency, int quantity, string accountId);
+    (string PreferenceId, string InitPoint) CreatePaymentPreference(string title, decimal price, string currency, int quantity, string accountId, DateTime? expirationDateFrom, DateTime? expirationDateTo);
     
     /// <summary>
     ///     Method to get a payment by its ID.

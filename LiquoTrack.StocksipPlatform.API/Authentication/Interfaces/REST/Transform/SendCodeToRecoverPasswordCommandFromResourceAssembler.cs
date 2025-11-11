@@ -6,7 +6,7 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Interfaces.REST.Transfo
 /// <summary>
 ///     Static assembler class to convert SendCodeToRecoverResource to SendCodeToRecoverCommand.
 /// </summary>
-public class SendCodeToRecoverCommandFromResourceAssembler
+public class SendCodeToRecoverPasswordCommandFromResourceAssembler
 {
     /// <summary>
     ///     Method to convert SendCodeToRecoverResource to SendCodeToRecoverCommand.
