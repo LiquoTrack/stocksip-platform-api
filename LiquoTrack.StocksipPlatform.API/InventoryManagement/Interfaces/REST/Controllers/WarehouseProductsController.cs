@@ -236,4 +236,43 @@ public class WarehouseProductsController(
         var resourceWithProduct = InventoryWithProductResourceFromEntityAssembler.ToResourceFromEntity(inventory, product);
         return Ok(resourceWithProduct);
     }
+
+    /// <summary>
+    ///     Endpoint to handle the transfer of products to another warehouse.
+    /// </summary>
+    /// <param name="warehouseId">
+    ///     The route parameter representing the unique identifier of the warehouse to which products are to be transferred.
+    /// </param>
+    /// <param name="productId">
+    ///     The route parameter representing the unique identifier of the product to be transferred.
+    /// </param>
+    /// <param name="resource">
+    ///     The request body containing the details of the products to be transferred.  
+    /// </param>
+    /// <returns>
+    ///     The updated current inventory for the product, or a 400 Bad Request response if the products could not be transferred.
+    /// </returns>
+    [HttpPost("{productId}/transfers")]
+    [SwaggerOperation(
+        Summary = "Transfer products to another warehouse",
+        Description = "Transfers products from one warehouse to another.",
+        OperationId = "TransferProductsToAnotherWarehouse")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Products transferred successfully!", typeof(InventoryWithProductResource))]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Products could not be transferred...")]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Product not found.")]
+    public async Task<IActionResult> TransferProductsToAnotherWarehouse(
+            [FromRoute] string warehouseId,
+            [FromRoute] string productId, 
+            [FromBody] TransferProductsToAnotherWarehouseResource resource
+        )
+    {
+        var product = await productQueryService.Handle(new GetProductByIdQuery(new ObjectId(productId)));
+        if (product is null) return NotFound("Product not found.");
+        var transferProductsToAnotherWarehouseCommand =
+            TransferProductsToAnotherWarehouseCommandFromResourceAssembler.ToCommandFromResource(resource, warehouseId, productId);
+        var inventory = await inventoryCommandService.Handle(transferProductsToAnotherWarehouseCommand);
+        if (inventory is null) return BadRequest("Products could not be transferred.");
+        var resourceWithProduct = InventoryWithProductResourceFromEntityAssembler.ToResourceFromEntity(inventory, product);
+        return Ok(resourceWithProduct);
+    }
 }
