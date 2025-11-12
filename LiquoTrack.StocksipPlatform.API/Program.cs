@@ -66,7 +66,7 @@ using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Outbou
 using LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Email;
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Email.Gmail.Confirguration;
 using LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Email.Gmail.Services;
-using AppGoogleAuthService = LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Services.GoogleAuthService;
+
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Application.External.ACL;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.ACL;
@@ -152,26 +152,6 @@ builder.Services.AddCortexMediator(
 
 // Dependency Injection
 
-// Register Google Auth Services with fully qualified names
-builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
-
-// Register Google SignIn Command Handler and its dependencies
-builder.Services.AddScoped<GoogleSignInCommandHandler>();
-
-// Register External Auth Service (Google) with a fully qualified name
-builder.Services.AddScoped<IExternalAuthService,
-    LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google.GoogleAuthService>();
-
-// Register the custom token validator first
-builder.Services.AddSingleton<ISecurityTokenValidator, CustomGoogleTokenValidator>();
-
-// Register Google Token Validator with configuration
-builder.Services.AddScoped<IGoogleTokenValidator>(sp =>
-    new CustomGoogleTokenValidatorAdapter(
-        sp.GetRequiredService<ISecurityTokenValidator>(),
-        sp.GetRequiredService<ILogger<CustomGoogleTokenValidatorAdapter>>(),
-        sp.GetRequiredService<IConfiguration>()));
-
 // Registers the MongoDB client as a singleton service
 builder.Services.AddSingleton<IMongoClient>(sp =>
 {
@@ -233,6 +213,13 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserCommandService, UserCommandService>();
 builder.Services.AddScoped<IUserQueryService, UserQueryService>();
 
+// Google Identity Services configuration and validator
+builder.Services.Configure<LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google.Settings.GoogleAuthSettings>(
+    builder.Configuration.GetSection("Authentication:Google"));
+builder.Services.AddScoped<
+    LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.OutboundServices.Authentication.IExternalAuthService,
+    LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google.GoogleTokenValidator>();
+
 // JWT Configuration
 builder.Services.Configure<TokenSettings>(
     builder.Configuration.GetSection("Jwt"));
@@ -244,13 +231,12 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IHashingService, HashingService>();
 
 // Register token validator and authentication services
-builder.Services.AddSingleton<CustomGoogleTokenValidator>();
-builder.Services.AddScoped<ISecurityTokenValidator>(sp => sp.GetRequiredService<CustomGoogleTokenValidator>());
-builder.Services.AddScoped<IGoogleTokenValidator, CustomGoogleTokenValidatorAdapter>();
+
+
+
 
 // Using a fully qualified name to resolve ambiguity
-builder.Services.AddScoped<IExternalAuthService,
-    LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google.GoogleAuthService>();
+
 
 // JWT Configuration
 builder.Services.Configure<LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.Tokens.JWT.Configuration.TokenSettings>(
@@ -260,9 +246,8 @@ builder.Services.Configure<LiquoTrack.StocksipPlatform.API.Authentication.Infras
 builder.Services.AddScoped<ITokenService, TokenService>();
 
 // Google Auth Service 
-builder.Services.AddScoped<IGoogleAuthService, AppGoogleAuthService>();
-builder.Services.AddScoped<GoogleSignInCommandHandler>();
-builder.Services.AddScoped<IExternalAuthService, LiquoTrack.StocksipPlatform.API.Authentication.Infrastructure.External.Google.GoogleAuthService>();
+ 
+
 
 // Cloudinary Settings Configuration
 builder.Services.Configure<CloudinarySettings>(configuration.GetSection("CloudinarySettings"));
@@ -422,9 +407,9 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 // Token settings 
 builder.Services.Configure<TokenSettings>(configuration.GetSection("Jwt"));
 
-builder.Services.AddSingleton<CustomGoogleTokenValidator>();
-builder.Services.AddSingleton<ISecurityTokenValidator>(sp => sp.GetRequiredService<CustomGoogleTokenValidator>());
-builder.Services.AddScoped<IGoogleTokenValidator, CustomGoogleTokenValidatorAdapter>();
+
+
+
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
