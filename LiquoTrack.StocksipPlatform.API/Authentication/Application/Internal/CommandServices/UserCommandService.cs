@@ -7,6 +7,7 @@ using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.Commands;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.Authentication.Domain.Services;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
 using LiquoTrack.StocksipPlatform.API.ProfileManagement.Interfaces.ACL;
 using LiquoTrack.StocksipPlatform.API.Shared.Domain.Model.ValueObjects;
@@ -84,28 +85,68 @@ namespace LiquoTrack.StocksipPlatform.API.Authentication.Application.Internal.Co
 
             if (existingUser != null)
             {
+                if (existingUser.AccountId is null ||
+                    string.IsNullOrWhiteSpace(existingUser.AccountId.GetId) ||
+                    existingUser.AccountId.GetId == "1234")
+                {
+                    var resolvedAccountId = await EnsureAccountStructureAsync(name, email);
+                    existingUser.AccountId = new AccountId(resolvedAccountId);
+                    await userRepository.UpdateAsync(existingUser);
+                }
+
                 return existingUser;
             }
 
             var randomPassword = Convert.ToBase64String(RandomNumberGenerator.GetBytes(16));
             var hashedPassword = hashingService.HashPassword(randomPassword);
+            var accountIdForNewUser = await EnsureAccountStructureAsync(name, email);
 
+            var displayName = string.IsNullOrWhiteSpace(name) ? email.Split('@')[0] : name;
             var user = new User(
                 new Email(email),
-                string.IsNullOrWhiteSpace(name) ? email.Split('@')[0] : name,
+                displayName,
                 hashedPassword,
-                "1234",
+                accountIdForNewUser,
                 EUserRoles.SuperAdmin.ToString()
             );
 
             try
             {
+                await profileContextFacade.CreateProfileAsync(
+                    userId: user.Id.ToString(),
+                    firstName: user.Username,
+                    lastName: "",
+                    phoneNumber: "+10000000000",
+                    profilePicture: null,
+                    assignedRole: "Admin"
+                );
+
                 await userRepository.AddAsync(user);
                 return user;
             }
             catch (Exception ex)
             {
                 throw new Exception($"An error occurred while creating user from external provider: {ex.Message}", ex);
+            }
+
+            async Task<string> EnsureAccountStructureAsync(string? fullName, string mail)
+            {
+                var businessName = string.IsNullOrWhiteSpace(fullName)
+                    ? mail.Split('@')[0]
+                    : fullName.Trim();
+
+                var business = await paymentAndSubscriptionsFacade.CreateBusiness(businessName);
+                if (business is null)
+                    throw new Exception("Business creation failed for external authentication user");
+
+                var account = await paymentAndSubscriptionsFacade.CreateAccount(
+                    EAccountRole.LiquorStoreOwner.ToString(),
+                    business.Id.ToString());
+
+                if (account is null)
+                    throw new Exception("Account creation failed for external authentication user");
+
+                return account.Id.ToString();
             }
         }
 
