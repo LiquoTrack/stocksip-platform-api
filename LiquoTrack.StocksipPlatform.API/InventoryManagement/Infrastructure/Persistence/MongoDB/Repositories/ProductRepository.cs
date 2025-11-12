@@ -121,4 +121,19 @@ public class ProductRepository(AppDbContext context, IMediator mediator) : BaseR
         
         return imageUrlValueObject?.GetValue() ?? string.Empty;
     }
+
+    /// <summary>
+    ///     This method counts the number of products associated with a specific account ID.
+    /// </summary>
+    /// <param name="accountId">
+    ///     The unique identifier of the account.
+    /// </param>
+    /// <returns>
+    ///     A task that represents the asynchronous operation, containing the count of products.
+    /// </returns>
+    public Task<int> CountByAccountIdAsync(AccountId accountId)
+    {
+        var filter = Builders<Product>.Filter.Eq(w => w.AccountId, accountId);
+        return _productCollection.CountDocumentsAsync(filter).ContinueWith(t => (int)t.Result);
+    }
 }

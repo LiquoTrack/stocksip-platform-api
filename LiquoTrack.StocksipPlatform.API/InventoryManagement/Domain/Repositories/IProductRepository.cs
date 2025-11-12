@@ -78,4 +78,15 @@ public interface IProductRepository : IBaseRepository<Product>
     ///     A string containing the image URL.
     /// </returns>
     Task<string> FindImageUrlByProductIdAsync(ObjectId productId);
+    
+    /// <summary>
+    ///     This method counts the number of products associated with a specific account ID.
+    /// </summary>
+    /// <param name="accountId">
+    ///     The unique identifier of the account.
+    /// </param>
+    /// <returns>
+    ///     A task that represents the asynchronous operation, containing the count of products.
+    /// </returns>
+    Task<int> CountByAccountIdAsync(AccountId accountId);
 }
