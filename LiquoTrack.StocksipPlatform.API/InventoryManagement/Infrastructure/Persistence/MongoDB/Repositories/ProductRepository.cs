@@ -64,9 +64,8 @@ public class ProductRepository(AppDbContext context, IMediator mediator) : BaseR
     /// </returns>
     public async Task<ICollection<Product>> FindBySupplierIdAsync(AccountId supplierId)
     {
-        return await _productCollection
-            .Find(x => x.SupplierId.GetId == supplierId.GetId)
-            .ToListAsync();
+        var filter = Builders<Product>.Filter.Eq(p => p.SupplierId, supplierId);
+        return await _productCollection.Find(filter).ToListAsync();
     }
 
     /// <summary>
@@ -107,9 +106,8 @@ public class ProductRepository(AppDbContext context, IMediator mediator) : BaseR
     /// </returns>
     public async Task<ICollection<Product>> FindByAccountIdAsync(AccountId accountId)
     {
-        return await _productCollection
-            .Find(x => x.AccountId.GetId == accountId.GetId)
-            .ToListAsync();
+        var filter = Builders<Product>.Filter.Eq(p => p.AccountId, accountId);
+        return await _productCollection.Find(filter).ToListAsync();
     }
 
     public async Task<string> FindImageUrlByProductIdAsync(ObjectId productId)
