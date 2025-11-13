@@ -22,13 +22,9 @@ public static class CreateSalesOrderCommandFromResourceAssembler
             throw new ArgumentException("Invalid sales order status value.", nameof(resource.Status));
         }
 
-        var resolvedBuyerId = string.IsNullOrWhiteSpace(accountId)
-            ? resource.Buyer
-            : accountId;
-
-        if (string.IsNullOrWhiteSpace(resolvedBuyerId))
+        if (string.IsNullOrWhiteSpace(accountId))
         {
-            throw new ArgumentException("A buyer account identifier must be provided either via authentication or request body.", nameof(resource));
+            throw new ArgumentException("An account identifier must be provided via authentication.", nameof(accountId));
         }
 
         var items = resource.Items.Select(item =>
@@ -36,7 +32,8 @@ public static class CreateSalesOrderCommandFromResourceAssembler
             var salesOrderItem = new SalesOrderItem(
                 new ProductId(item.ProductId),
                 new Money(item.UnitPrice, new Currency(item.Currency)),
-                item.QuantityToSell);
+                item.QuantityToSell,
+                item.ProductName);
 
             if (!string.IsNullOrWhiteSpace(item.InventoryId))
             {
@@ -46,6 +43,12 @@ public static class CreateSalesOrderCommandFromResourceAssembler
             return salesOrderItem;
         }).ToList();
 
+        var accountIdValue = accountId;
+        if (string.IsNullOrWhiteSpace(accountIdValue))
+        {
+            throw new ArgumentException("Account ID is required for creating an order");
+        }
+
         return new GenerateSalesOrderCommand(
             resource.OrderCode,
             new Shared.Domain.Model.ValueObjects.PurchaseOrderId(resource.PurchaseOrderId),
@@ -54,7 +57,7 @@ public static class CreateSalesOrderCommandFromResourceAssembler
             new Shared.Domain.Model.ValueObjects.CatalogId(resource.CatalogToBuyFrom),
             resource.ReceiptDate,
             resource.CompletitionDate,
-            AccountId.Create(resolvedBuyerId)
+            AccountId.Create(accountIdValue.Trim())
         );
     }
 }

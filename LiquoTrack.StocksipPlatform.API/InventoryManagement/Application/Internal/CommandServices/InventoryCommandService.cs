@@ -37,7 +37,13 @@ public class InventoryCommandService(
         // Validate if the warehouse exists
         var warehouse = await warehouseRepository.FindByIdAsync(command.WarehouseId.ToString())
             ?? throw new ArgumentException($"Warehouse with ID {command.WarehouseId} does not exist.");
-        
+
+        // Validate if the expiration date is provided
+        if (command.ExpirationDate == null)
+        {
+            throw new ArgumentException("Expiration date is required when adding products with expiration date.");
+        }
+
         // Validate if the inventory already exists
         var inventory = await inventoryRepository.GetByProductIdWarehouseIdAndExpirationDateAsync(command.ProductId,
                 command.WarehouseId, command.ExpirationDate);
@@ -168,6 +174,106 @@ public class InventoryCommandService(
         
         // Returns the updated inventory.
         return inventoryToUpdate;
+    }
+
+    /// <summary>
+    ///     Method to handle the transfer of products from one warehouse to another.
+    /// </summary>
+    /// <param name="command">
+    ///     The command containing the details for transferring products from one warehouse to another.
+    /// </param>
+    /// <returns>
+    ///     The updated inventory or null if the inventory could not be updated.
+    /// </returns>
+    public async Task<Inventory?> Handle(TransferProductsToAnotherWarehouseCommand command)
+    {
+        // Validate if the product to be moved exists.
+        var movedProduct = await productRepository.FindByIdAsync(command.ProductId.ToString())
+                           ?? throw new ArgumentException($"Product with ID {command.ProductId} does not exist.");
+        
+        // Validate if the new warehouse where the product will be moved exists.
+        var newWarehouse = await warehouseRepository.FindByIdAsync(command.DestinationWarehouseId.ToString())
+                           ?? throw new ArgumentException($"Warehouse with ID {command.DestinationWarehouseId} does not exist.");
+        
+        // Validate if the old warehouse where the product will be moved exists.
+        if (command.DestinationWarehouseId == command.OriginWarehouseId)
+        {
+            throw new ArgumentException("Cannot move products to the same warehouse.");
+        }
+
+        // Initializes a new inventory object with the new warehouse and the moved stock expiration date.
+        Inventory currentInventory;
+        
+        if (command.ExpirationDate == null)
+        {
+            // Retrieves the current inventory of the product in the old warehouse.
+            currentInventory = 
+                await inventoryRepository.GetByProductIdWarehouseIdAsync(command.ProductId, command.OriginWarehouseId) 
+                                   ?? throw new ArgumentException($"Inventory with Product ID {command.ProductId} and Warehouse ID {command.OriginWarehouseId} does not exist.");
+        }
+        else
+        {
+            // Retrieves the current inventory of the product in the old warehouse with the specified expiration date.
+            currentInventory =
+                await inventoryRepository.GetByProductIdWarehouseIdAndExpirationDateAsync(command.ProductId,
+                    command.OriginWarehouseId, new ProductExpirationDate(DateOnly.FromDateTime(command.ExpirationDate.Value)))
+                                    ?? throw new ArgumentException($"Inventory with Product ID {command.ProductId} and Warehouse ID {command.OriginWarehouseId} does not exist.");
+        }
+        
+        // Removes the moved stock from the current inventory. And If the current inventory has no stock left, the product state will be set to OUT_OF_STOCK.
+        currentInventory.DecreaseStockFromProduct(command.QuantityToTransfer, movedProduct.MinimumStock.GetValue(), newWarehouse.AccountId);
+
+        // Updates the inventory in the repository.
+        await inventoryRepository.UpdateAsync(currentInventory.Id.ToString(), currentInventory);
+        
+        // Publishes the events related to the inventory.
+        await inventoryRepository.PublishEventsAsync(currentInventory);
+        
+        // Initializes a new inventory object with the new warehouse and the moved stock expiration date.
+        Inventory destinationInventory;
+        
+        // Validates the expiration date of the moved product.
+        if (command.ExpirationDate == null)
+        {
+            // Retrieves the destination inventory of the product in the new warehouse.
+            var existing = await inventoryRepository.GetByProductIdWarehouseIdAsync(command.ProductId, command.DestinationWarehouseId);
+            
+            // Verifies if the destination inventory exists.
+            if (existing != null)
+            {
+                // If exists, adds the moved stock to the existing inventory.
+                destinationInventory = existing;
+                destinationInventory.AddStockToProduct(command.QuantityToTransfer, movedProduct.MinimumStock.GetValue());
+                await inventoryRepository.UpdateAsync(destinationInventory.Id.ToString(), destinationInventory);
+            }
+            else
+            {
+                destinationInventory = new Inventory(command.ProductId, command.DestinationWarehouseId, new ProductStock(command.QuantityToTransfer), new ProductExpirationDate());
+                await inventoryRepository.AddAsync(destinationInventory);
+            }
+        }
+        else
+        {
+            var expiration = new ProductExpirationDate(DateOnly.FromDateTime(command.ExpirationDate.Value));
+            var existing = await inventoryRepository.GetByProductIdWarehouseIdAndExpirationDateAsync(command.ProductId, command.DestinationWarehouseId, expiration);
+            if (existing != null)
+            {
+                destinationInventory = existing;
+                destinationInventory.AddStockToProduct(command.QuantityToTransfer, movedProduct.MinimumStock.GetValue());
+                await inventoryRepository.UpdateAsync(destinationInventory.Id.ToString(), destinationInventory);
+            }
+            else
+            {
+                destinationInventory = new Inventory(command.ProductId, command.DestinationWarehouseId, new ProductStock(command.QuantityToTransfer), expiration);
+                await inventoryRepository.AddAsync(destinationInventory);
+            }
+        }
+
+        // Publishes the events related to the destination inventory.
+        await inventoryRepository.PublishEventsAsync(destinationInventory);
+
+        // Returns the updated/current inventory.
+        return currentInventory;
     }
 
     /// <summary>

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using LiquoTrack.StocksipPlatform.API.OrderManagement.Domain.Model.Aggregates;
@@ -73,9 +72,12 @@ public class SalesOrderJsonConverter : JsonConverter<SalesOrder>
                 ?? throw new JsonException("unitPrice.currency must be a valid string");
 
             var quantity = itemElement.GetProperty("quantityToSell").GetInt32();
+            
+            var productName = itemElement.GetProperty("productName").GetString()
+                ?? throw new JsonException("productName is required for each item");
 
             var unitPrice = new Money(amount, new Currency(currencyCode));
-            var salesOrderItem = new SalesOrderItem(new ProductId(productIdValue), unitPrice, quantity);
+            var salesOrderItem = new SalesOrderItem(new ProductId(productIdValue), unitPrice, quantity, productName);
 
             if (itemElement.TryGetProperty("inventoryId", out var inventoryElement) &&
                 inventoryElement.ValueKind == JsonValueKind.String)
@@ -123,7 +125,7 @@ public class SalesOrderJsonConverter : JsonConverter<SalesOrder>
         writer.WriteString("catalogToBuyFrom", value.CatalogToBuyFrom.GetId());
         writer.WriteString("receiptDate", value.ReceiptDate);
         writer.WriteString("completitionDate", value.CompletitionDate);
-        writer.WriteString("buyer", value.Buyer.GetId);
+        writer.WriteString("buyer", value.AccountId.GetId);
 
         writer.WriteStartArray("items");
         if (value.Items != null)

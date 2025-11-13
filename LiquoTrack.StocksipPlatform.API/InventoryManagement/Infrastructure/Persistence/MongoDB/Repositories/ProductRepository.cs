@@ -64,9 +64,8 @@ public class ProductRepository(AppDbContext context, IMediator mediator) : BaseR
     /// </returns>
     public async Task<ICollection<Product>> FindBySupplierIdAsync(AccountId supplierId)
     {
-        return await _productCollection
-            .Find(x => x.SupplierId.GetId == supplierId.GetId)
-            .ToListAsync();
+        var filter = Builders<Product>.Filter.Eq(p => p.SupplierId, supplierId);
+        return await _productCollection.Find(filter).ToListAsync();
     }
 
     /// <summary>
@@ -107,9 +106,8 @@ public class ProductRepository(AppDbContext context, IMediator mediator) : BaseR
     /// </returns>
     public async Task<ICollection<Product>> FindByAccountIdAsync(AccountId accountId)
     {
-        return await _productCollection
-            .Find(x => x.AccountId.GetId == accountId.GetId)
-            .ToListAsync();
+        var filter = Builders<Product>.Filter.Eq(p => p.AccountId, accountId);
+        return await _productCollection.Find(filter).ToListAsync();
     }
 
     public async Task<string> FindImageUrlByProductIdAsync(ObjectId productId)
@@ -120,5 +118,20 @@ public class ProductRepository(AppDbContext context, IMediator mediator) : BaseR
             .FirstOrDefaultAsync();
         
         return imageUrlValueObject?.GetValue() ?? string.Empty;
+    }
+
+    /// <summary>
+    ///     This method counts the number of products associated with a specific account ID.
+    /// </summary>
+    /// <param name="accountId">
+    ///     The unique identifier of the account.
+    /// </param>
+    /// <returns>
+    ///     A task that represents the asynchronous operation, containing the count of products.
+    /// </returns>
+    public Task<int> CountByAccountIdAsync(AccountId accountId)
+    {
+        var filter = Builders<Product>.Filter.Eq(w => w.AccountId, accountId);
+        return _productCollection.CountDocumentsAsync(filter).ContinueWith(t => (int)t.Result);
     }
 }
