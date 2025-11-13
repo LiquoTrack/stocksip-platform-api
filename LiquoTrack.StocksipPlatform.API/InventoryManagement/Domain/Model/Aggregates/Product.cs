@@ -76,7 +76,7 @@ public class Product(
     /// <summary>
     ///     The identifier of the supplier of the product. Can be null.
     /// </summary>
-    public AccountId SupplierId { get; private set; } = supplierId;
+    public AccountId? SupplierId { get; private set; } = supplierId;
 
     /// <summary>
     ///     Command constructor for the Product Aggregate Root.
