@@ -25,7 +25,8 @@ public static class CatalogResourceFromEntityAssembler
                 item.UnitPrice.GetCurrencyCode(),
                 item.AddedAt,
                 item.ProductName,
-                item.ImageUrl
+                item.ImageUrl,
+                item.AvailableStock
             )).ToList(),
             entity.OwnerAccount.GetId,
             entity.ContactEmail.GetValue,

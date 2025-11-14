@@ -35,4 +35,12 @@ public interface ISalesOrderCommandService
     /// LiquorStoreOwner responds to a delivery proposal (accept/reject)
     /// </summary>
     Task<SalesOrder> Handle(RespondDeliveryProposalCommand command);
+    
+    
+    Task<SalesOrder> CreateFromPurchaseOrderAsync(string purchaseOrderId);
+    
+    Task<SalesOrder> ConfirmOrderAsync(string orderId);
+    Task<SalesOrder> ReceiveOrderAsync(string orderId);
+    Task<SalesOrder> ShipOrderAsync(string orderId);
+    Task<SalesOrder> CancelOrderAsync(string orderId);
 }

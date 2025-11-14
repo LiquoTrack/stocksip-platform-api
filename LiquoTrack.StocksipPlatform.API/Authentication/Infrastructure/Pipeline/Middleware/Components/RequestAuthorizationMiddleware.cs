@@ -46,7 +46,9 @@ public class RequestAuthorizationMiddleware(RequestDelegate next,
         }
 
         var endpoint  = context.GetEndpoint();
-        var allowAnon = endpoint?.Metadata.Any(m => m is CustomAllowAnonymousAttribute) ?? false;
+        var hasCustomAllowAnon = endpoint?.Metadata.Any(m => m is CustomAllowAnonymousAttribute) ?? false;
+        var hasBuiltInAllowAnon = endpoint?.Metadata.Any(m => m is IAllowAnonymous || m is Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute) ?? false;
+        var allowAnon = hasCustomAllowAnon || hasBuiltInAllowAnon;
 
         _logger.LogInformation("Allow Anonymous = {AllowAnonymous}", allowAnon);
         if (allowAnon)
