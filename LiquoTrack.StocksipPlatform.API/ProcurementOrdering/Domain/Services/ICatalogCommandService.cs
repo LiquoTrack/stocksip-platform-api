@@ -45,4 +45,10 @@ public interface ICatalogCommandService
     /// </summary>
     /// <param name="command">The command to remove an item from a catalog.</param>
     Task Handle(RemoveItemFromCatalogCommand command);
+    
+    /// <summary>
+    /// Handles the ReduceCatalogItemStockCommand.
+    /// </summary>
+    /// <param name="command">The command to reduce stock for a catalog item.</param>
+    Task Handle(ReduceCatalogItemStockCommand command);
 }

@@ -53,7 +53,7 @@ public class Product(
     /// </summary>
     public ProductContent Content { get; private set; } = content;
 
-/// <summary>
+    /// <summary>
     ///     The total stock in the store. Which sums up the stock of the product in all the warehouses.
     /// </summary>
     public int TotalStockInStore { get; private set; } = 0;
@@ -76,7 +76,7 @@ public class Product(
     /// <summary>
     ///     The identifier of the supplier of the product. Can be null.
     /// </summary>
-    public AccountId SupplierId { get; private set; } = supplierId;
+    public AccountId? SupplierId { get; private set; } = supplierId;
 
     /// <summary>
     ///     Command constructor for the Product Aggregate Root.
@@ -132,4 +132,12 @@ public class Product(
         MinimumStock = command.MinimumStock;
         ImageUrl = new ImageUrl(imageUrl);
     }
+    
+    /// <summary>
+    ///     Getter method for the total stock in store.
+    /// </summary>
+    /// <returns>
+    ///     The total stock in store of the product.
+    /// </returns>
+    public int GetStockInStorage() => TotalStockInStore;
 }

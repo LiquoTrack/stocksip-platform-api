@@ -175,9 +175,6 @@ public class CatalogController(
         }
     }
 
-    /// <summary>
-    /// Adds a product item with stock information to a catalog.
-    /// </summary>
     [HttpPost("{catalogId}/items")]
     [SwaggerOperation(
         Summary = "Add item to catalog.",
@@ -190,7 +187,13 @@ public class CatalogController(
     {
         try
         {
-            var command = new AddItemToCatalogCommand(catalogId, resource.ProductId, resource.WarehouseId);
+            var command = new AddItemToCatalogCommand(
+                catalogId,
+                resource.ProductId,
+                resource.WarehouseId,
+                resource.Stock
+            );
+
             await catalogCommandService.Handle(command);
 
             var query = new GetCatalogByIdQuery(catalogId);

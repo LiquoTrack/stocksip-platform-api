@@ -9,6 +9,7 @@ namespace LiquoTrack.StocksipPlatform.API.ProcurementOrdering.Interfaces.REST.Re
 /// <param name="subTotal">The subtotal for this item.</param>
 public record PurchaseOrderItemResource(
     string productId,
+    string productName,
     decimal unitPrice,
     int quantity,
     decimal subTotal
