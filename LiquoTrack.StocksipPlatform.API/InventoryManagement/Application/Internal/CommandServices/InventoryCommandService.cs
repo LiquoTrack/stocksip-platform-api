@@ -60,6 +60,14 @@ public class InventoryCommandService(
         
         // When the inventory exists, add the products to it
         inventory.AddStockToProduct(command.QuantityToAdd, product.MinimumStock.GetValue());
+        
+        // Updates the product 'totalStockInWarehouse' field
+        var productToUpdate = await productRepository.FindByIdAsync(command.ProductId.ToString()) 
+                              ?? throw new ArgumentException($"Product with ID {command.ProductId} does not exist.");
+        
+        productToUpdate.UpdateTotalStockInStore(productToUpdate.GetStockInStorage() + command.QuantityToAdd);
+        
+        await productRepository.UpdateAsync(productToUpdate.Id.ToString(), productToUpdate);
         await inventoryRepository.UpdateAsync(inventory.Id.ToString(), inventory);
         return inventory;
     }
@@ -98,6 +106,14 @@ public class InventoryCommandService(
         // When the inventory exists, add the products to it
         inventory.AddStockToProduct(command.QuantityToAdd, product.MinimumStock.GetValue());
         
+        // Updates the product 'totalStockInWarehouse' field
+        var productToUpdate = await productRepository.FindByIdAsync(command.ProductId.ToString()) 
+                              ?? throw new ArgumentException($"Product with ID {command.ProductId} does not exist.");
+        
+        productToUpdate.UpdateTotalStockInStore(productToUpdate.GetStockInStorage() + command.QuantityToAdd);
+        
+        await productRepository.UpdateAsync(productToUpdate.Id.ToString(), productToUpdate);
+        
         // Updates the inventory in the repository.
         await inventoryRepository.UpdateAsync(inventory.Id.ToString(), inventory);
         
@@ -130,6 +146,14 @@ public class InventoryCommandService(
         
         // Decreases the stock of the product in the inventory.
         inventoryToUpdate.DecreaseStockFromProduct(command.QuantityToDecrease, product.MinimumStock.GetValue(), warehouse.AccountId);
+        
+        // Updates the product 'totalStockInWarehouse' field
+        var productToUpdate = await productRepository.FindByIdAsync(command.ProductId.ToString()) 
+                              ?? throw new ArgumentException($"Product with ID {command.ProductId} does not exist.");
+        
+        productToUpdate.UpdateTotalStockInStore(productToUpdate.GetStockInStorage() - command.QuantityToDecrease);
+        
+        await productRepository.UpdateAsync(productToUpdate.Id.ToString(), productToUpdate);
         
         // Updates the inventory in the repository.
         await inventoryRepository.UpdateAsync(inventoryToUpdate.Id.ToString(), inventoryToUpdate);
@@ -166,6 +190,14 @@ public class InventoryCommandService(
         
         // Decreases the stock of the product in the inventory.
         inventoryToUpdate.DecreaseStockFromProduct(command.QuantityToDecrease, product.MinimumStock.GetValue(), warehouse.AccountId);
+        
+        // Updates the product 'totalStockInWarehouse' field
+        var productToUpdate = await productRepository.FindByIdAsync(command.ProductId.ToString()) 
+                              ?? throw new ArgumentException($"Product with ID {command.ProductId} does not exist.");
+        
+        productToUpdate.UpdateTotalStockInStore(productToUpdate.GetStockInStorage() - command.QuantityToDecrease);
+        
+        await productRepository.UpdateAsync(productToUpdate.Id.ToString(), productToUpdate);
         
         // Updates the inventory in the repository.
         await inventoryRepository.UpdateAsync(inventoryToUpdate.Id.ToString(), inventoryToUpdate);

@@ -132,4 +132,12 @@ public class Product(
         MinimumStock = command.MinimumStock;
         ImageUrl = new ImageUrl(imageUrl);
     }
+    
+    /// <summary>
+    ///     Getter method for the total stock in store.
+    /// </summary>
+    /// <returns>
+    ///     The total stock in store of the product.
+    /// </returns>
+    public int GetStockInStorage() => TotalStockInStore;
 }
