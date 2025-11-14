@@ -53,7 +53,7 @@ public class Product(
     /// </summary>
     public ProductContent Content { get; private set; } = content;
 
-/// <summary>
+    /// <summary>
     ///     The total stock in the store. Which sums up the stock of the product in all the warehouses.
     /// </summary>
     public int TotalStockInStore { get; private set; } = 0;

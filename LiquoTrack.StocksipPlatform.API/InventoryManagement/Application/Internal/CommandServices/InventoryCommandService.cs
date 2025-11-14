@@ -4,6 +4,7 @@ using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Commands;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Services;
+using MongoDB.Bson;
 
 namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.CommandServices;
 
@@ -233,40 +234,30 @@ public class InventoryCommandService(
         Inventory destinationInventory;
         
         // Validates the expiration date of the moved product.
-        if (command.ExpirationDate == null)
-        {
-            // Retrieves the destination inventory of the product in the new warehouse.
-            var existing = await inventoryRepository.GetByProductIdWarehouseIdAsync(command.ProductId, command.DestinationWarehouseId);
+        if (command.ExpirationDate == null) {
             
-            // Verifies if the destination inventory exists.
-            if (existing != null)
-            {
-                // If exists, adds the moved stock to the existing inventory.
-                destinationInventory = existing;
-                destinationInventory.AddStockToProduct(command.QuantityToTransfer, movedProduct.MinimumStock.GetValue());
-                await inventoryRepository.UpdateAsync(destinationInventory.Id.ToString(), destinationInventory);
-            }
-            else
-            {
-                destinationInventory = new Inventory(command.ProductId, command.DestinationWarehouseId, new ProductStock(command.QuantityToTransfer), new ProductExpirationDate());
-                await inventoryRepository.AddAsync(destinationInventory);
-            }
+            // Retrieves the destination inventory of the product in the new warehouse.
+            destinationInventory = await inventoryRepository.GetByProductIdWarehouseIdAsync(command.ProductId, command.DestinationWarehouseId)
+                                   ?? new Inventory(command.ProductId, command.DestinationWarehouseId, new ProductStock(0), new ProductExpirationDate());
         }
-        else
-        {
+        else {
+            
+            // Retrieves the destination inventory of the product in the new warehouse with the specified expiration date.
             var expiration = new ProductExpirationDate(DateOnly.FromDateTime(command.ExpirationDate.Value));
-            var existing = await inventoryRepository.GetByProductIdWarehouseIdAndExpirationDateAsync(command.ProductId, command.DestinationWarehouseId, expiration);
-            if (existing != null)
-            {
-                destinationInventory = existing;
-                destinationInventory.AddStockToProduct(command.QuantityToTransfer, movedProduct.MinimumStock.GetValue());
-                await inventoryRepository.UpdateAsync(destinationInventory.Id.ToString(), destinationInventory);
-            }
-            else
-            {
-                destinationInventory = new Inventory(command.ProductId, command.DestinationWarehouseId, new ProductStock(command.QuantityToTransfer), expiration);
-                await inventoryRepository.AddAsync(destinationInventory);
-            }
+            destinationInventory = await inventoryRepository.GetByProductIdWarehouseIdAndExpirationDateAsync(command.ProductId, command.DestinationWarehouseId, expiration)
+                                   ?? new Inventory(command.ProductId, command.DestinationWarehouseId, new ProductStock(0), expiration);
+        }
+        
+        // Adds the moved stock to the destination inventory.
+        destinationInventory.AddStockToProduct(command.QuantityToTransfer, movedProduct.MinimumStock.GetValue());
+
+        // Updates the inventory in the repository.
+        if (destinationInventory.Id == ObjectId.Empty) {
+            // If the destination inventory does not exist, creates it.
+            await inventoryRepository.AddAsync(destinationInventory);
+        } else {
+            // If the destination inventory exists, updates it.
+            await inventoryRepository.UpdateAsync(destinationInventory.Id.ToString(), destinationInventory);
         }
 
         // Publishes the events related to the destination inventory.
