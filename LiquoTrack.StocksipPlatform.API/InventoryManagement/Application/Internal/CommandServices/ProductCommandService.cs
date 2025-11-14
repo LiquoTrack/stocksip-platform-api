@@ -46,7 +46,7 @@ public class ProductCommandService(
         
         string imageUrl = command.Image != null
             ? inventoryImageService.UploadImage(command.Image)
-            : "https://res.cloudinary.com/deuy1pr9e/image/upload/v1759687115/StockSip-MB/inventories/69d07d02-1c92-46e6-ae24-b5c049f61d31.png";
+            : "https://res.cloudinary.com/deuy1pr9e/image/upload/v1759709979/Default-product_kt9bxf.png";
 
         // Creates the product with the given details.
         var product = new Product(command, imageUrl);
