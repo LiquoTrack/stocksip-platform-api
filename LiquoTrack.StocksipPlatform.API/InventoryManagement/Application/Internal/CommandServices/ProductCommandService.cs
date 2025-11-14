@@ -8,9 +8,22 @@ using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Services;
 
 namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.CommandServices;
 
+/// <summary>
+///     Command service implementation for handling product-related commands.
+/// </summary>
+/// <param name="productRepository">
+///     The repository for handling the Products in the database.
+/// </param>
+/// <param name="inventoryImageService">
+///     The service for handling image operations.
+/// </param>
+/// <param name="inventoryRepository">
+///     The repository for handling the Inventories in the database.
+/// </param>
 public class ProductCommandService(
         IProductRepository productRepository,
-        IInventoryImageService inventoryImageService
+        IInventoryImageService inventoryImageService,
+        IInventoryRepository inventoryRepository
     ) : IProductCommandService
 {
     /// <summary>
@@ -149,11 +162,19 @@ public class ProductCommandService(
             throw new ProductFailedDeletionException($"Could not find the product to delete with identifier {command.ProductId.ToString()}.");
 
         
+        if (product.TotalStockInStore != 0)
+            throw new ProductFailedDeletionException($"Cannot delete product with identifier {command.ProductId.ToString()} because it still has stock in the warehouse.");
+            
         var imageUrl = await productRepository.FindImageUrlByProductIdAsync(command.ProductId);
         
-        // Tries to delete the product from the repository.
+        // Tries to delete the product and its inventories from the repository.
         try
         {
+            var inventories = await inventoryRepository.FindByProductIdAsync(command.ProductId);
+            foreach (var inventory in inventories)
+            {
+                await inventoryRepository.DeleteAsync(inventory.Id.ToString());
+            }
             inventoryImageService.DeleteImage(imageUrl);
             await productRepository.DeleteAsync(command.ProductId.ToString());
         }

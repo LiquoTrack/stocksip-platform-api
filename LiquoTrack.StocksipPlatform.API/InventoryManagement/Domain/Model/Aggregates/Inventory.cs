@@ -178,4 +178,12 @@ public class Inventory(
         // Decrease the stock of the product
         Quantity = Quantity.DecreaseStock(removedStock);
     }
+    
+    /// <summary>
+    ///     Getter method for the total stock in the inventory.
+    /// </summary>
+    /// <returns>
+    ///     The total stock in the inventory.
+    /// </returns>
+    public int GetStock() => Quantity.GetValue;
 }

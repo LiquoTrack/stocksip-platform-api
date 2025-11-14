@@ -33,12 +33,15 @@ public static class DecreaseProductsFromWarehouseCommandFromResourceAssembler
             throw new ArgumentNullException(nameof(resource.ExpirationDate), "ExpirationDate is required for this command.");
         
         var dateOnly = DateOnly.FromDateTime(resource.ExpirationDate.Value);
+
+        var exitType = Enum.Parse<EProductExitReasons>(resource.ExitType);
         
         return new DecreaseProductsFromWarehouseCommand(
                 new ObjectId(productId),
                 new ObjectId(warehouseId),
                 new ProductExpirationDate(dateOnly),
-                resource.QuantityToDecrease
+                resource.QuantityToDecrease,
+                exitType
             );
     }
 
@@ -60,10 +63,13 @@ public static class DecreaseProductsFromWarehouseCommandFromResourceAssembler
     {
         ArgumentNullException.ThrowIfNull(resource);
         
+        var exitType = Enum.Parse<EProductExitReasons>(resource.ExitType);
+        
         return new DecreaseProductsFromWarehouseWithoutExpirationDateCommand(
             new ObjectId(productId),
             new ObjectId(warehouseId),
-            resource.QuantityToDecrease
+            resource.QuantityToDecrease,
+            exitType
         );
     }
 }
