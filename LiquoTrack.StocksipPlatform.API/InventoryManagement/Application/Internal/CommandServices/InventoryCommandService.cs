@@ -1,6 +1,7 @@
 ﻿using Cortex.Mediator.Commands;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Commands;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Services;
@@ -17,7 +18,8 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Intern
 public class InventoryCommandService(
         IProductRepository productRepository,
         IWarehouseRepository warehouseRepository,
-        IInventoryRepository inventoryRepository
+        IInventoryRepository inventoryRepository,
+        IProductExitRepository productExitRepository
     ) : IInventoryCommandService
 {
     /// <summary>
@@ -151,7 +153,21 @@ public class InventoryCommandService(
         var productToUpdate = await productRepository.FindByIdAsync(command.ProductId.ToString()) 
                               ?? throw new ArgumentException($"Product with ID {command.ProductId} does not exist.");
         
+        // Creates a new product exit record
+        var productExit = new ProductExit(
+            productToUpdate.Id.ToString(),
+            productToUpdate.Name,
+            warehouse.Id.ToString(),
+            command.ExpirationDate.ToString(),
+            warehouse.Name,
+            command.ExitType,
+            command.QuantityToDecrease,
+            inventoryToUpdate.GetStock() + command.QuantityToDecrease
+        );
+        
         productToUpdate.UpdateTotalStockInStore(productToUpdate.GetStockInStorage() - command.QuantityToDecrease);
+
+        await productExitRepository.AddAsync(productExit);
         
         await productRepository.UpdateAsync(productToUpdate.Id.ToString(), productToUpdate);
         
@@ -195,7 +211,21 @@ public class InventoryCommandService(
         var productToUpdate = await productRepository.FindByIdAsync(command.ProductId.ToString()) 
                               ?? throw new ArgumentException($"Product with ID {command.ProductId} does not exist.");
         
+        // Creates a new product exit record
+        var productExit = new ProductExit(
+            productToUpdate.Id.ToString(),
+            productToUpdate.Name,
+            warehouse.Id.ToString(),
+            null,
+            warehouse.Name,
+            command.ExitType,
+            command.QuantityToDecrease,
+            inventoryToUpdate.GetStock() + command.QuantityToDecrease
+        );
+        
         productToUpdate.UpdateTotalStockInStore(productToUpdate.GetStockInStorage() - command.QuantityToDecrease);
+        
+        await productExitRepository.AddAsync(productExit);
         
         await productRepository.UpdateAsync(productToUpdate.Id.ToString(), productToUpdate);
         

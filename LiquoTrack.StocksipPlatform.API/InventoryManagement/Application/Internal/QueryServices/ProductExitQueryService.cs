@@ -1,12 +1,19 @@
 ﻿using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Queries;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Repositories;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Services;
 
-namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Services;
+namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.QueryServices;
 
 /// <summary>
-///     Interface for handling product exit-related queries.
+///     Implementation of the <see cref="IProductExitQueryService"/> interface.
 /// </summary>
-public interface IProductExitQueryService
+/// <param name="productExitRepository">
+///     The repository for handling the ProductExits in the database.
+/// </param>
+public class ProductExitQueryService(
+    IProductExitRepository productExitRepository
+) : IProductExitQueryService
 {
     /// <summary>
     ///     Handler for the retrieval of all product exits for a given warehouse ID.
@@ -17,8 +24,11 @@ public interface IProductExitQueryService
     /// <returns>
     ///     A list of product exits for the specified warehouse ID, if any; otherwise, an empty list.  
     /// </returns>
-    Task<IEnumerable<ProductExit>> Handle(GetAllProductExitsByWarehouseIdQuery query);
-    
+    public async Task<IEnumerable<ProductExit>> Handle(GetAllProductExitsByWarehouseIdQuery query)
+    {
+        return await productExitRepository.GetAllByWarehouseIdAsync(query.WarehouseId);
+    }
+
     /// <summary>
     ///     Handler for the retrieval of all product exits for a given product ID.
     /// </summary>
@@ -28,8 +38,11 @@ public interface IProductExitQueryService
     /// <returns>
     ///     A list of product exits for the specified product ID, if any; otherwise, an empty list. 
     /// </returns>
-    Task<IEnumerable<ProductExit>> Handle(GetAllProductExitsByProductIdQuery query);
-    
+    public async Task<IEnumerable<ProductExit>> Handle(GetAllProductExitsByProductIdQuery query)
+    {
+        return await productExitRepository.GetAllByProductIdAsync(query.ProductId);
+    }
+
     /// <summary>
     ///     Handler for the retrieval of a product exit by product ID and warehouse ID.
     /// </summary>
@@ -39,8 +52,11 @@ public interface IProductExitQueryService
     /// <returns>
     ///     The product exit if found; otherwise, null.
     /// </returns>
-    Task<ProductExit?> Handle(GetProductExitByProductIdAndWarehouseIdQuery query);
-    
+    public async Task<ProductExit?> Handle(GetProductExitByProductIdAndWarehouseIdQuery query)
+    {
+        return await productExitRepository.GetByProductIdAndWarehouseIdAsync(query.ProductId, query.WarehouseId, query.ExpirationDate);
+    }
+
     /// <summary>
     ///     Handler for the retrieval of a product exit by ID.
     /// </summary>
@@ -50,5 +66,8 @@ public interface IProductExitQueryService
     /// <returns>
     ///     The product exit if found; otherwise, null.
     /// </returns>
-    Task<ProductExit?> Handle(GetProductExitByIdQuery query);
+    public async Task<ProductExit?> Handle(GetProductExitByIdQuery query)
+    {
+        return await productExitRepository.FindByIdAsync(query.ProductExitId.ToString());
+    }
 }

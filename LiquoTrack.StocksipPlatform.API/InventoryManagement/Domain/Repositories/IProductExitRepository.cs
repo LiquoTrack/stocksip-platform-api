@@ -20,4 +20,32 @@ public interface IProductExitRepository : IBaseRepository<ProductExit>
     ///     A list of product exits for the specified warehouse or a blank list if no product exits are found.
     /// </returns>
     Task<IEnumerable<ProductExit>> GetAllByWarehouseIdAsync(ObjectId warehouseId);
+    
+    /// <summary>
+    ///     Retrieves all product exits for a given product ID.
+    /// </summary>
+    /// <param name="productId">
+    ///     The ID of the product to retrieve product exits for.
+    /// </param>
+    /// <returns>
+    ///     A list of product exits for the specified product or a blank list if no product exits are found.
+    /// </returns>
+    Task<IEnumerable<ProductExit>> GetAllByProductIdAsync(ObjectId productId);
+    
+    /// <summary>
+    ///     Retrieves a product exit by product ID and warehouse ID.
+    /// </summary>
+    /// <param name="productId">
+    ///     The ID of the product.
+    /// </param>
+    /// <param name="warehouseId">
+    ///     The ID of the warehouse.
+    /// </param>
+    /// <param name="expirationDate">
+    ///     The expiration date of the product exit.
+    /// </param>
+    /// <returns>
+    ///     The product exit if found; otherwise, null.
+    /// </returns>
+    Task<ProductExit?> GetByProductIdAndWarehouseIdAsync(ObjectId productId, ObjectId warehouseId, DateTime? expirationDate);
 }
