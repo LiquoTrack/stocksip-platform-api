@@ -69,7 +69,7 @@ public class AccountProductsController(
         OperationId = "RegisterProduct")]
     [SwaggerResponse(StatusCodes.Status201Created, "Product registered successfully.", typeof(ProductResource))]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Product could not be registered.")]
-    public async Task<IActionResult> RegisterProduct([FromBody] RegisterProductResource resource, [FromRoute] string accountId)
+    public async Task<IActionResult> RegisterProduct([FromForm] RegisterProductResource resource, [FromRoute] string accountId)
     {
         var registerProductCommand = RegisterProductCommandFromResourceAssembler.ToCommandFromResource(resource, accountId);
         var product = await productCommandService.Handle(registerProductCommand);
