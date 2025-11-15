@@ -266,9 +266,15 @@ builder.Services.AddHostedService<SubscriptionsExpirationJob>();
 //
 // Bounded context Inventory
 //
+builder.Services.AddScoped<ITypeRepository, TypeRepository>();
+builder.Services.AddScoped<ITypeQueryService, TypeQueryService>();
 
 builder.Services.AddScoped<IBrandRepository, BrandRepository>();
 builder.Services.AddScoped<IBrandQueryService, BrandQueryService>();
+
+builder.Services.AddScoped<IProductExitQueryService, ProductExitQueryService>();
+builder.Services.AddScoped<IProductExitRepository, ProductExitRepository>();
+
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductQueryService, ProductQueryService>();
 builder.Services.AddScoped<IProductCommandService, ProductCommandService>();
@@ -312,7 +318,6 @@ builder.Services.Configure<JsonOptions>(options =>
 //
 // Bounded Context Procurement Ordering
 //
-
 builder.Services.AddScoped<IPurchaseOrderRepository, PurchaseOrderRepository>();
 builder.Services.AddScoped<IPurchaseOrderCommandService, PurchaseOrderCommandService>();
 builder.Services.AddScoped<IPurchaseOrderQueryService, PurchaseOrderQueryService>();
@@ -331,7 +336,6 @@ builder.Services.Configure<JsonOptions>(options =>
     options.JsonSerializerOptions.Converters.Add(new PurchaseOrderItemJsonConverter());
     options.JsonSerializerOptions.Converters.Add(new CatalogItemJsonConverter());
 });
-
 
 //
 // Bounded Context Order Management
@@ -406,10 +410,6 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 
 // Token settings 
 builder.Services.Configure<TokenSettings>(configuration.GetSection("Jwt"));
-
-
-
-
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>

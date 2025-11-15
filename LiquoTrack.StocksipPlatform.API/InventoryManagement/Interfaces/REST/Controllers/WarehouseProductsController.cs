@@ -31,7 +31,8 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Interfaces.REST.Co
 public class WarehouseProductsController(
         IInventoryCommandService inventoryCommandService,
         IInventoryQueryService inventoryQueryService,
-        IProductQueryService productQueryService
+        IProductQueryService productQueryService,
+        IProductExitQueryService productExitQueryService
     ) : ControllerBase
 {
     /// <summary>
@@ -101,6 +102,42 @@ public class WarehouseProductsController(
         return Ok(resource);
     }
 
+    /// <summary>
+    ///     Endpoint to handle the retrieval of a product exit by its ID.
+    /// </summary>
+    /// <param name="warehouseId">
+    ///     The route parameter representing the unique identifier of the warehouse for which to retrieve the product exit.
+    /// </param>
+    /// <param name="productId">
+    ///     The route parameter representing the unique identifier of the product for which to retrieve the product exit.
+    /// </param>
+    /// <param name="expirationDate">
+    ///     The query parameter representing the expiration date of the product exit to be retrieved.
+    /// </param>
+    /// <returns></returns>
+    [HttpGet("{productId}/exits")]
+    [SwaggerOperation(
+        Summary = "Get Product Exit by Product ID and Warehouse ID",
+        Description = "Retrieves product exit details for a specific product in a specific warehouse. Optionally, filter by expiration date.",
+        OperationId = "GetProductExitByProductIdAndWarehouseId")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Product exit found!", typeof(ProductExitResource))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Product exit not found.")]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid warehouse ID.")]
+    public async Task<IActionResult> GetProductExitByWarehouseIdAndProductId(
+        [FromRoute] string warehouseId,
+        [FromRoute] string productId,
+        [FromQuery] DateTime? expirationDate)
+    {
+        if (!ObjectId.TryParse(warehouseId, out var warehouseObjId)) return BadRequest("Invalid warehouse ID.");
+        if (!ObjectId.TryParse(productId, out var productObjId)) return BadRequest("Invalid product ID.");
+        
+        var getProductExitByWarehouseIdQuery = new GetProductExitByProductIdAndWarehouseIdQuery(warehouseObjId, productObjId, expirationDate);
+        var productExit = await productExitQueryService.Handle(getProductExitByWarehouseIdQuery);
+        if (productExit is null) return NotFound("Product exit not found.");
+        var resource = ProductExitResourceFromEntityAssembler.ToResourceFromEntity(productExit);
+        return Ok(resource);
+    }
+    
     /// <summary>
     ///     Endpoint to handle the retrieval of all products in a warehouse.   
     /// </summary>
@@ -224,16 +261,18 @@ public class WarehouseProductsController(
         if (!ObjectId.TryParse(warehouseId, out var warehouseObjId)) return BadRequest("Invalid warehouse ID.");
         if (!ObjectId.TryParse(productId, out var productObjId)) return BadRequest("Invalid product ID.");
 
+        var exitType = Enum.Parse<EProductExitReasons>(resource.ExitType);
+        
         Inventory? inventory;
         if (resource.ExpirationDate.HasValue)
         {
             var expiration = new ProductExpirationDate(DateOnly.FromDateTime(resource.ExpirationDate.Value));
-            var cmd = new DecreaseProductsFromWarehouseCommand(productObjId, warehouseObjId, expiration, resource.QuantityToDecrease);
+            var cmd = new DecreaseProductsFromWarehouseCommand(productObjId, warehouseObjId, expiration, resource.QuantityToDecrease, exitType);
             inventory = await inventoryCommandService.Handle(cmd);
         }
         else
         {
-            var cmd = new DecreaseProductsFromWarehouseWithoutExpirationDateCommand(productObjId, warehouseObjId, resource.QuantityToDecrease);
+            var cmd = new DecreaseProductsFromWarehouseWithoutExpirationDateCommand(productObjId, warehouseObjId, resource.QuantityToDecrease, exitType);
             inventory = await inventoryCommandService.Handle(cmd);
         }
 

@@ -1,9 +1,11 @@
 ﻿using Cortex.Mediator.Commands;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Aggregates;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Commands;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Services;
+using MongoDB.Bson;
 
 namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.CommandServices;
 
@@ -16,7 +18,8 @@ namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Intern
 public class InventoryCommandService(
         IProductRepository productRepository,
         IWarehouseRepository warehouseRepository,
-        IInventoryRepository inventoryRepository
+        IInventoryRepository inventoryRepository,
+        IProductExitRepository productExitRepository
     ) : IInventoryCommandService
 {
     /// <summary>
@@ -59,6 +62,14 @@ public class InventoryCommandService(
         
         // When the inventory exists, add the products to it
         inventory.AddStockToProduct(command.QuantityToAdd, product.MinimumStock.GetValue());
+        
+        // Updates the product 'totalStockInWarehouse' field
+        var productToUpdate = await productRepository.FindByIdAsync(command.ProductId.ToString()) 
+                              ?? throw new ArgumentException($"Product with ID {command.ProductId} does not exist.");
+        
+        productToUpdate.UpdateTotalStockInStore(productToUpdate.GetStockInStorage() + command.QuantityToAdd);
+        
+        await productRepository.UpdateAsync(productToUpdate.Id.ToString(), productToUpdate);
         await inventoryRepository.UpdateAsync(inventory.Id.ToString(), inventory);
         return inventory;
     }
@@ -97,6 +108,14 @@ public class InventoryCommandService(
         // When the inventory exists, add the products to it
         inventory.AddStockToProduct(command.QuantityToAdd, product.MinimumStock.GetValue());
         
+        // Updates the product 'totalStockInWarehouse' field
+        var productToUpdate = await productRepository.FindByIdAsync(command.ProductId.ToString()) 
+                              ?? throw new ArgumentException($"Product with ID {command.ProductId} does not exist.");
+        
+        productToUpdate.UpdateTotalStockInStore(productToUpdate.GetStockInStorage() + command.QuantityToAdd);
+        
+        await productRepository.UpdateAsync(productToUpdate.Id.ToString(), productToUpdate);
+        
         // Updates the inventory in the repository.
         await inventoryRepository.UpdateAsync(inventory.Id.ToString(), inventory);
         
@@ -129,6 +148,28 @@ public class InventoryCommandService(
         
         // Decreases the stock of the product in the inventory.
         inventoryToUpdate.DecreaseStockFromProduct(command.QuantityToDecrease, product.MinimumStock.GetValue(), warehouse.AccountId);
+        
+        // Updates the product 'totalStockInWarehouse' field
+        var productToUpdate = await productRepository.FindByIdAsync(command.ProductId.ToString()) 
+                              ?? throw new ArgumentException($"Product with ID {command.ProductId} does not exist.");
+        
+        // Creates a new product exit record
+        var productExit = new ProductExit(
+            productToUpdate.Id.ToString(),
+            productToUpdate.Name,
+            warehouse.Id.ToString(),
+            command.ExpirationDate.ToString(),
+            warehouse.Name,
+            command.ExitType,
+            command.QuantityToDecrease,
+            inventoryToUpdate.GetStock() + command.QuantityToDecrease
+        );
+        
+        productToUpdate.UpdateTotalStockInStore(productToUpdate.GetStockInStorage() - command.QuantityToDecrease);
+
+        await productExitRepository.AddAsync(productExit);
+        
+        await productRepository.UpdateAsync(productToUpdate.Id.ToString(), productToUpdate);
         
         // Updates the inventory in the repository.
         await inventoryRepository.UpdateAsync(inventoryToUpdate.Id.ToString(), inventoryToUpdate);
@@ -165,6 +206,28 @@ public class InventoryCommandService(
         
         // Decreases the stock of the product in the inventory.
         inventoryToUpdate.DecreaseStockFromProduct(command.QuantityToDecrease, product.MinimumStock.GetValue(), warehouse.AccountId);
+        
+        // Updates the product 'totalStockInWarehouse' field
+        var productToUpdate = await productRepository.FindByIdAsync(command.ProductId.ToString()) 
+                              ?? throw new ArgumentException($"Product with ID {command.ProductId} does not exist.");
+        
+        // Creates a new product exit record
+        var productExit = new ProductExit(
+            productToUpdate.Id.ToString(),
+            productToUpdate.Name,
+            warehouse.Id.ToString(),
+            null,
+            warehouse.Name,
+            command.ExitType,
+            command.QuantityToDecrease,
+            inventoryToUpdate.GetStock() + command.QuantityToDecrease
+        );
+        
+        productToUpdate.UpdateTotalStockInStore(productToUpdate.GetStockInStorage() - command.QuantityToDecrease);
+        
+        await productExitRepository.AddAsync(productExit);
+        
+        await productRepository.UpdateAsync(productToUpdate.Id.ToString(), productToUpdate);
         
         // Updates the inventory in the repository.
         await inventoryRepository.UpdateAsync(inventoryToUpdate.Id.ToString(), inventoryToUpdate);
@@ -233,40 +296,30 @@ public class InventoryCommandService(
         Inventory destinationInventory;
         
         // Validates the expiration date of the moved product.
-        if (command.ExpirationDate == null)
-        {
-            // Retrieves the destination inventory of the product in the new warehouse.
-            var existing = await inventoryRepository.GetByProductIdWarehouseIdAsync(command.ProductId, command.DestinationWarehouseId);
+        if (command.ExpirationDate == null) {
             
-            // Verifies if the destination inventory exists.
-            if (existing != null)
-            {
-                // If exists, adds the moved stock to the existing inventory.
-                destinationInventory = existing;
-                destinationInventory.AddStockToProduct(command.QuantityToTransfer, movedProduct.MinimumStock.GetValue());
-                await inventoryRepository.UpdateAsync(destinationInventory.Id.ToString(), destinationInventory);
-            }
-            else
-            {
-                destinationInventory = new Inventory(command.ProductId, command.DestinationWarehouseId, new ProductStock(command.QuantityToTransfer), new ProductExpirationDate());
-                await inventoryRepository.AddAsync(destinationInventory);
-            }
+            // Retrieves the destination inventory of the product in the new warehouse.
+            destinationInventory = await inventoryRepository.GetByProductIdWarehouseIdAsync(command.ProductId, command.DestinationWarehouseId)
+                                   ?? new Inventory(command.ProductId, command.DestinationWarehouseId, new ProductStock(0), new ProductExpirationDate());
         }
-        else
-        {
+        else {
+            
+            // Retrieves the destination inventory of the product in the new warehouse with the specified expiration date.
             var expiration = new ProductExpirationDate(DateOnly.FromDateTime(command.ExpirationDate.Value));
-            var existing = await inventoryRepository.GetByProductIdWarehouseIdAndExpirationDateAsync(command.ProductId, command.DestinationWarehouseId, expiration);
-            if (existing != null)
-            {
-                destinationInventory = existing;
-                destinationInventory.AddStockToProduct(command.QuantityToTransfer, movedProduct.MinimumStock.GetValue());
-                await inventoryRepository.UpdateAsync(destinationInventory.Id.ToString(), destinationInventory);
-            }
-            else
-            {
-                destinationInventory = new Inventory(command.ProductId, command.DestinationWarehouseId, new ProductStock(command.QuantityToTransfer), expiration);
-                await inventoryRepository.AddAsync(destinationInventory);
-            }
+            destinationInventory = await inventoryRepository.GetByProductIdWarehouseIdAndExpirationDateAsync(command.ProductId, command.DestinationWarehouseId, expiration)
+                                   ?? new Inventory(command.ProductId, command.DestinationWarehouseId, new ProductStock(0), expiration);
+        }
+        
+        // Adds the moved stock to the destination inventory.
+        destinationInventory.AddStockToProduct(command.QuantityToTransfer, movedProduct.MinimumStock.GetValue());
+
+        // Updates the inventory in the repository.
+        if (destinationInventory.Id == ObjectId.Empty) {
+            // If the destination inventory does not exist, creates it.
+            await inventoryRepository.AddAsync(destinationInventory);
+        } else {
+            // If the destination inventory exists, updates it.
+            await inventoryRepository.UpdateAsync(destinationInventory.Id.ToString(), destinationInventory);
         }
 
         // Publishes the events related to the destination inventory.
