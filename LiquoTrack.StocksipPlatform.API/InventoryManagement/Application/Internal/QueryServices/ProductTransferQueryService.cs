@@ -1,12 +1,16 @@
 ﻿using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Entities;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Queries;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Repositories;
+using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Services;
 
-namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Services;
+namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.QueryServices;
 
 /// <summary>
-///     Interface for handling product-transfer-related queries.
+///     Service for handling product-transfer-related queries.
 /// </summary>
-public interface IProductTransferQueryService
+public class ProductTransferQueryService(
+    IProductTransferRepository productTransferRepository
+) : IProductTransferQueryService
 {
     /// <summary>
     ///     Query handler for retrieving all product transfers for a given warehouse ID.
@@ -17,8 +21,11 @@ public interface IProductTransferQueryService
     /// <returns>
     ///     A list of product transfers for the specified warehouse ID or an empty list if no transfers are found.
     /// </returns>
-    Task<IEnumerable<ProductTransfer>> Handle(GetAllProductTransfersByWarehouseIdQuery query);
-    
+    public async Task<IEnumerable<ProductTransfer>> Handle(GetAllProductTransfersByWarehouseIdQuery query)
+    {
+        return await productTransferRepository.GetAllByWarehouseIdAsync(query.WarehouseId);
+    }
+
     /// <summary>
     ///     Query handler for retrieving all product transfers for a given product ID.
     /// </summary>
@@ -28,8 +35,11 @@ public interface IProductTransferQueryService
     /// <returns>
     ///     A list of product transfers for the specified product ID or an empty list if no transfers are found.
     /// </returns>
-    Task<IEnumerable<ProductTransfer>> Handle(GetAllProductTransfersByProductIdQuery query);
-    
+    public async Task<IEnumerable<ProductTransfer>> Handle(GetAllProductTransfersByProductIdQuery query)
+    {
+        return await productTransferRepository.GetAllByProductIdAsync(query.ProductId);
+    }
+
     /// <summary>
     ///     Query handler for retrieving a product transfer by product ID and warehouse ID.
     /// </summary>
@@ -39,8 +49,11 @@ public interface IProductTransferQueryService
     /// <returns>
     ///     A product transfer if found; otherwise, null.
     /// </returns>
-    Task<ProductTransfer?> Handle(GetProductTransferByProductIdAndWarehouseIdQuery query);
-    
+    public async Task<ProductTransfer?> Handle(GetProductTransferByProductIdAndWarehouseIdQuery query)
+    {
+        return await productTransferRepository.GetByProductIdWarehouseIdAsync(query.ProductId, query.WarehouseId, query.ExpirationDate);
+    }
+
     /// <summary>
     ///     Query handler for retrieving a product transfer by ID.
     /// </summary>
@@ -50,5 +63,8 @@ public interface IProductTransferQueryService
     /// <returns>
     ///     A product transfer if found; otherwise, null.
     /// </returns>
-    Task<ProductTransfer?> Handle(GetProductTransferByIdQuery query);
+    public async Task<ProductTransfer?> Handle(GetProductTransferByIdQuery query)
+    {
+        return await productTransferRepository.FindByIdAsync(query.ProductTransferId.ToString());
+    }
 }
