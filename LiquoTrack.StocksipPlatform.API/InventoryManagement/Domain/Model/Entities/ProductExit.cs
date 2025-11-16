@@ -36,11 +36,11 @@ public class ProductExit(
     string productId, 
     string productName, 
     string warehouseId,
-    string? expirationDate,
     string warehouseName, 
     EProductExitReasons exitType,
     int outputQuantity,
-    int previousQuantity
+    int previousQuantity,
+    string? expirationDate = ""
 ) : Entity 
 {
     /// <summary>
