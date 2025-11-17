@@ -5,12 +5,27 @@ using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.Exception
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Model.ValueObjects;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Repositories;
 using LiquoTrack.StocksipPlatform.API.InventoryManagement.Domain.Services;
+using LiquoTrack.StocksipPlatform.API.PaymentAndSubscriptions.Interfaces.ACL.Services;
 
 namespace LiquoTrack.StocksipPlatform.API.InventoryManagement.Application.Internal.CommandServices;
 
+/// <summary>
+///     Command service implementation for handling product-related commands.
+/// </summary>
+/// <param name="productRepository">
+///     The repository for handling the Products in the database.
+/// </param>
+/// <param name="inventoryImageService">
+///     The service for handling image operations.
+/// </param>
+/// <param name="inventoryRepository">
+///     The repository for handling the Inventories in the database.
+/// </param>
 public class ProductCommandService(
         IProductRepository productRepository,
-        IInventoryImageService inventoryImageService
+        IInventoryImageService inventoryImageService,
+        IInventoryRepository inventoryRepository,
+        IPaymentAndSubscriptionsFacade paymentAndSubscriptionsFacade
     ) : IProductCommandService
 {
     /// <summary>
@@ -26,14 +41,24 @@ public class ProductCommandService(
     public async Task<Product?> Handle(RegisterProductCommand command)
     {
         // Verifies that the product name is unique.
-        if (await productRepository.ExistsByNameAsync(new ProductName(command.Name)))
+        if (await productRepository.ExistsByNameAndAccountIdAsync(new ProductName(command.Name), command.AccountId))
         {
-            throw new ProductFailedCreationException("This ${command.Name} is taken by another product. Cannot create a new product with the same name.");
+            throw new ProductFailedCreationException($"This {command.Name} is taken by another product. Cannot create a new product with the same name.");
         }
         
+        // Verifies that the account has not reached the maximum number of warehouses.
+        var currentProductsCount = await productRepository.CountByAccountIdAsync(command.AccountId);
+        
+        var maxAllowedProducts = await paymentAndSubscriptionsFacade
+            .GetPlanWarehouseLimitByAccountId(command.AccountId.GetId);
+        
+        if (maxAllowedProducts != 0 && currentProductsCount >= maxAllowedProducts)
+            throw new ProductFailedCreationException($"The account {command.AccountId.GetId} has reached the maximum number of products for the current plan.");
+        
+        // Gets the image url of the warehouse.
         string imageUrl = command.Image != null
             ? inventoryImageService.UploadImage(command.Image)
-            : "https://res.cloudinary.com/deuy1pr9e/image/upload/v1759687115/StockSip-MB/inventories/69d07d02-1c92-46e6-ae24-b5c049f61d31.png";
+            : "https://res.cloudinary.com/deuy1pr9e/image/upload/v1759709979/Default-product_kt9bxf.png";
 
         // Creates the product with the given details.
         var product = new Product(command, imageUrl);
@@ -149,11 +174,19 @@ public class ProductCommandService(
             throw new ProductFailedDeletionException($"Could not find the product to delete with identifier {command.ProductId.ToString()}.");
 
         
+        if (product.TotalStockInStore != 0)
+            throw new ProductFailedDeletionException($"Cannot delete product with identifier {command.ProductId.ToString()} because it still has stock in the warehouse.");
+            
         var imageUrl = await productRepository.FindImageUrlByProductIdAsync(command.ProductId);
         
-        // Tries to delete the product from the repository.
+        // Tries to delete the product and its inventories from the repository.
         try
         {
+            var inventories = await inventoryRepository.FindByProductIdAsync(command.ProductId);
+            foreach (var inventory in inventories)
+            {
+                await inventoryRepository.DeleteAsync(inventory.Id.ToString());
+            }
             inventoryImageService.DeleteImage(imageUrl);
             await productRepository.DeleteAsync(command.ProductId.ToString());
         }

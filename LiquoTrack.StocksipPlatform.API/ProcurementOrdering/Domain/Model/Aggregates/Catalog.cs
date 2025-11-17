@@ -130,6 +130,24 @@ public class Catalog : Entity
         if (item != null)
             CatalogItems.Remove(item);
     }
+    
+    /// <summary>
+    /// Reduces the stock for a specific catalog item using a domain command.
+    /// </summary>
+    public void ReduceItemStock(ReduceCatalogItemStockCommand command)
+    {
+        var item = CatalogItems.FirstOrDefault(i => i.ProductId == command.ProductId);
+        if (item == null)
+            throw new InvalidOperationException($"Product {command.ProductId} not found in catalog.");
+
+        if (item.Stock < command.Quantity)
+            throw new InvalidOperationException(
+                $"Insufficient stock for product {command.ProductId}. " +
+                $"Available: {item.Stock}, requested: {command.Quantity}"
+            );
+
+        item.Stock -= command.Quantity;
+    }
 
     public AccountId GetOwnerAccount() => OwnerAccount;
 }
