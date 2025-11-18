@@ -111,6 +111,9 @@ public class Product(
         if (totalStockInStore < 0)
             throw new ArgumentException("Total stock in store cannot be negative.", nameof(totalStockInStore));
 
+        if (totalStockInStore > 0) StoreProduct();
+        if (totalStockInStore == 0) IsInWarehouse = false;
+        
         TotalStockInStore = totalStockInStore;
     }
     
@@ -132,4 +135,12 @@ public class Product(
         MinimumStock = command.MinimumStock;
         ImageUrl = new ImageUrl(imageUrl);
     }
+    
+    /// <summary>
+    ///     Getter method for the total stock in store.
+    /// </summary>
+    /// <returns>
+    ///     The total stock in store of the product.
+    /// </returns>
+    public int GetStockInStorage() => TotalStockInStore;
 }

@@ -5,5 +5,6 @@
 /// </summary>
 public record DecreaseProductsFromWarehouseResource(
     int QuantityToDecrease,
+    string ExitType,
     DateTime? ExpirationDate
 );
